@@ -10,10 +10,10 @@ const Header: React.FC = () => {
                         <a href="#hero">Home</a>
                     </li>
                     <li className="site-nav-item">
-                        <a href="#gallery"><span className="header-accent-word">Gallery</span></a>
+                        <a href="#about">About</a>
                     </li>
                     <li className="site-nav-item">
-                        <a href="#about">About</a>
+                        <a href="#gallery">Gallery</a>
                     </li>
                     <li className="site-nav-item">
                         <a href="#services">Services</a>
