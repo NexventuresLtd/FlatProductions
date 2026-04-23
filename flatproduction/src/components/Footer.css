@@ -1,0 +1,153 @@
+.footer {
+  position: relative;
+  overflow: hidden;
+  background: #111111;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 4rem 1.25rem 2rem;
+}
+
+.footer-content {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: grid;
+  /* Adjusted ratios: slightly reduced brand, increased contact width */
+  grid-template-columns: 1.2fr 1fr 1fr 1fr 1.2fr;
+  gap: 1.5rem; /* Increased gap slightly for better separation */
+  align-items: start;
+}
+
+.footer-column {
+  padding: 0;
+}
+
+.footer-column h3,
+.footer-column h4 {
+  margin: 0;
+  color: #565050e8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.footer-column h3 {
+  font-size: 0.95rem;
+}
+
+.footer-column h4 {
+  font-size: 0.85rem;
+}
+
+.footer-brand p {
+  margin: 0.9rem 0 0;
+  color: rgba(250, 250, 250, 0.78);
+  line-height: 1.8;
+  font-size: 0.85rem;
+}
+
+.footer-column ul {
+  list-style: none;
+  margin: 0.9rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.7rem;
+}
+
+.footer-column li,
+.footer-column a {
+  color: rgba(250, 250, 250, 0.8);
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+.footer-column a {
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.footer-column a:hover {
+  color: rgba(81, 188, 227, 0.906);
+}
+
+.footer-bottom {
+  max-width: 1280px;
+  margin: 2rem auto 0;
+  padding-top: 1.2rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05); /* Added subtle border */
+  text-align: center;
+}
+
+.footer-bottom p {
+  margin: 0;
+  color: rgba(250, 250, 250, 0.7);
+  font-size: 0.85rem;
+  letter-spacing: 0.03em;
+}
+
+.footer-contact-actions {
+  margin-top: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem; /* Adjusted gap for the new padding */
+}
+
+.footer-contact-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Changed padding from 5rem to 1.5rem to fit column width while keeping height */
+  padding: 1.8rem 1.5rem; 
+  border: 1px solid rgba(200, 207, 210, 0.664);
+  border-radius: 1px;
+  color: rgba(250, 250, 250, 0.95);
+  font-size: 0.85rem; /* Slightly smaller font to fit "Contact Support" better */
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  text-align: center;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  /* Ensure it doesn't shrink below content size */
+  min-width: 0; 
+}
+
+.footer-contact-card::after {
+  content: '↗';
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  color: rgba(228, 235, 237, 0.8);
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+}
+
+
+
+
+
+/* Tablet Layout: 2 Columns */
+@media (max-width: 1024px) {
+  .footer-content {
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+  }
+  
+  /* Let the Contact column span full width of the grid if desired, 
+     or sit in the second column. Here it sits in the 2nd column naturally. */
+}
+
+/* Mobile Layout: 1 Column */
+@media (max-width: 640px) {
+  .footer-content {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .footer-contact-actions {
+    grid-template-columns: 1fr;
+  }
+  
+  .footer-contact-card {
+    padding: 1.5rem;
+    font-size: 0.9rem;
+  }
+}
