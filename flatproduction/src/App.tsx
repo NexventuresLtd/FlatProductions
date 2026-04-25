@@ -12,10 +12,11 @@ import PortfolioPage from './components/portfoliopage';
 import ContactPage from './components/contactpage';
 
 const App: React.FC = () => {
-  const isAboutPage = window.location.pathname === '/about';
-  const isGalleryPage = window.location.pathname === '/gallery';
-  const isPortfolioPage = window.location.pathname === '/portfolio';
-  const isContactPage = window.location.pathname === '/contact';
+  const currentPath = window.location.pathname.replace(/\/+$/, '') || '/';
+  const isAboutPage = currentPath === '/about';
+  const isGalleryPage = currentPath === '/gallery';
+  const isPortfolioPage = currentPath === '/portfolio';
+  const isContactPage = currentPath === '/contact';
 
   if (isAboutPage) {
     return <AboutPage />;

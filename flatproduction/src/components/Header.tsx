@@ -1,21 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const Header: React.FC = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    
-    // Use current path to determine active link (optional but helpful for styling)
-    const currentPath = window.location.pathname;
-    
-    const homeHref = '/';
-    const aboutHref = '/about';
-    const galleryHref = '/gallery';
-    const portfolioHref = '/portfolio';
-    const contactHref = '/contact';
-    const servicesHref = currentPath === '/about' || currentPath === '/gallery' || currentPath === '/portfolio' || currentPath === '/contact' ? '/#services' : '#services';
+    const [currentPath, setCurrentPath] = useState('/');
+
+    useEffect(() => {
+        setCurrentPath(window.location.pathname.replace(/\/+$/, '') || '/');
+    }, []);
 
     const toggleMenu = (): void => {
         setIsMenuOpen((prev) => !prev);
-        // RESPONSIVENESS FIX: Lock body scroll when menu opens on mobile
         if (!isMenuOpen) {
             document.body.style.overflow = 'hidden';
         } else {
@@ -25,14 +19,17 @@ const Header: React.FC = () => {
 
     const closeMenu = (): void => {
         setIsMenuOpen(false);
-        // Ensure scroll is re-enabled
         document.body.style.overflow = 'unset';
     };
 
     return (
         <header className="site-header">
-            <a className="site-brand" href={homeHref} onClick={closeMenu}>Flat<span className="header-brand-word header-accent-word">Production</span></a>
+            {/* 1. Brand/Logo (Left) */}
+            <a className="site-brand" href="/" onClick={closeMenu}>
+                Flat<span className="header-accent-word">Production</span>
+            </a>
             
+            {/* 2. Menu Toggle (Right) */}
             <button
                 type="button"
                 className={`menu-toggle ${isMenuOpen ? 'is-open' : ''}`}
@@ -46,22 +43,23 @@ const Header: React.FC = () => {
                 <span className="menu-toggle-bar" />
             </button>
 
+            {/* 3. Navigation (Desktop: Right / Mobile: Dropdown) */}
             <nav className={`site-nav ${isMenuOpen ? 'is-open' : ''}`}>
                 <ul id="site-nav-list" className="site-nav-list">
                     <li className="site-nav-item">
-                        <a href={homeHref} onClick={closeMenu}>Home</a>
+                        <a href="/" onClick={closeMenu}>Home</a>
                     </li>
                     <li className="site-nav-item">
-                        <a href={aboutHref} onClick={closeMenu}>About</a>
+                        <a href="/about" onClick={closeMenu}>About</a>
                     </li>
                     <li className="site-nav-item">
-                        <a href={galleryHref} onClick={closeMenu}>Gallery</a>
+                        <a href="/gallery" onClick={closeMenu}>Gallery</a>
                     </li>
                     <li className="site-nav-item">
-                        <a href={portfolioHref} onClick={closeMenu}>Portfolio</a>
+                        <a href="/portfolio" onClick={closeMenu}>Portfolio</a>
                     </li>
                     <li className="site-nav-item">
-                        <a href={contactHref} onClick={closeMenu}>Contact</a>
+                        <a href="/contact" onClick={closeMenu}>Contact</a>
                     </li>
                 </ul>
             </nav>

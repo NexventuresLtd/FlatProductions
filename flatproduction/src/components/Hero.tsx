@@ -13,14 +13,30 @@ const Hero: React.FC = () => {
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
     useEffect(() => {
+        // Direct state update inside setInterval is more reliable
         const interval = setInterval(() => {
-            setCurrentImageIndex((prev) => (prev + 1) % images.length);
-        }, 4000);
+            setCurrentImageIndex((prevIndex) => (prevIndex + 1) % images.length);
+        }, 4000); // Changes every 4 seconds
+        
         return () => clearInterval(interval);
+    }, [images.length]);
+
+    // Keyboard navigation (Optional, but nice to have)
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'ArrowRight') {
+                setCurrentImageIndex((prev) => (prev + 1) % images.length);
+            } else if (e.key === 'ArrowLeft') {
+                setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
     }, [images.length]);
 
     return (
         <div id="hero" className="hero-container">
+            {/* Background Images */}
             <div className="hero-images">
                 {images.map((image, index) => (
                     <div
@@ -31,18 +47,23 @@ const Hero: React.FC = () => {
                     />
                 ))}
             </div>
+            
+            {/* Overlay - Darkens image slightly for contrast, but not too much since no text */}
             <div className="hero-overlay"></div>
+            
+            {/* Header */}
             <div className="hero-header-wrap">
                 <Header />
             </div>
           
+            {/* Indicators (Dots) */}
             <div className="hero-indicators">
                 {images.map((_, index) => (
                     <button
                         key={index}
                         className={`indicator ${index === currentImageIndex ? 'active' : ''}`}
                         onClick={() => setCurrentImageIndex(index)}
-                        aria-label={`Go to image ${index + 1}`}
+                        aria-label={`Go to slide ${index + 1}`}
                     ></button>
                 ))}
             </div>
