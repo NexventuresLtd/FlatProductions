@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { contentStore } from '../store/contentStore';
 
 const Services: React.FC = () => {
-    const services = [
+    const defaultServices = [
         {
             title: 'PHOTOGRAPHY & VIDEO PRODUCTION',
             description:
@@ -34,14 +35,23 @@ const Services: React.FC = () => {
         },
     ];
 
+    const [services, setServices] = useState(() => contentStore.read().services.length ? contentStore.read().services : defaultServices);
+
+    useEffect(()=>{
+      const onUpdate = (c: any) => setServices((c.services && c.services.length) ? c.services : defaultServices);
+      contentStore.onUpdate(onUpdate);
+    },[]);
+
     return (
         <section id="services" className="services-section">
             <div className="services-header">
+                <p className="section-tag">What We Do</p>
                 <h2>Services</h2>
             </div>
             <div className="services-grid">
-                {services.map((service) => (
+                {services.map((service, index) => (
                     <article className="service-card" key={service.title}>
+                        <span className="service-number">{String(index + 1).padStart(2, '0')}</span>
                         <h3>{service.title}</h3>
                         <p>{service.description}</p>
                     </article>

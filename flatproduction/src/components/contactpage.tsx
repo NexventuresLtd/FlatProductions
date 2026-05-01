@@ -5,6 +5,7 @@ import Footer from './Footer';
 const ContactPage: React.FC = () => {
     const [formStatus, setFormStatus] = useState<'idle' | 'submitting' | 'success'>('idle');
     const [showToast, setShowToast] = useState(false);
+    const whatsappLink = 'https://wa.me/250781691713?text=Hello%20Flat%20Production%2C%20I%20would%20like%20to%20book%20your%20services.';
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -56,9 +57,9 @@ const ContactPage: React.FC = () => {
 
                             <button type="submit" className={`submit-btn ${formStatus === 'submitting' ? 'loading' : ''}`}>
                                 {formStatus === 'submitting' ? (
-                                    <span>Sending...</span>
+                                    <span>Sending Inquiry...</span>
                                 ) : (
-                                    <>Take the Next Step <i className="arrow-icon">→</i></>
+                                    <>Send Inquiry <i className="arrow-icon">→</i></>
                                 )}
                             </button>
                         </form>
@@ -68,6 +69,9 @@ const ContactPage: React.FC = () => {
                         <article className="contact-info-item glass-card">
                             <h2>Book Us</h2>
                             <p>Schedule an appointment today for your event, production, or campaign. We are ready to bring your vision to life.</p>
+                            <a className="book-us-button" href={whatsappLink} target="_blank" rel="noreferrer">
+                                Message on WhatsApp
+                            </a>
                         </article>
                         <article className="contact-info-item glass-card">
                             <h2>Partner With Us</h2>
@@ -96,7 +100,7 @@ const ContactPage: React.FC = () => {
             <div className={`toast-notification ${showToast ? 'active' : ''}`}>
                 <div className="toast-icon">✓</div>
                 <div className="toast-message">
-                    <h4>Message Sent!</h4>
+                    <h4>Inquiry Sent!</h4>
                     <p>We'll get back to you shortly.</p>
                 </div>
             </div>

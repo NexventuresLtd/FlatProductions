@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { contentStore } from '../store/contentStore';
 
 const Team: React.FC = () => {
-    const team = [
+    const defaultTeam = [
         {
             image: '/kadaff.jpg',
             name: 'KADAffI PRO',
@@ -34,23 +35,34 @@ const Team: React.FC = () => {
         },
     ];
 
+    const [team, setTeam] = useState(() => contentStore.read().team.length ? contentStore.read().team : defaultTeam);
+
+    useEffect(()=>{
+      const onUpdate = (c:any) => setTeam((c.team && c.team.length) ? c.team : defaultTeam);
+      contentStore.onUpdate(onUpdate);
+    },[]);
+
     return (
         <section id="team" className="team-section">
             <div className="team-header">
+                <p className="section-tag">Creative Crew</p>
                 <h2>Our Team</h2>
+                <p className="team-intro">
+                    Small team, big energy. We blend strategy, storytelling, and style to shape every production.
+                </p>
             </div>
             <div className="team-grid">
-                {team.map((member) => (
+                {team.map((member:any) => (
                     <article className="team-card" key={member.name}>
                         <img
                             className="team-image"
-                            src={member.image}
+                            src={member.photo ?? member.image}
                             alt={member.name}
-                            style={{ objectPosition: member.position }}
+                            style={{ objectPosition: member.position ?? '50% 20%' }}
                         />
                         <div className="team-copy">
                             <h3>{member.name}</h3>
-                            <p>{member.role}</p>
+                            <p className="team-role">{member.role}</p>
                         </div>
                     </article>
                 ))}

@@ -1,38 +1,84 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { contentStore } from '../store/contentStore';
+
+type GalleryPortfolioItem = {
+    src: string;
+    alt: string;
+    title: string;
+    videoUrl?: string;
+};
+
+function toEmbedUrl(url: string) {
+    const youtubeMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/i);
+    if (!youtubeMatch) {
+        return url;
+    }
+
+    return `https://www.youtube.com/embed/${youtubeMatch[1]}`;
+}
 
 const Gallery: React.FC = () => {
-    const images = [
-        { src: '/photo1.jpg', alt: 'Gallery image 1' },
-        { src: '/photo2.jpg', alt: 'Gallery image 2' },
-        { src: '/photo3.jpg', alt: 'Gallery image 3' },
-        { src: '/photo4.jpg', alt: 'Gallery image 4' },
-        { src: '/photo5.jpg', alt: 'Gallery image 5' },
-        { src: '/photo6.jpg', alt: 'Gallery image 6' },
-        { src: '/photo8.jpg', alt: 'Gallery image 7' },
-        { src: '/photo9.jpg', alt: 'Gallery image 8' },
-        { src: '/photo10.jpg', alt: 'Gallery image 9' },
-        { src: '/photo12.jpg', alt: 'Gallery image 10' },
-        { src: '/photo14.jpg', alt: 'Gallery image 11' },
-        { src: '/live1.jpeg', alt: 'Gallery image 12' },
+        const defaultItems: GalleryPortfolioItem[] = [
+        { src: '/photo1.jpg', alt: 'Photography', title: 'Photography' },
+        { src: '/photo3.jpg', alt: 'Video Production', title: 'Video Production' },
+        { src: '/live1.jpeg', alt: 'Live Streaming', title: 'Live Streaming' },
+        { src: '/web.jpg', alt: 'Web & Digital', title: 'Web & Digital' },
+        { src: '/graphy33.jpg', alt: 'Branding', title: 'Branding' },
+        { src: '/photo12.jpg', alt: 'Documentary', title: 'Documentary' },
     ];
 
+        const [items, setItems] = useState<GalleryPortfolioItem[]>(() => {
+      const p = contentStore.read().portfolio;
+            return p && p.length ? p.map((it:any): GalleryPortfolioItem => ({ src: it.image, alt: it.title, title: it.title, videoUrl: it.videoUrl })) : defaultItems;
+    });
+
+    useEffect(()=>{
+      const onUpdate = (c:any) => {
+        const p = c.portfolio;
+                setItems(p && p.length ? p.map((it:any): GalleryPortfolioItem => ({ src: it.image, alt: it.title, title: it.title, videoUrl: it.videoUrl })) : defaultItems);
+      };
+      contentStore.onUpdate(onUpdate);
+    },[]);
+
     return (
-        <div id="gallery" className="gallery-section">
+        <div id="portfolio" className="gallery-section">
             <div className="gallery-header">
-                <h2>Gallery</h2>
+                <p className="section-tag">Portfolio</p>
+                <h2>Our Services</h2>
+                <p>
+                    Six core services we provide — tap any card to learn more on the portfolio page.
+                </p>
             </div>
+
             <div className="gallery">
-                {images.map((image, index) => (
-                    <div className="gallery-item" key={index}>
-                        <img src={image.src} alt={image.alt} className="gallery-image" />
+                {items.map((item, index) => (
+                    <div className="gallery-item" key={index} role="button" aria-label={item.title}>
+                        {item.videoUrl ? (
+                            <div className="gallery-video-frame">
+                                <iframe
+                                    src={toEmbedUrl(item.videoUrl)}
+                                    title={item.title}
+                                    loading="lazy"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                    allowFullScreen
+                                />
+                            </div>
+                        ) : (
+                            <img src={item.src} alt={item.alt} className="gallery-image" />
+                        )}
                         <div className="gallery-overlay"></div>
+                        {item.videoUrl ? <div className="gallery-video-badge">YouTube</div> : null}
+                        <div className="gallery-label">
+                            <span className="gallery-service">{item.title}</span>
+                        </div>
                     </div>
                 ))}
             </div>
+
             <div className="gallery-actions">
-                <button type="button" className="view-all-button" aria-label="View all gallery images">
-                    View All
-                </button>
+                <a className="view-all-button" href="/portfolio" aria-label="Go to portfolio page">
+                    View Full Portfolio
+                </a>
             </div>
         </div>
     );

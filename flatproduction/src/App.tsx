@@ -10,6 +10,8 @@ import AboutPage from './components/aboutpage';
 import GalleryPage from './components/gallerypage';
 import PortfolioPage from './components/portfoliopage';
 import ContactPage from './components/contactpage';
+import AdminLogin from './components/AdminLogin';
+import AdminDashboard from './components/AdminDashboard';
 
 const App: React.FC = () => {
   const currentPath = window.location.pathname.replace(/\/+$/, '') || '/';
@@ -17,6 +19,8 @@ const App: React.FC = () => {
   const isGalleryPage = currentPath === '/gallery';
   const isPortfolioPage = currentPath === '/portfolio';
   const isContactPage = currentPath === '/contact';
+  const isLoginPage = currentPath === '/login';
+  const isAdminPage = currentPath === '/admin';
 
   if (isAboutPage) {
     return <AboutPage />;
@@ -32,6 +36,19 @@ const App: React.FC = () => {
 
   if (isContactPage) {
     return <ContactPage />;
+  }
+
+  if (isLoginPage) {
+    return <AdminLogin />;
+  }
+
+  if (isAdminPage) {
+    const authed = sessionStorage.getItem('flat_admin_auth') === '1';
+    if (!authed) {
+      window.location.pathname = '/login';
+      return null;
+    }
+    return <AdminDashboard />;
   }
 
   return (

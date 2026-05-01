@@ -1,12 +1,19 @@
 import React from 'react';
 import './Footer.css';
 
+const logoSrc = '/flat%20production.jpg.jpeg';
+
 const Footer: React.FC = () => {
     return (
         <footer className="footer">
             <div className="footer-content">
                 <div className="footer-column footer-brand">
-                    <h3>Flat Production</h3>
+                    <div className="footer-brand-lockup">
+                        <span className="footer-brand-badge" aria-hidden="true">
+                            <img className="footer-brand-logo" src={logoSrc} alt="" />
+                        </span>
+                        <h3 className="footer-brand-name">Flat Production</h3>
+                    </div>
                     <p>Creative storytelling through photography, video, design, and digital experiences.</p>
                 </div>
                 <div className="footer-column">
@@ -19,12 +26,15 @@ const Footer: React.FC = () => {
                     </ul>
                 </div>
                 <div className="footer-column">
-                    <h4>Links</h4>
+                    <h4>Quick Links</h4>
                     <ul>
-                        <li><a href="#hero">Home</a></li>
-                        <li><a href="#about">About</a></li>
-                        <li><a href="#services">Services</a></li>
-                        <li><a href="#team">Team</a></li>
+                        <li><a href="/">Home</a></li>
+                        <li><a href="/about">About</a></li>
+                        <li><a href="/gallery">Gallery</a></li>
+                        <li><a href="/portfolio">Portfolio</a></li>
+                        <li><a href="/contact">Contact</a></li>
+                        <li><a href="/#services">Services</a></li>
+                        <li><a href="/#team">Team</a></li>
                     </ul>
                 </div>
                 <div className="footer-column">
@@ -38,7 +48,7 @@ const Footer: React.FC = () => {
                 </div>
                 <div className="footer-column">
                     <div className="footer-contact-actions">
-                        <a className="footer-contact-card" href="mailto:info@flatproduction.com">Contact</a>
+                        <a className="footer-contact-card" href="mailto:info@flatproduction.com">Book Us</a>
                         <a className="footer-contact-card" href="mailto:support@flatproduction.com">Contact Support</a>
                     </div>
                 </div>

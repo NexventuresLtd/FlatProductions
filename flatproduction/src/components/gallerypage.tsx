@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Header from './Header';
 import Footer from './Footer';
+import { contentStore } from '../store/contentStore';
 
 const GalleryPage: React.FC = () => {
-    const galleryImages = [
+    const defaultImages = [
         '/photo1.jpg',
         '/photo2.jpg',
         '/photo3.jpg',
@@ -17,7 +18,17 @@ const GalleryPage: React.FC = () => {
         '/photo14.jpg',
         '/live1.jpeg',
         '/live2.jpeg',
+        '/web.jpg',
+        '/graphy33.jpg',
+        '/iwacu1.jpg',
     ];
+
+    const [galleryImages, setGalleryImages] = useState<string[]>(() => contentStore.read().gallery.length ? contentStore.read().gallery : defaultImages);
+
+    useEffect(()=>{
+      const onUpdate = (c:any) => setGalleryImages((c.gallery && c.gallery.length) ? c.gallery : defaultImages);
+      contentStore.onUpdate(onUpdate);
+    },[]);
 
     return (
         <div className="gallery-page">

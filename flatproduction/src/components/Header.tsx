@@ -1,12 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+
+const logoSrc = '/flat%20production.jpg.jpeg';
 
 const Header: React.FC = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const [currentPath, setCurrentPath] = useState('/');
-
-    useEffect(() => {
-        setCurrentPath(window.location.pathname.replace(/\/+$/, '') || '/');
-    }, []);
 
     const toggleMenu = (): void => {
         setIsMenuOpen((prev) => !prev);
@@ -24,12 +21,13 @@ const Header: React.FC = () => {
 
     return (
         <header className="site-header">
-            {/* 1. Brand/Logo (Left) */}
-            <a className="site-brand" href="/" onClick={closeMenu}>
-                Flat<span className="header-accent-word">Production</span>
+            <a className="site-brand" href="/" onClick={closeMenu} aria-label="Flat Production home">
+                <span className="site-brand-badge" aria-hidden="true">
+                    <img className="site-brand-logo" src={logoSrc} alt="" />
+                </span>
+                <span className="site-brand-text">Flat Production</span>
             </a>
-            
-            {/* 2. Menu Toggle (Right) */}
+
             <button
                 type="button"
                 className={`menu-toggle ${isMenuOpen ? 'is-open' : ''}`}
@@ -43,7 +41,6 @@ const Header: React.FC = () => {
                 <span className="menu-toggle-bar" />
             </button>
 
-            {/* 3. Navigation (Desktop: Right / Mobile: Dropdown) */}
             <nav className={`site-nav ${isMenuOpen ? 'is-open' : ''}`}>
                 <ul id="site-nav-list" className="site-nav-list">
                     <li className="site-nav-item">

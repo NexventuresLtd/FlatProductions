@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Header from './Header';
+import { contentStore } from '../store/contentStore';
 
 const Hero: React.FC = () => {
     const images = [
@@ -34,6 +35,13 @@ const Hero: React.FC = () => {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [images.length]);
 
+    const [heroText, setHeroText] = useState(() => contentStore.read().hero);
+
+    useEffect(() => {
+      const onUpdate = (c: any) => setHeroText(c.hero ?? { title: '', subtitle: '' });
+      contentStore.onUpdate(onUpdate);
+    }, []);
+
     return (
         <div id="hero" className="hero-container">
             {/* Background Images */}
@@ -56,6 +64,14 @@ const Hero: React.FC = () => {
                 <Header />
             </div>
           
+            {/* Hero text (from admin content) */}
+            <div className="hero-text">
+                <div className="hero-text-inner">
+                    <h1>{heroText.title}</h1>
+                    <p>{heroText.subtitle}</p>
+                </div>
+            </div>
+
             {/* Indicators (Dots) */}
             <div className="hero-indicators">
                 {images.map((_, index) => (
