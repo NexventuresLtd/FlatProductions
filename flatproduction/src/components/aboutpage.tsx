@@ -37,7 +37,7 @@ const AboutPage: React.FC = () => {
                 </div>
                 <div className="aboutpage-hero-content">
                     <h1>
-                        Real Moments.
+                        <span>Real Moments.</span>
                         <span>Bold Stories.</span>
                         <span>Timeless Impact.</span>
                     </h1>

@@ -36,6 +36,11 @@ const Hero: React.FC = () => {
     }, [images.length]);
 
     const [heroText, setHeroText] = useState(() => contentStore.read().hero);
+    const heroNotes = [
+        'Photography. Video. Design.',
+        'Live streaming for events and launches.',
+        'Creative content built for brands.',
+    ];
 
     useEffect(() => {
       const onUpdate = (c: any) => setHeroText(c.hero ?? { title: '', subtitle: '' });
@@ -69,6 +74,13 @@ const Hero: React.FC = () => {
                 <div className="hero-text-inner">
                     <h1>{heroText.title}</h1>
                     <p>{heroText.subtitle}</p>
+                    <ul className="hero-notes" aria-label="Flat Production highlights">
+                        {heroNotes.map((note) => (
+                            <li key={note} className="hero-note">
+                                {note}
+                            </li>
+                        ))}
+                    </ul>
                 </div>
             </div>
 

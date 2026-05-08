@@ -77,7 +77,7 @@ const Gallery: React.FC = () => {
 
             <div className="gallery-actions">
                 <a className="view-all-button" href="/portfolio" aria-label="Go to portfolio page">
-                    View Full Portfolio
+                    Explore Our Work
                 </a>
             </div>
         </div>

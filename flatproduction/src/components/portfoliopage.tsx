@@ -71,7 +71,7 @@ const PortfolioPage: React.FC = () => {
                 </div>
                 <div className="portfoliopage-intro-content">
                     <p className="section-tag">Portfolio</p>
-                    <h1>Selected work across our creative services</h1>
+                    <h3>Selected work across our creative services</h3>
                     <p>
                         Choose a category to explore the matching visuals, or start with all projects and move through the full collection.
                     </p>

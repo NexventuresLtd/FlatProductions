@@ -3,6 +3,35 @@ import Header from './Header';
 import Footer from './Footer';
 import { contentStore } from '../store/contentStore';
 
+type GalleryItem = {
+    src: string;
+    title: string;
+};
+
+const galleryLabels: Record<string, string> = {
+    photo1: 'quiet frame',
+    photo2: 'soft portrait',
+    photo3: 'moving scene',
+    photo4: 'event moment',
+    photo5: 'bright memory',
+    photo6: 'creative view',
+    photo8: 'story detail',
+    photo9: 'scene capture',
+    photo10: 'visual moment',
+    photo12: 'simple story',
+    photo14: 'special moment',
+    live1: 'live moment',
+    live2: 'live frame',
+    web: 'web view',
+    graphy33: 'brand look',
+    iwacu1: 'clean frame',
+};
+
+const getGalleryTitle = (image: string, index: number): string => {
+    const fileName = image.split('/').pop()?.split('.')[0]?.toLowerCase() ?? '';
+    return galleryLabels[fileName] ?? `image ${index + 1}`;
+};
+
 const GalleryPage: React.FC = () => {
     const defaultImages = [
         '/photo1.jpg',
@@ -23,10 +52,15 @@ const GalleryPage: React.FC = () => {
         '/iwacu1.jpg',
     ];
 
-    const [galleryImages, setGalleryImages] = useState<string[]>(() => contentStore.read().gallery.length ? contentStore.read().gallery : defaultImages);
+        const buildGalleryItems = (images: string[]): GalleryItem[] => images.map((image, index) => ({
+                src: image,
+                title: getGalleryTitle(image, index),
+        }));
+
+        const [galleryItems, setGalleryItems] = useState<GalleryItem[]>(() => buildGalleryItems(contentStore.read().gallery.length ? contentStore.read().gallery : defaultImages));
 
     useEffect(()=>{
-      const onUpdate = (c:any) => setGalleryImages((c.gallery && c.gallery.length) ? c.gallery : defaultImages);
+            const onUpdate = (c:any) => setGalleryItems(buildGalleryItems((c.gallery && c.gallery.length) ? c.gallery : defaultImages));
       contentStore.onUpdate(onUpdate);
     },[]);
 
@@ -44,14 +78,17 @@ const GalleryPage: React.FC = () => {
             <main className="gallerypage-main">
                 <section className="gallerypage-section">
                     <div className="gallerypage-grid">
-                        {galleryImages.map((image, index) => (
+                        {galleryItems.map((item, index) => (
                             <div key={index} className="gallery-item-wrapper">
                                 <img 
-                                    src={image} 
-                                    alt={`Gallery image ${index + 1}`} 
+                                    src={item.src} 
+                                    alt={item.title} 
                                     loading="lazy" 
                                 />
                                 <div className="gallery-overlay"></div>
+                                <div className="gallerypage-caption">
+                                    <span>{item.title}</span>
+                                </div>
                             </div>
                         ))}
                     </div>

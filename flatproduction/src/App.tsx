@@ -9,6 +9,7 @@ import Footer from './components/Footer';
 import AboutPage from './components/aboutpage';
 import GalleryPage from './components/gallerypage';
 import PortfolioPage from './components/portfoliopage';
+import ServicesPage from './components/servicespage';
 import ContactPage from './components/contactpage';
 import AdminLogin from './components/AdminLogin';
 import AdminDashboard from './components/AdminDashboard';
@@ -18,6 +19,7 @@ const App: React.FC = () => {
   const isAboutPage = currentPath === '/about';
   const isGalleryPage = currentPath === '/gallery';
   const isPortfolioPage = currentPath === '/portfolio';
+  const isServicesPage = currentPath === '/services';
   const isContactPage = currentPath === '/contact';
   const isLoginPage = currentPath === '/login';
   const isAdminPage = currentPath === '/admin';
@@ -32,6 +34,10 @@ const App: React.FC = () => {
 
   if (isPortfolioPage) {
     return <PortfolioPage />;
+  }
+
+  if (isServicesPage) {
+    return <ServicesPage />;
   }
 
   if (isContactPage) {

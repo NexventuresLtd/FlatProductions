@@ -33,7 +33,7 @@ const ContactPage: React.FC = () => {
 
             <main className="contactpage-main">
                 <div className="contact-header-content">
-                    <span className="overline">Get in Touch</span>
+                    
                     <h1 className="contact-form-title">Let's Create Something<br />Extraordinary</h1>
                 </div>
 

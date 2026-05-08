@@ -1,9 +1,21 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 const logoSrc = '/flat%20production.jpg.jpeg';
 
 const Header: React.FC = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isScrolled, setIsScrolled] = useState(false);
+
+    useEffect(() => {
+        const handleScroll = (): void => {
+            setIsScrolled(window.scrollY > 0);
+        };
+
+        handleScroll();
+        window.addEventListener('scroll', handleScroll);
+
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
 
     const toggleMenu = (): void => {
         setIsMenuOpen((prev) => !prev);
@@ -20,7 +32,7 @@ const Header: React.FC = () => {
     };
 
     return (
-        <header className="site-header">
+        <header className={`site-header ${isScrolled ? 'scrolled' : ''}`}>
             <a className="site-brand" href="/" onClick={closeMenu} aria-label="Flat Production home">
                 <span className="site-brand-badge" aria-hidden="true">
                     <img className="site-brand-logo" src={logoSrc} alt="" />
@@ -54,6 +66,9 @@ const Header: React.FC = () => {
                     </li>
                     <li className="site-nav-item">
                         <a href="/portfolio" onClick={closeMenu}>Portfolio</a>
+                    </li>
+                    <li className="site-nav-item">
+                        <a href="/services" onClick={closeMenu}>Services</a>
                     </li>
                     <li className="site-nav-item">
                         <a href="/contact" onClick={closeMenu}>Contact</a>
