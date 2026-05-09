@@ -1,119 +1,192 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* =========================================
+   LOGIN SHELL (Light Mode Background)
+   ========================================= */
 .admin-login-shell {
   min-height: 100vh;
   display: grid;
   place-items: center;
   padding: 24px;
-  background:
-    radial-gradient(circle at 10% 10%, rgba(255, 255, 255, 0.09), transparent 28%),
-    radial-gradient(circle at 90% 20%, rgba(255, 255, 255, 0.05), transparent 24%),
-    linear-gradient(180deg, #050505 0%, #0f0f0f 100%);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  /* Light Gray/White Gradient Background */
+  background: 
+    radial-gradient(circle at 10% 10%, rgba(255, 255, 255, 0.5), transparent 40%),
+    linear-gradient(180deg, #f9fafb 0%, #f3f4f6 100%);
   position: relative;
   overflow: hidden;
+  color: #111827;
 }
 
+/* Soft Indigo/Blue Glow to replace the dark glow */
 .admin-login-glow {
   position: absolute;
   width: min(66vw, 520px);
   height: min(66vw, 520px);
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.01) 65%, transparent 75%);
-  filter: blur(8px);
+  /* Subtle Brand Color Glow */
+  background: radial-gradient(circle, rgba(79, 70, 229, 0.15), rgba(79, 70, 229, 0.02) 70%, transparent 80%);
+  filter: blur(30px); /* Softer blur for light mode */
   animation: loginFloat 7s ease-in-out infinite;
 }
 
-.admin-login-card {
-  width: min(100%, 460px);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 24px;
-  padding: 30px;
-  background: rgba(16, 16, 16, 0.78);
-  backdrop-filter: blur(14px);
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
-  color: #fff;
-  z-index: 1;
+@keyframes loginFloat {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
 }
 
+/* =========================================
+   LOGIN CARD (White Glass)
+   ========================================= */
+.admin-login-card {
+  width: min(100%, 460px);
+  border: 1px solid rgba(17, 17, 17, 0.1);
+  border-radius: 24px;
+  padding: 40px 30px; /* Increased padding to fit logo */
+  background: rgba(255, 255, 255, 0.95); /* White with slight opacity */
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1); /* Deep soft shadow */
+  color: #111827;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* LOGO STYLING */
+.admin-login-logo {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  margin-bottom: 16px;
+  border-radius: 16px;
+  background: #f9fafb; /* Subtle background for logo if transparent */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* Typography */
 .admin-login-kicker {
-  margin: 0 0 10px;
+  margin: 0;
   text-transform: uppercase;
   letter-spacing: 0.16em;
-  font-size: 0.72rem;
-  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #6b7280; /* Subdued Gray */
 }
 
 .admin-login-card h1 {
-  margin: 0;
-  font-size: clamp(1.8rem, 4vw, 2.4rem);
+  margin: 0 0 8px 0;
+  font-size: clamp(1.8rem, 4vw, 2.2rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #111827;
 }
 
 .admin-login-subtitle {
-  margin: 10px 0 24px;
+  margin: 0 0 32px 0;
   line-height: 1.6;
-  color: rgba(255, 255, 255, 0.74);
+  color: #4b5563;
+  font-size: 0.95rem;
 }
 
+/* =========================================
+   FORM ELEMENTS
+   ========================================= */
 .admin-login-form {
+  width: 100%;
   display: grid;
-  gap: 14px;
+  gap: 18px;
 }
 
 .admin-login-form label {
   display: grid;
   gap: 8px;
+  text-align: left;
+  width: 100%;
 }
 
 .admin-login-form span {
-  font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #374151;
+  margin-left: 4px;
 }
 
+/* Inputs - Light Theme */
 .admin-login-form input {
   width: 100%;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 12px;
-  padding: 12px 14px;
-  color: #fff;
-  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid #e5e7eb;
+  background: #f9fafb; /* Light Gray Input Bg */
+  color: #111827;
+  border-radius: 10px;
+  padding: 14px 16px;
+  font-size: 1rem;
   outline: none;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 .admin-login-form input:focus {
-  border-color: rgba(255, 255, 255, 0.42);
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.09);
+  border-color: #4f46e5; /* Indigo Focus Ring */
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
 }
 
+/* Error Message */
 .admin-login-error {
-  margin-top: 2px;
+  margin-top: 8px;
   border-radius: 10px;
-  padding: 10px 12px;
-  background: rgba(255, 255, 255, 0.12);
-  color: #fff;
-  font-size: 0.88rem;
+  padding: 12px 16px;
+  /* Light Red Error Background */
+  background: #fee2e2; 
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-align: center;
 }
 
+/* =========================================
+   SUBMIT BUTTON
+   ========================================= */
 .admin-login-submit {
-  margin-top: 6px;
+  margin-top: 12px;
   border: 0;
   border-radius: 12px;
-  padding: 12px 14px;
-  font-size: 0.95rem;
+  padding: 14px 20px;
+  font-size: 1rem;
   font-weight: 700;
   cursor: pointer;
-  color: #000;
-  background: #fff;
-  transition: transform 0.2s ease, opacity 0.2s ease;
+  /* Black Primary Button to match Dashboard */
+  color: #fff;
+  background: #111827;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+  width: 100%;
 }
 
 .admin-login-submit:hover {
+  background: #374151;
   transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
 }
 
-@keyframes loginFloat {
-  0%, 100% {
-    transform: translateY(0px);
+.admin-login-submit:active {
+  transform: translateY(0);
+}
+
+/* =========================================
+   RESPONSIVE
+   ========================================= */
+@media (max-width: 480px) {
+  .admin-login-card {
+    padding: 32px 24px;
+    border-radius: 20px;
   }
-  50% {
-    transform: translateY(-10px);
+
+  .admin-login-logo {
+    width: 56px;
+    height: 56px;
   }
 }

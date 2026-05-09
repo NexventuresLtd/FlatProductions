@@ -26,8 +26,17 @@ const Login: React.FC = () => {
 
   return (
     <div className="admin-login-shell">
+      {/* Subtle Light Glow Effect */}
       <div className="admin-login-glow" aria-hidden="true"></div>
+      
       <main className="admin-login-card" role="main">
+        {/* UPDATED: Company Logo */}
+        <img 
+          className="admin-login-logo" 
+          src="/flat production.jpg.jpeg" 
+          alt="Flat Production Logo" 
+        />
+
         <p className="admin-login-kicker">Flat Productions</p>
         <h1>Admin Access</h1>
         <p className="admin-login-subtitle">Sign in to manage homepage content, services, portfolio, gallery, and clients.</p>

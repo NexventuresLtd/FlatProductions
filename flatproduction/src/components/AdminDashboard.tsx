@@ -26,7 +26,7 @@ const IMAGE_SUGGESTIONS = [
 const EMPTY_SERVICE = (): ServiceItem => ({
   id: cryptoId(),
   title: 'New service',
-  description: 'Describe the service here.',
+  description: 'Describe service here.',
   image: '/photo1.jpg',
 });
 
@@ -52,7 +52,11 @@ function cryptoId() {
 
 function cloneContent(content: SiteContent): SiteContent {
   return {
-    hero: { ...content.hero },
+    hero: { 
+      ...content.hero,
+      // Ensure images array is deeply copied to avoid mutation bugs
+      images: content.hero.images ? [...content.hero.images] : []
+    },
     about: { ...content.about },
     services: content.services.map((service) => ({ ...service })),
     portfolio: content.portfolio.map((item) => ({ ...item })),
@@ -92,7 +96,13 @@ const AdminDashboard: React.FC = () => {
 
   const resetActiveSection = () => {
     if (active === 'hero') {
-      persist({ ...draft, hero: { ...DEFAULT_SITE_CONTENT.hero } });
+      persist({
+        ...draft,
+        hero: {
+          ...DEFAULT_SITE_CONTENT.hero,
+          images: DEFAULT_SITE_CONTENT.hero?.images || [],
+        },
+      });
       return;
     }
 
@@ -132,6 +142,36 @@ const AdminDashboard: React.FC = () => {
   const updateHero = (field: 'title' | 'subtitle', value: string) => {
     persist({ ...draft, hero: { ...draft.hero, [field]: value } });
   };
+
+  // --- NEW: Hero Image Handlers ---
+  const getHeroImages = () => draft.hero.images || [];
+
+  const updateHeroImage = (index: number, value: string) => {
+    const currentImages = getHeroImages();
+    const nextImages = currentImages.map((img, imgIndex) => (imgIndex === index ? value : img));
+    persist({ ...draft, hero: { ...draft.hero, images: nextImages } });
+  };
+
+  const addHeroImage = () => {
+    const currentImages = getHeroImages();
+    persist({ ...draft, hero: { ...draft.hero, images: [...currentImages, '/photo1.jpg'] } });
+  };
+
+  const moveHeroImage = (index: number, direction: -1 | 1) => {
+    const currentImages = getHeroImages();
+    persist({ ...draft, hero: { ...draft.hero, images: moveItem(currentImages, index, index + direction) } });
+  };
+
+  const removeHeroImage = (index: number) => {
+    const currentImages = getHeroImages();
+    persist({ ...draft, hero: { ...draft.hero, images: currentImages.filter((_, i) => i !== index) } });
+  };
+  
+  // FIXED: Function to clear ALL hero images
+  const clearHeroImages = () => {
+    persist({ ...draft, hero: { ...draft.hero, images: [] } });
+  };
+  // ---------------------------------
 
   const updateAbout = (field: 'heading' | 'body', value: string) => {
     persist({ ...draft, about: { ...draft.about, [field]: value } });
@@ -252,7 +292,7 @@ const AdminDashboard: React.FC = () => {
     <div className="admin-shell">
       <aside className="admin-sidebar">
         <div className="admin-brand">
-          <span className="admin-brand-mark">FP</span>
+          <img className="admin-brand-logo" src="/flat production.jpg.jpeg" alt="Flat Production Logo" />
           <div>
             <h1>Flat Productions</h1>
             <p>Admin Panel</p>
@@ -276,7 +316,7 @@ const AdminDashboard: React.FC = () => {
           <button type="button" className="admin-secondary-button" onClick={logout}>
             Logout
           </button>
-          <p>Live updates are saved instantly and reflected on the website.</p>
+          <p>Live updates are saved instantly and reflected on website.</p>
         </div>
       </aside>
 
@@ -296,21 +336,98 @@ const AdminDashboard: React.FC = () => {
 
         <section className="admin-panel">
           {active === 'hero' && (
-            <div className="admin-form-grid">
-              <Field label="Hero title">
-                <input
-                  type="text"
-                  value={draft.hero.title}
-                  onChange={(event) => updateHero('title', event.target.value)}
-                />
-              </Field>
-              <Field label="Hero subtitle">
-                <textarea
-                  rows={5}
-                  value={draft.hero.subtitle}
-                  onChange={(event) => updateHero('subtitle', event.target.value)}
-                />
-              </Field>
+            <div className="admin-section-stack">
+              {/* Text Fields */}
+              <div className="admin-form-grid">
+                <Field label="Hero title">
+                  <input
+                    type="text"
+                    value={draft.hero.title}
+                    onChange={(event) => updateHero('title', event.target.value)}
+                  />
+                </Field>
+                <Field label="Hero subtitle">
+                  <textarea
+                    rows={5}
+                    value={draft.hero.subtitle}
+                    onChange={(event) => updateHero('subtitle', event.target.value)}
+                  />
+                </Field>
+              </div>
+
+              {/* New: Hero Background Images Management */}
+              <div className="admin-section-stack">
+                <div className="admin-section-actions">
+                  <p>Manage background images for home slider.</p>
+                  <div className="admin-section-actions-group">
+                    <button
+                      type="button"
+                      className="admin-secondary-button"
+                      onClick={clearHeroImages} // FIXED: Now clears all images
+                      disabled={!getHeroImages().length}
+                    >
+                      Clear all
+                    </button>
+                    <button type="button" className="admin-primary-button" onClick={addHeroImage}>
+                      + Add Image
+                    </button>
+                  </div>
+                </div>
+
+                <div className="admin-list-grid admin-list-grid-wide">
+                  {getHeroImages().map((image, index) => (
+                    <article className="admin-item-card admin-list-item" key={`${image}-${index}`}>
+                      <div className="admin-item-header">
+                        <h3>Image {index + 1}</h3>
+                        <div className="admin-item-header-actions">
+                          <button
+                            type="button"
+                            className="admin-secondary-button"
+                            onClick={() => moveHeroImage(index, -1)}
+                            disabled={index === 0}
+                          >
+                            Up
+                          </button>
+                          <button
+                            type="button"
+                            className="admin-secondary-button"
+                            onClick={() => moveHeroImage(index, 1)}
+                            disabled={index === getHeroImages().length - 1}
+                          >
+                            Down
+                          </button>
+                          <button
+                            type="button"
+                            className="admin-danger-button"
+                            onClick={() => removeHeroImage(index)}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="admin-item-preview admin-preview-square">
+                        <img src={image} alt={`Hero bg ${index + 1}`} />
+                      </div>
+
+                      <Field label="Image URL">
+                        <input
+                          type="text"
+                          value={image}
+                          onChange={(event) => updateHeroImage(index, event.target.value)}
+                          placeholder="/photo1.jpg"
+                        />
+                      </Field>
+
+                      <SuggestionRow
+                        label="Image helpers"
+                        values={IMAGE_SUGGESTIONS}
+                        onPick={(value) => updateHeroImage(index, value)}
+                      />
+                    </article>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
 
@@ -488,7 +605,7 @@ const AdminDashboard: React.FC = () => {
                             rows={4}
                             value={item.description ?? ''}
                             onChange={(event) => updatePortfolioDescription(index, event.target.value)}
-                            placeholder="Describe the video or project."
+                            placeholder="Describe video or project."
                           />
                         </Field>
                       </div>
@@ -507,7 +624,7 @@ const AdminDashboard: React.FC = () => {
           {active === 'gallery' && (
             <div className="admin-section-stack">
               <div className="admin-section-actions">
-                <p>Gallery images are used on the gallery page.</p>
+                <p>Gallery images are used on gallery page.</p>
                 <div className="admin-section-actions-group">
                   <button type="button" className="admin-secondary-button" onClick={clearGallery}>
                     Clear all
@@ -580,7 +697,7 @@ const AdminDashboard: React.FC = () => {
               </div>
 
               <div className="admin-section-actions">
-                <p>Client category tags for the pills section.</p>
+                <p>Client category tags for pills section.</p>
                 <div className="admin-section-actions-group">
                   <button type="button" className="admin-secondary-button" onClick={clearClients}>
                     Clear tags
