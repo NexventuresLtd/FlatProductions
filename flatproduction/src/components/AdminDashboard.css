@@ -410,7 +410,10 @@
 
 .admin-item-header-actions .admin-danger-button {
   padding: 10px 20px; /* Big enough to tap, fits container */
-  min-width: 100px; /* Ensures it's substantial */
+  max-width: 60px; /* UPDATED: Width cap to 60px */
+  width: auto; /* Fits content naturally */
+  flex: 1; /* Fills available space in row */
+  padding: 10px 20px; /* Standard padding */
 }
 
 .admin-item-layout {
@@ -577,7 +580,6 @@
     align-items: flex-start;
     flex-direction: column;
     align-items: stretch;
-    gap: 16px;
   }
   
   .admin-section-actions-group {
@@ -591,23 +593,25 @@
   }
 
   /* Fix for "Remove button exceeding box" on mobile */
-  .admin-item-header-actions {
-    flex-wrap: wrap; /* Allow buttons to wrap if they don't fit */
-    width: 100%;
-    justify-content: flex-end;
-    margin-top: 12px;
+  .admin-item-header {
+    flex-wrap: wrap; /* Allow buttons to stack if they don't fit */
+    gap: 12px; /* Increased gap */
+    width: 100%; /* Ensure it fills available space */
+    justify-content: flex-end; /* Align buttons to right */
+    margin-top: 12px; /* Extra spacing if header wraps */
   }
 
   /* Make Remove button distinct but contained */
   .admin-item-header-actions .admin-danger-button {
-    width: 100%; /* Full width for easy tapping */
-    margin-top: 8px;
-    order: 10; /* Ensure it drops to bottom if needed */
+    width: auto; /* Content-based width */
+    flex: 1; /* Grow to fill available space */
+    padding: 10px 20px; /* Maintain touch target size */
+    margin-top: 0; /* No extra margin, aligns with row */
   }
   
   /* Make Up/Down buttons compact */
   .admin-item-header-actions .admin-secondary-button {
     width: auto;
-    flex: 1;
+    flex: 0 0 auto; /* Do not grow */
   }
 }
