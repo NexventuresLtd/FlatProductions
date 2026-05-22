@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { contentStore, type SiteContent, DEFAULT_SITE_CONTENT } from '../store/contentStore';
+import { contentStore, type SiteContent, DEFAULT_SITE_CONTENT, toOneSentence } from '../store/contentStore';
 import './AdminDashboard.css';
 
 type SectionKey = 'hero' | 'about' | 'services' | 'portfolio' | 'gallery' | 'clients' | 'team';
@@ -26,7 +26,7 @@ const IMAGE_SUGGESTIONS = [
 const EMPTY_SERVICE = (): ServiceItem => ({
   id: cryptoId(),
   title: 'New service',
-  description: 'Describe service here.',
+  description: 'Short caption here.',
   image: '/photo1.jpg',
 });
 
@@ -42,6 +42,7 @@ const EMPTY_TEAM = (): TeamItem => ({
   id: cryptoId(),
   name: 'Team member',
   role: 'Role',
+  bio: 'Short bio goes here.',
   photo: '/kadaff.jpg',
   position: '50% 20%',
 });
@@ -55,7 +56,8 @@ function cloneContent(content: SiteContent): SiteContent {
     hero: { 
       ...content.hero,
       // Ensure images array is deeply copied to avoid mutation bugs
-      images: content.hero.images ? [...content.hero.images] : []
+      images: content.hero.images ? [...content.hero.images] : [],
+      notes: content.hero.notes ? [...content.hero.notes] : []
     },
     about: { ...content.about },
     services: content.services.map((service) => ({ ...service })),
@@ -67,6 +69,7 @@ function cloneContent(content: SiteContent): SiteContent {
     gallery: [...content.gallery],
   };
 }
+
 
 function moveItem<T>(items: T[], fromIndex: number, toIndex: number) {
   if (toIndex < 0 || toIndex >= items.length) {
@@ -101,6 +104,7 @@ const AdminDashboard: React.FC = () => {
         hero: {
           ...DEFAULT_SITE_CONTENT.hero,
           images: DEFAULT_SITE_CONTENT.hero?.images || [],
+          notes: DEFAULT_SITE_CONTENT.hero?.notes || [],
         },
       });
       return;
@@ -143,8 +147,20 @@ const AdminDashboard: React.FC = () => {
     persist({ ...draft, hero: { ...draft.hero, [field]: value } });
   };
 
-  // --- NEW: Hero Image Handlers ---
+  const updateHeroNote = (index: number, value: string) => {
+    const currentNotes = draft.hero.notes || [];
+    const nextNotes = [...currentNotes];
+
+    while (nextNotes.length < index) {
+      nextNotes.push('');
+    }
+
+    nextNotes[index] = value;
+    persist({ ...draft, hero: { ...draft.hero, notes: nextNotes } });
+  };
+
   const getHeroImages = () => draft.hero.images || [];
+  const getHeroNotes = () => draft.hero.notes || [];
 
   const updateHeroImage = (index: number, value: string) => {
     const currentImages = getHeroImages();
@@ -154,24 +170,46 @@ const AdminDashboard: React.FC = () => {
 
   const addHeroImage = () => {
     const currentImages = getHeroImages();
-    persist({ ...draft, hero: { ...draft.hero, images: [...currentImages, '/photo1.jpg'] } });
+    const currentNotes = getHeroNotes();
+    persist({
+      ...draft,
+      hero: {
+        ...draft.hero,
+        images: [...currentImages, '/photo1.jpg'],
+        notes: [...currentNotes, 'Short slide caption'],
+      },
+    });
   };
 
   const moveHeroImage = (index: number, direction: -1 | 1) => {
     const currentImages = getHeroImages();
-    persist({ ...draft, hero: { ...draft.hero, images: moveItem(currentImages, index, index + direction) } });
+    const currentNotes = getHeroNotes();
+    persist({
+      ...draft,
+      hero: {
+        ...draft.hero,
+        images: moveItem(currentImages, index, index + direction),
+        notes: moveItem(currentNotes, index, index + direction),
+      },
+    });
   };
 
   const removeHeroImage = (index: number) => {
     const currentImages = getHeroImages();
-    persist({ ...draft, hero: { ...draft.hero, images: currentImages.filter((_, i) => i !== index) } });
+    const currentNotes = getHeroNotes();
+    persist({
+      ...draft,
+      hero: {
+        ...draft.hero,
+        images: currentImages.filter((_, i) => i !== index),
+        notes: currentNotes.filter((_, i) => i !== index),
+      },
+    });
   };
   
-  // FIXED: Function to clear ALL hero images
   const clearHeroImages = () => {
-    persist({ ...draft, hero: { ...draft.hero, images: [] } });
+    persist({ ...draft, hero: { ...draft.hero, images: [], notes: [] } });
   };
-  // ---------------------------------
 
   const updateAbout = (field: 'heading' | 'body', value: string) => {
     persist({ ...draft, about: { ...draft.about, [field]: value } });
@@ -206,7 +244,7 @@ const AdminDashboard: React.FC = () => {
 
   const updatePortfolioDescription = (index: number, value: string) => {
     const portfolio = draft.portfolio.map((item, itemIndex) =>
-      itemIndex === index ? { ...item, description: value } : item,
+      itemIndex === index ? { ...item, description: toOneSentence(value) } : item,
     );
     persist({ ...draft, portfolio });
   };
@@ -255,7 +293,7 @@ const AdminDashboard: React.FC = () => {
   const removeClientLogo = (index: number) =>
     persist({ ...draft, clientLogos: draft.clientLogos.filter((_, i) => i !== index) });
 
-  const updateTeam = (index: number, field: 'name' | 'role' | 'photo' | 'position', value: string) => {
+  const updateTeam = (index: number, field: 'name' | 'role' | 'bio' | 'photo' | 'position', value: string) => {
     const team = draft.team.map((member, memberIndex) =>
       memberIndex === index ? { ...member, [field]: value } : member,
     );
@@ -419,6 +457,15 @@ const AdminDashboard: React.FC = () => {
                         />
                       </Field>
 
+                      <Field label="Slide caption">
+                        <input
+                          type="text"
+                          value={getHeroNotes()[index] ?? ''}
+                          onChange={(event) => updateHeroNote(index, event.target.value)}
+                          placeholder="Short caption for this image"
+                        />
+                      </Field>
+
                       <SuggestionRow
                         label="Image helpers"
                         values={IMAGE_SUGGESTIONS}
@@ -511,11 +558,12 @@ const AdminDashboard: React.FC = () => {
                             placeholder="/photo1.jpg"
                           />
                         </Field>
-                        <Field label="Description" className="field-span-2">
+                        <Field label="Short caption" className="field-span-2">
                           <textarea
                             rows={4}
                             value={service.description}
                             onChange={(event) => updateService(index, 'description', event.target.value)}
+                            placeholder="Two or three words"
                           />
                         </Field>
                       </div>
@@ -811,7 +859,7 @@ const AdminDashboard: React.FC = () => {
           {active === 'team' && (
             <div className="admin-section-stack">
               <div className="admin-section-actions">
-                <p>Add team members with a name, role, and photo URL.</p>
+                <p>Add team members with a name, role, bio, and photo URL.</p>
                 <div className="admin-section-actions-group">
                   <button type="button" className="admin-secondary-button" onClick={clearTeam}>
                     Clear all
@@ -866,6 +914,14 @@ const AdminDashboard: React.FC = () => {
                             type="text"
                             value={member.role}
                             onChange={(event) => updateTeam(index, 'role', event.target.value)}
+                          />
+                        </Field>
+                        <Field label="Bio" className="field-span-2">
+                          <textarea
+                            rows={4}
+                            value={member.bio ?? ''}
+                            onChange={(event) => updateTeam(index, 'bio', event.target.value)}
+                            placeholder="Short paragraph about this team member"
                           />
                         </Field>
                         <Field label="Photo URL">

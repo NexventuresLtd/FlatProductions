@@ -1,47 +1,37 @@
 import React, { useState, useEffect } from 'react';
+import { Instagram, Youtube, Linkedin, X } from 'lucide-react';
 import Header from './Header';
 import { contentStore } from '../store/contentStore';
 
 const Hero: React.FC = () => {
-  // 1. Get initial data
   const initialHero = contentStore.read().hero;
-  
-  // 2. Safely set images. If undefined (old data), use the 5 defaults.
-  const [images, setImages] = useState<string[]>(initialHero?.images || []);  
+
+  const [images, setImages] = useState<string[]>(initialHero?.images || []);
+  const [heroContent, setHeroContent] = useState(initialHero);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  // 3. Log to console (Check browser DevTools F12 to see this)
-  useEffect(() => {
-    console.log("Hero Images Loaded:", images);
-  }, [images]);
-
-  // 4. Subscribe to store updates
   useEffect(() => {
     const onUpdate = (c: any) => {
-      const heroImages = c.hero?.images || [];
-      console.log("Store Updated Images:", heroImages);
-      setImages(heroImages);
-      setCurrentImageIndex(0); 
+      const nextHero = c.hero ?? initialHero;
+      setHeroContent(nextHero);
+      setImages(nextHero.images || []);
+      setCurrentImageIndex(0);
     };
     contentStore.onUpdate(onUpdate);
-  }, []);
+  }, [initialHero]);
 
-  // 5. Slider Interval
   useEffect(() => {
     if (images.length === 0) {
-      console.warn("No images found, slider stopped.");
-      return; // Stop if array is empty
+      return;
     }
 
-    console.log("Starting slider with", images.length, "images.");
     const interval = setInterval(() => {
       setCurrentImageIndex((prevIndex) => (prevIndex + 1) % images.length);
-    }, 4000); // 4 seconds
+    }, 4000);
     
     return () => clearInterval(interval);
-  }, [images.length]); // Re-run if images array length changes
+  }, [images.length]);
 
-  // 6. Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (images.length === 0) return;
@@ -56,18 +46,8 @@ const Hero: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [images.length]);
 
-  // 7. Text Content
-  const [heroText, setHeroText] = useState(() => initialHero || { title: '', subtitle: '' });
-  const heroNotes = [
-    'Photography. Video. Design.',
-    'Live streaming for events and launches.',
-    'Creative content built for brands.',
-  ];
-
-  useEffect(() => {
-    const onUpdate = (c: any) => setHeroText(c.hero ?? { title: '', subtitle: '' });
-    contentStore.onUpdate(onUpdate);
-  }, []);
+  const heroNotes = heroContent.notes || [];
+  const currentHeroNote = heroNotes[currentImageIndex] || heroContent.subtitle;
 
   return (
     <div id="hero" className="hero-container">
@@ -101,15 +81,22 @@ const Hero: React.FC = () => {
     
       <div className="hero-text">
         <div className="hero-text-inner">
-          <h1>{heroText.title}</h1>
-          <p>{heroText.subtitle}</p>
-          <ul className="hero-notes" aria-label="Flat Production highlights">
-            {heroNotes.map((note) => (
-              <li key={note} className="hero-note">
-                  {note}
-              </li>
-            ))}
-          </ul>
+          <span className="hero-kicker">Now playing</span>
+          <p>{currentHeroNote}</p>
+          <div className="hero-socials" aria-label="Social links">
+            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="social-link" aria-label="Instagram">
+              <Instagram size={18} />
+            </a>
+            <a href="https://x.com" target="_blank" rel="noopener noreferrer" className="social-link" aria-label="X">
+              <X size={18} />
+            </a>
+            <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" className="social-link" aria-label="YouTube">
+              <Youtube size={18} />
+            </a>
+            <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="social-link" aria-label="LinkedIn">
+              <Linkedin size={18} />
+            </a>
+          </div>
         </div>
       </div>
 

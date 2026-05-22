@@ -1,0 +1,6 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="50" cy="50" r="48" fill="#FFD500"/>
+  <circle cx="50" cy="50" r="42" fill="#FFF"/>
+  <circle cx="50" cy="50" r="35" fill="#FFD500"/>
+  <text x="50" y="60" font-size="28" font-weight="bold" text-anchor="middle" fill="#000">MTN</text>
+</svg>

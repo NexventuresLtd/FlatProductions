@@ -53,7 +53,7 @@ const AboutPage: React.FC = () => {
                         <img src="/photo10.jpg" alt="Documentary filming moment" />
                     </div>
                     <div className="history-block">
-                        <h2>Our History</h2>
+                        <h1>Our History</h1>
                         <p>
                             FLAT PRODUCTION LIMITED is a Rwandan-based company with 8 years of comprehensive experience and a full portfolio of services. Since 2018, we have delivered event live streaming and feed, photography and video production, web design, content creation, social media management, graphic design, printing, branding, event and entertainment coverage, and documentary production.
                         </p>

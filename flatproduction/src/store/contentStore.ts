@@ -2,11 +2,12 @@ type SiteContent = {
   hero: { title: string; subtitle: string; images?: string[]; notes?: string[] };
   about: { heading: string; body: string };
   services: Array<{ id: string; title: string; description: string; image?: string }>;
-  portfolio: Array<{ id: string; title: string; image?: string; videoUrl?: string; description?: string }>;
+  // UPDATED: Added 'link' property here to match your Gallery component usage
+  portfolio: Array<{ id: string; title: string; image?: string; videoUrl?: string; description?: string; link?: string }>;
   clientsIntro: string;
   clients: string[];
   clientLogos: string[];
-  team: Array<{ id: string; name: string; role: string; photo?: string; position?: string }>;
+  team: Array<{ id: string; name: string; role: string; bio?: string; photo?: string; position?: string }>;
   gallery: string[];
 };
 
@@ -22,9 +23,9 @@ const DEFAULT_SITE_CONTENT: SiteContent = {
       '/photo5.jpg',
     ],
     notes: [
-      'Photography. Video. Design.',
-      'Live streaming for events and launches.',
-      'Creative content built for brands.'
+      'Cinematic light, real moments, and stories that linger.',
+      'Live coverage shaped to feel immediate and polished.',
+      'Creative visuals built to make brands feel alive.'
     ]
   },
   about: {
@@ -72,33 +73,72 @@ const DEFAULT_SITE_CONTENT: SiteContent = {
       image: '/photo12.jpg',
     },
   ],
+  // UPDATED: Portfolio now matches the 3-sentence descriptions and includes links
   portfolio: [
-    { id: 'pf-1', title: 'Photography', image: '/photo1.jpg', description: 'Portrait and event storytelling.' },
-    { id: 'pf-2', title: 'Video Production', image: '/photo3.jpg', description: 'Creative video campaigns and edits.' },
-    { id: 'pf-3', title: 'Live Streaming', image: '/live1.jpeg', description: 'Live events and production feeds.' },
-    { id: 'pf-4', title: 'Web & Digital', image: '/web.jpg', description: 'Website and digital presence projects.' },
-    { id: 'pf-5', title: 'Branding', image: '/graphy33.jpg', description: 'Design, print, and visual identity.' },
-    { id: 'pf-6', title: 'Documentary', image: '/photo12.jpg', description: 'Long-form visual storytelling.' },
+    { 
+      id: 'pf-1', 
+      title: 'Photography', 
+      image: '/photo1.jpg', 
+      link: '#',
+      description: 'We capture stunning visuals that tell your unique story with precision and artistic flair.' 
+    },
+    { 
+      id: 'pf-2', 
+      title: 'Video Production', 
+      image: '/photo3.jpg', 
+      link: '#',
+      description: 'We deliver high-end video production services tailored for commercials, events, and cinematic projects.' 
+    },
+    { 
+      id: 'pf-3', 
+      title: 'Live Streaming', 
+      image: '/live1.jpeg', 
+      link: '#',
+      description: 'We provide professional multi-camera live streaming solutions to connect you with a global audience instantly.' 
+    },
+    { 
+      id: 'pf-4', 
+      title: 'Web & Digital', 
+      image: '/web.jpg', 
+      link: '#',
+      description: 'We offer comprehensive digital strategies including web design, development, and online marketing solutions.' 
+    },
+    { 
+      id: 'pf-5', 
+      title: 'Branding', 
+      image: '/graphy33.jpg', 
+      link: '#',
+      description: 'We create memorable brand identities that resonate deeply with your target market and stand out.' 
+    },
+    { 
+      id: 'pf-6', 
+      title: 'Documentary', 
+      image: '/photo12.jpg', 
+      link: '#',
+      description: 'We specialize in in-depth documentary filmmaking that brings important real-world stories to light.' 
+    },
   ],
   clientsIntro:
     'We work with brands, organizations, and creators who want visuals that feel sharp, memorable, and full of character. Every project is tailored to match your message, audience, and moment.',
   clients: ['Corporate', 'Weddings', 'Events', 'Non-profits'],
-  clientLogos: ['/clients.jpg'],
+  clientLogos: ['/mtn.png', '/engen.png', '/inyange.jpg', '/nbg.jpg'],
   team: [
-    { id: 'team-1', name: 'KADAffI PRO', role: 'Ceo & Founder', photo: '/kadaff.jpg', position: '50% 18%' },
-    { id: 'team-2', name: 'Kelly', role: 'Graphics Designer', photo: '/ike.jpg', position: '50% 20%' },
+    { id: 'team-1', name: 'KADAffI PRO', role: 'Ceo & Founder', bio: 'Leads the creative direction and keeps every project focused, sharp, and client-centered.', photo: '/kadaff.jpg', position: '50% 18%' },
+    { id: 'team-2', name: 'Kelly', role: 'Graphics Designer', bio: 'Shapes visual identities, layouts, and brand assets with a clean, modern style.', photo: '/ike.jpg', position: '50% 20%' },
     {
       id: 'team-3',
       name: 'Chancelline niyotugendana',
       role: 'Secretary & photographer',
+      bio: 'Keeps the studio organized while capturing moments with a calm eye for detail.',
       photo: '/chance.jpg',
       position: '50% 22%',
     },
-    { id: 'team-4', name: 'anura', role: 'Intern', photo: '/chelsea.jpg', position: '50% 18%' },
+    { id: 'team-4', name: 'anura', role: 'Intern', bio: 'Supports the team across shoots, edits, and day-to-day production work.', photo: '/chelsea.jpg', position: '50% 18%' },
     {
       id: 'team-5',
       name: 'ishimwe samuel kelly',
       role: 'GRAPHICS DESIGNER',
+      bio: 'Brings bold concepts to life through graphics, branding, and polished design details.',
       photo: '/onekelly.jpg',
       position: '50% 20%',
     },
@@ -129,7 +169,6 @@ function cloneContent(content: SiteContent): SiteContent {
   return {
     hero: { 
       ...content.hero,
-      // Ensure images and notes arrays are deeply copied
       images: content.hero.images ? [...content.hero.images] : [],
       notes: content.hero.notes ? [...content.hero.notes] : []
     },
@@ -144,27 +183,57 @@ function cloneContent(content: SiteContent): SiteContent {
   };
 }
 
+export function toOneSentence(text?: string): string {
+  const value = (text || '').trim();
+
+  if (!value) {
+    return '';
+  }
+
+  const firstSentenceMatch = value.match(/^(.+?[.!?])(?:\s|$)/);
+
+  if (firstSentenceMatch) {
+    return firstSentenceMatch[1].trim();
+  }
+
+  return `${value}.`;
+}
+
 function normalize(parsed: Partial<SiteContent>): SiteContent {
+  // --- AUTO-CLEAN LOGIC ---
+  // 1. Get saved logos (or empty array)
+  const incomingLogos = parsed.clientLogos || [];
+  
+  // 2. Filter out 'clients.jpg' specifically to prevent it from ever showing
+  const cleanLogos = incomingLogos.filter(logo => !logo.includes('clients.jpg'));
+
+  // 3. Decide: Use cleaned logos if any remain, otherwise fallback to defaults
+  const finalLogos = cleanLogos.length > 0 ? cleanLogos : [...DEFAULT_SITE_CONTENT.clientLogos];
+  // -----------------------
+
   return {
     hero: {
-      // Fallback title/subtitle
       title: parsed.hero?.title ?? DEFAULT_SITE_CONTENT.hero.title,
       subtitle: parsed.hero?.subtitle ?? DEFAULT_SITE_CONTENT.hero.subtitle,
-      // RESTORE IMAGES IF EMPTY OR MISSING
       images: (parsed.hero?.images && parsed.hero.images.length > 0) 
         ? parsed.hero.images 
         : DEFAULT_SITE_CONTENT.hero.images || [],
-      // RESTORE NOTES IF EMPTY OR MISSING
       notes: (parsed.hero?.notes && parsed.hero.notes.length > 0)
         ? parsed.hero.notes
         : DEFAULT_SITE_CONTENT.hero.notes || [],
     },
     about: { ...DEFAULT_SITE_CONTENT.about, ...parsed.about },
     services: parsed.services ?? [...DEFAULT_SITE_CONTENT.services],
-    portfolio: parsed.portfolio ?? [...DEFAULT_SITE_CONTENT.portfolio],
+    portfolio: (parsed.portfolio ?? [...DEFAULT_SITE_CONTENT.portfolio]).map((item) => ({
+      ...item,
+      description: toOneSentence(item.description),
+    })),
     clientsIntro: parsed.clientsIntro ?? DEFAULT_SITE_CONTENT.clientsIntro,
     clients: parsed.clients ?? [...DEFAULT_SITE_CONTENT.clients],
-    clientLogos: parsed.clientLogos ?? [...DEFAULT_SITE_CONTENT.clientLogos],
+    
+    // Use the calculated safe logos
+    clientLogos: finalLogos,
+    
     team: parsed.team ?? [...DEFAULT_SITE_CONTENT.team],
     gallery: parsed.gallery ?? [...DEFAULT_SITE_CONTENT.gallery],
   };

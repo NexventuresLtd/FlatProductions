@@ -226,6 +226,10 @@
   grid-column: span 2;
 }
 
+.field-span-3 {
+  grid-column: span 3;
+}
+
 /* Inputs */
 .admin-field {
   display: flex;
@@ -553,6 +557,10 @@
   }
 
   .field-span-2 {
+    grid-column: auto;
+  }
+
+  .field-span-3 {
     grid-column: auto;
   }
   

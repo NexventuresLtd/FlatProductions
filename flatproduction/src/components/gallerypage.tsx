@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Header from './Header';
 import Footer from './Footer';
 import { contentStore } from '../store/contentStore';
@@ -52,17 +52,36 @@ const GalleryPage: React.FC = () => {
         '/iwacu1.jpg',
     ];
 
-        const buildGalleryItems = (images: string[]): GalleryItem[] => images.map((image, index) => ({
-                src: image,
-                title: getGalleryTitle(image, index),
-        }));
+const categories = ['All', 'Live', 'Photography', 'Web', 'Graphics', 'Documentary'];
 
-        const [galleryItems, setGalleryItems] = useState<GalleryItem[]>(() => buildGalleryItems(contentStore.read().gallery.length ? contentStore.read().gallery : defaultImages));
+const getCategoryFromFile = (path: string): string => {
+    const name = path.split('/').pop()?.split('.')[0]?.toLowerCase() ?? '';
+    if (/^live/.test(name)) return 'Live';
+    if (name.includes('web')) return 'Web';
+    if (/^photo/.test(name)) return 'Photography';
+    if (name.startsWith('graphy') || name.includes('graphy')) return 'Graphics';
+    if (name.includes('iwacu') || name.includes('onekelly')) return 'Photography';
+    return 'Photography';
+};
 
-    useEffect(()=>{
-            const onUpdate = (c:any) => setGalleryItems(buildGalleryItems((c.gallery && c.gallery.length) ? c.gallery : defaultImages));
-      contentStore.onUpdate(onUpdate);
-    },[]);
+const buildGalleryItems = (images: string[]): GalleryItem[] => images.map((image, index) => ({
+    src: image,
+    title: getGalleryTitle(image, index),
+}));
+
+const [galleryItems, setGalleryItems] = useState<GalleryItem[]>(() => buildGalleryItems(contentStore.read().gallery.length ? contentStore.read().gallery : defaultImages));
+
+useEffect(() => {
+    const onUpdate = (c: any) => setGalleryItems(buildGalleryItems((c.gallery && c.gallery.length) ? c.gallery : defaultImages));
+    contentStore.onUpdate(onUpdate);
+}, []);
+
+const [activeCategory, setActiveCategory] = useState<string>('All');
+
+const displayedItems = useMemo(() => {
+    if (activeCategory === 'All') return galleryItems;
+    return galleryItems.filter(item => getCategoryFromFile(item.src) === activeCategory);
+}, [galleryItems, activeCategory]);
 
     return (
         <div className="gallery-page">
@@ -76,14 +95,28 @@ const GalleryPage: React.FC = () => {
             </section>
 
             <main className="gallerypage-main">
+                <div className="portfolio-filter-bar" style={{ marginBottom: 24 }} role="tablist" aria-label="Gallery categories">
+                    {categories.map(cat => (
+                        <button
+                            key={cat}
+                            type="button"
+                            className={`portfolio-filter-button ${activeCategory === cat ? 'is-active' : ''}`}
+                            onClick={() => setActiveCategory(cat)}
+                            aria-pressed={activeCategory === cat}
+                        >
+                            {cat}
+                        </button>
+                    ))}
+                </div>
+
                 <section className="gallerypage-section">
                     <div className="gallerypage-grid">
-                        {galleryItems.map((item, index) => (
-                            <div key={index} className="gallery-item-wrapper">
-                                <img 
-                                    src={item.src} 
-                                    alt={item.title} 
-                                    loading="lazy" 
+                        {displayedItems.map((item, index) => (
+                            <div key={`${item.src}-${index}`} className="gallery-item-wrapper">
+                                <img
+                                    src={item.src}
+                                    alt={item.title}
+                                    loading="lazy"
                                 />
                                 <div className="gallery-overlay"></div>
                                 <div className="gallerypage-caption">
