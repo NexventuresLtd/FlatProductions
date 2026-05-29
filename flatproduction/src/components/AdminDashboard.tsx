@@ -23,6 +23,16 @@ const IMAGE_SUGGESTIONS = [
   '/onekelly.jpg',
 ];
 
+const VIDEO_LINK_SUGGESTIONS = [
+  'https://youtu.be/RjXqY31jpy0',
+  'https://youtu.be/de6oWk6vGlM',
+];
+
+const BTS_LINK_SUGGESTIONS = [
+  'https://youtu.be/DHR85WBk4tY',
+  'https://youtu.be/zWTFpxzQaes',
+];
+
 const EMPTY_SERVICE = (): ServiceItem => ({
   id: cryptoId(),
   title: 'New service',
@@ -35,6 +45,7 @@ const EMPTY_PORTFOLIO = (): PortfolioItem => ({
   title: 'New portfolio item',
   image: '/photo1.jpg',
   videoUrl: '',
+  btsUrl: '',
   description: '',
 });
 
@@ -228,7 +239,7 @@ const AdminDashboard: React.FC = () => {
   const clearServices = () => persist({ ...draft, services: [] });
   const removeService = (index: number) => persist({ ...draft, services: draft.services.filter((_, i) => i !== index) });
 
-  const updatePortfolio = (index: number, field: 'title' | 'image', value: string) => {
+  const updatePortfolio = (index: number, field: 'title' | 'image' | 'btsUrl', value: string) => {
     const portfolio = draft.portfolio.map((item, itemIndex) =>
       itemIndex === index ? { ...item, [field]: value } : item,
     );
@@ -238,6 +249,13 @@ const AdminDashboard: React.FC = () => {
   const updatePortfolioVideo = (index: number, value: string) => {
     const portfolio = draft.portfolio.map((item, itemIndex) =>
       itemIndex === index ? { ...item, videoUrl: value } : item,
+    );
+    persist({ ...draft, portfolio });
+  };
+
+  const updatePortfolioBts = (index: number, value: string) => {
+    const portfolio = draft.portfolio.map((item, itemIndex) =>
+      itemIndex === index ? { ...item, btsUrl: value } : item,
     );
     persist({ ...draft, portfolio });
   };
@@ -306,6 +324,38 @@ const AdminDashboard: React.FC = () => {
   const clearTeam = () => persist({ ...draft, team: [] });
   const removeTeamMember = (index: number) => persist({ ...draft, team: draft.team.filter((_, i) => i !== index) });
 
+  const previewWebsite = () => {
+    window.open('/', '_blank', 'noopener,noreferrer');
+  };
+
+  const getActiveItemCount = () => {
+    if (active === 'hero') return (draft.hero.images?.length ?? 0).toString();
+    if (active === 'about') return '1 block';
+    if (active === 'services') return `${draft.services.length} cards`;
+    if (active === 'portfolio') return `${draft.portfolio.length} items`;
+    if (active === 'gallery') return `${draft.gallery.length} images`;
+    if (active === 'clients') return `${draft.clients.length + draft.clientLogos.length} entries`;
+    return `${draft.team.length} members`;
+  };
+
+  const getActiveGuidance = () => {
+    if (active === 'hero') return 'Slides and captions';
+    if (active === 'about') return 'Edit the intro story';
+    if (active === 'services') return 'Arrange service cards';
+    if (active === 'portfolio') return 'Video and BTS media';
+    if (active === 'gallery') return 'Visual image library';
+    if (active === 'clients') return 'Client tags and logos';
+    return 'Team bios and photos';
+  };
+
+  const totalContentGroups =
+    draft.services.length +
+    draft.portfolio.length +
+    draft.gallery.length +
+    draft.clients.length +
+    draft.clientLogos.length +
+    draft.team.length;
+
   const logout = () => {
     sessionStorage.removeItem('flat_admin_auth');
     window.location.pathname = '/login';
@@ -366,17 +416,49 @@ const AdminDashboard: React.FC = () => {
           </div>
           <div className="admin-topbar-actions">
             <span className="admin-status">Auto-save on change</span>
+            <button type="button" className="admin-secondary-button" onClick={previewWebsite}>
+              Preview site
+            </button>
             <button type="button" className="admin-secondary-button" onClick={resetActiveSection}>
               Reset section
             </button>
           </div>
         </header>
 
+        <section className="admin-dashboard-summary" aria-label="Dashboard summary">
+          <article className="admin-summary-card admin-summary-card--accent">
+            <span className="admin-summary-label">Active section</span>
+            <strong>{sectionTitle}</strong>
+            <p>{getActiveGuidance()}</p>
+          </article>
+          <article className="admin-summary-card">
+            <span className="admin-summary-label">Visible items</span>
+            <strong>{getActiveItemCount()}</strong>
+            <p>What you are editing right now</p>
+          </article>
+          <article className="admin-summary-card">
+            <span className="admin-summary-label">Total content</span>
+            <strong>{totalContentGroups}</strong>
+            <p>Stored cards, images, and profiles</p>
+          </article>
+        </section>
+
         <section className="admin-panel">
           {active === 'hero' && (
             <div className="admin-section-stack">
-              {/* Text Fields */}
-              <div className="admin-form-grid">
+              <div className="admin-section-actions admin-section-actions--bare">
+                <p>Shape the headline and supporting caption that appear on the home hero.</p>
+                <div className="admin-section-actions-group">
+                  <button type="button" className="admin-secondary-button" onClick={clearHeroImages} disabled={!getHeroImages().length}>
+                    Clear all
+                  </button>
+                  <button type="button" className="admin-primary-button" onClick={addHeroImage}>
+                    + Add Image
+                  </button>
+                </div>
+              </div>
+
+              <div className="admin-form-grid admin-form-grid-hero">
                 <Field label="Hero title">
                   <input
                     type="text"
@@ -393,26 +475,7 @@ const AdminDashboard: React.FC = () => {
                 </Field>
               </div>
 
-              {/* New: Hero Background Images Management */}
-              <div className="admin-section-stack">
-                <div className="admin-section-actions">
-                  <p>Manage background images for home slider.</p>
-                  <div className="admin-section-actions-group">
-                    <button
-                      type="button"
-                      className="admin-secondary-button"
-                      onClick={clearHeroImages} // FIXED: Now clears all images
-                      disabled={!getHeroImages().length}
-                    >
-                      Clear all
-                    </button>
-                    <button type="button" className="admin-primary-button" onClick={addHeroImage}>
-                      + Add Image
-                    </button>
-                  </div>
-                </div>
-
-                <div className="admin-list-grid admin-list-grid-wide">
+              <div className="admin-list-grid admin-list-grid-wide">
                   {getHeroImages().map((image, index) => (
                     <article className="admin-item-card admin-list-item" key={`${image}-${index}`}>
                       <div className="admin-item-header">
@@ -473,7 +536,6 @@ const AdminDashboard: React.FC = () => {
                       />
                     </article>
                   ))}
-                </div>
               </div>
             </div>
           )}
@@ -499,7 +561,7 @@ const AdminDashboard: React.FC = () => {
 
           {active === 'services' && (
             <div className="admin-section-stack">
-              <div className="admin-section-actions">
+              <div className="admin-section-actions admin-section-actions--bare">
                 <p>All original home services are preloaded. You can edit, reorder, remove, or add more.</p>
                 <div className="admin-section-actions-group">
                   <button type="button" className="admin-secondary-button" onClick={clearServices}>
@@ -582,7 +644,7 @@ const AdminDashboard: React.FC = () => {
           {active === 'portfolio' && (
             <div className="admin-section-stack">
               <div className="admin-section-actions">
-                <p>Portfolio cards support image and optional YouTube link.</p>
+                <p>Portfolio cards support image, video, and BTS links. Add both to make each project card richer.</p>
                 <div className="admin-section-actions-group">
                   <button type="button" className="admin-secondary-button" onClick={clearPortfolio}>
                     Clear all
@@ -648,6 +710,14 @@ const AdminDashboard: React.FC = () => {
                             placeholder="https://www.youtube.com/watch?v=..."
                           />
                         </Field>
+                        <Field label="Behind the scenes URL">
+                          <input
+                            type="text"
+                            value={item.btsUrl ?? ''}
+                            onChange={(event) => updatePortfolioBts(index, event.target.value)}
+                            placeholder="https://youtu.be/..."
+                          />
+                        </Field>
                         <Field label="Short description" className="field-span-2">
                           <textarea
                             rows={4}
@@ -661,6 +731,16 @@ const AdminDashboard: React.FC = () => {
                         label="Image helpers"
                         values={IMAGE_SUGGESTIONS}
                         onPick={(value) => updatePortfolio(index, 'image', value)}
+                      />
+                      <SuggestionRow
+                        label="Video links"
+                        values={VIDEO_LINK_SUGGESTIONS}
+                        onPick={(value) => updatePortfolioVideo(index, value)}
+                      />
+                      <SuggestionRow
+                        label="BTS links"
+                        values={BTS_LINK_SUGGESTIONS}
+                        onPick={(value) => updatePortfolioBts(index, value)}
                       />
                     </div>
                   </div>

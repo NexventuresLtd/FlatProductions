@@ -6,6 +6,7 @@ type GalleryPortfolioItem = {
     alt: string;
     title: string;
     videoUrl?: string;
+    btsUrl?: string;
     description?: string;
     link?: string;
 };
@@ -61,6 +62,22 @@ const Gallery: React.FC = () => {
             title: 'Documentary', 
             description: 'We specialize in in-depth documentary filmmaking that brings important real-world stories to light.',
             link: '/portfolio' // Updated link
+        },
+        {
+            src: '/2I1A0386.JPG.jpeg',
+            alt: 'Behind the Scenes',
+            title: 'Behind the Scenes',
+            btsUrl: 'https://youtu.be/DHR85WBk4tY',
+            description: 'Lighting, framing, and set preparation from the production floor.',
+            link: '/portfolio'
+        },
+        {
+            src: '/MARR0034.JPG',
+            alt: 'Production BTS',
+            title: 'Production BTS',
+            btsUrl: 'https://youtu.be/zWTFpxzQaes',
+            description: 'Candid crew moments captured during a live production setup.',
+            link: '/portfolio'
         }
     ];
 
@@ -71,6 +88,7 @@ const Gallery: React.FC = () => {
             alt: it.title, 
             title: it.title, 
             videoUrl: it.videoUrl,
+            btsUrl: it.btsUrl,
             description: toOneSentence(it.description || it.subtitle || ''),
             link: it.link || '/portfolio' // Updated fallback link
         })) : defaultItems;
@@ -84,6 +102,7 @@ const Gallery: React.FC = () => {
                     alt: it.title, 
                     title: it.title, 
                     videoUrl: it.videoUrl,
+                    btsUrl: it.btsUrl,
                     description: toOneSentence(it.description || it.subtitle || ''),
                     link: it.link || '/portfolio' // Updated fallback link
                 })) : defaultItems);
@@ -97,34 +116,22 @@ const Gallery: React.FC = () => {
                 <p className="section-tag">Portfolio</p>
                 <h2>Our Services</h2>
                 <p>
-                    Six core services we provide — tap any card to learn more on the portfolio page.
+                    Tap any card to learn more on the portfolio page.
                 </p>
             </div>
 
             <div className="gallery">
                 {items.map((item, index) => (
                     <div className="gallery-item" key={index}>
-                        <div className={`gallery-media ${item.videoUrl ? 'gallery-media--video' : 'gallery-media--image'}`}>
-                            {item.videoUrl ? (
-                                <div className="gallery-video-frame">
-                                    <iframe
-                                        src={toEmbedUrl(item.videoUrl)}
-                                        title={item.title}
-                                        loading="lazy"
-                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                                        allowFullScreen
-                                    />
-                                </div>
-                            ) : (
-                                <img 
-                                    src={item.src} 
-                                    alt={item.alt} 
-                                    className="gallery-image" 
-                                    loading="lazy"
-                                />
-                            )}
-                            {item.videoUrl && (
-                                <div className="gallery-video-badge">YouTube</div>
+                        <div className="gallery-media gallery-media--image">
+                            <img 
+                                src={item.src} 
+                                alt={item.alt} 
+                                className="gallery-image" 
+                                loading="lazy"
+                            />
+                            {(item.videoUrl || item.btsUrl) && (
+                                <div className="gallery-video-badge">{item.btsUrl && !item.videoUrl ? 'BTS' : 'Media'}</div>
                             )}
                         </div>
 
@@ -134,9 +141,31 @@ const Gallery: React.FC = () => {
                                 {item.description}
                             </p>
                             <div className="gallery-footer">
-                                <a href={item.link} className="gallery-link" aria-label={`Learn more about ${item.title}`}>
-                                    Learn More <span className="arrow">→</span>
-                                </a>
+                                <div className="gallery-link-group">
+                                    <a href={item.link} className="gallery-link" aria-label={`Learn more about ${item.title}`}>
+                                        Learn More <span className="arrow">→</span>
+                                    </a>
+                                    {item.videoUrl && (
+                                        <a
+                                            href={item.videoUrl}
+                                            className="gallery-link gallery-link--button"
+                                            target="_blank"
+                                            rel="noreferrer"
+                                        >
+                                            Watch Video
+                                        </a>
+                                    )}
+                                    {item.btsUrl && (
+                                        <a
+                                            href={item.btsUrl}
+                                            className="gallery-link gallery-link--button gallery-link--ghost"
+                                            target="_blank"
+                                            rel="noreferrer"
+                                        >
+                                            Behind the Scenes
+                                        </a>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>

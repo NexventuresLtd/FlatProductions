@@ -7,116 +7,38 @@ type PortfolioCard = {
     category: string;
     image?: string;
     label: string;
+    title?: string;
     videoUrl?: string;
-    description: string;
-    link: string;
+    btsUrl?: string;
 };
 
-// Updated with one-sentence descriptions
-const portfolioItems: PortfolioCard[] = [
-    { 
-        category: 'Live Streaming', 
-        image: '/live1.jpeg', 
-        label: 'Launch night coverage',
-        link: '#',
-        description: 'We captured the electric energy of the launch night with a high-definition multi-camera setup for a global audience.'
-    },
-    { 
-        category: 'Live Streaming', 
-        image: '/photo6.jpg', 
-        label: 'Conference live feed',
-        link: '#',
-        description: 'We provided seamless live coverage for a major corporate conference with dynamic speaker switching and crystal clear audio.'
-    },
-    { 
-        category: 'Live Streaming', 
-        image: '/photo14.jpg', 
-        label: 'Event stage stream',
-        link: '#',
-        description: 'We delivered a vibrant stage stream that brought the concert atmosphere directly to viewer screens with high-quality encoding.'
-    },
-    { 
-        category: 'Photography', 
-        image: '/photo3.jpg', 
-        label: 'Portrait storytelling',
-        link: '#',
-        description: 'Our portrait sessions focus on bringing out the unique personality and story of every subject through natural lighting.'
-    },
-    { 
-        category: 'Photography', 
-        image: '/photo8.jpg', 
-        label: 'Event highlights',
-        link: '#',
-        description: 'We document the key highlights of your events, from grand entrances to intimate interactions, to tell the complete story.'
-    },
-    { 
-        category: 'Photography', 
-        image: '/photo10.jpg', 
-        label: 'Behind the scenes',
-        link: '#',
-        description: 'We capture the hustle and creativity behind the curtain to show the raw and honest human side of your brand.'
-    },
-    { 
-        category: 'Web Design', 
-        image: '/web.jpg', 
-        label: 'Website interface design',
-        link: '#',
-        description: 'We designed a user-centric interface that prioritizes ease of navigation and visual appeal across all devices.'
-    },
-    { 
-        category: 'Web Design', 
-        image: '/photo1.jpg', 
-        label: 'Digital brand presence',
-        link: '#',
-        description: 'We built a comprehensive digital ecosystem that aligns with your brand identity and strengthens your online recognition.'
-    },
-    { 
-        category: 'Graphics Design', 
-        image: '/graphy2.png', 
-        label: 'Identity system',
-        link: '#',
-        description: 'We developed a complete visual identity system including logos, typography, and color palettes to ensure brand consistency.'
-    },
-    { 
-        category: 'Graphics Design', 
-        image: '/photo5.jpg', 
-        label: 'Campaign artwork',
-        link: '#',
-        description: 'We created eye-catching artwork for marketing campaigns that blend bold imagery with strategic messaging to drive action.'
-    },
-    { 
-        category: 'Documentary', 
-        image: '/photo12.jpg', 
-        label: 'Long-form story frame',
-        link: '#',
-        description: 'We produced compelling long-form documentaries that explore complex narratives with depth and sensitivity through authentic fieldwork.'
-    },
-    { 
-        category: 'Documentary', 
-        image: '/photo4.jpg', 
-        label: 'Field production moment',
-        link: '#',
-        description: 'We documented real-time field production moments that highlight the challenges and triumphs of the subject through observation.'
-    },
+const portfolioItems = [
+    { category: 'Live Streaming', image: '/live1.jpeg', label: 'Launch night coverage' },
+    { category: 'Live Streaming', image: '/photo6.jpg', label: 'Conference live feed' },
+    { category: 'Live Streaming', image: '/photo14.jpg', label: 'Event stage stream' },
+    { category: 'Photography', image: '/photo3.jpg', label: 'Portrait storytelling' },
+    { category: 'Photography', image: '/photo8.jpg', label: 'Event highlights' },
+    { category: 'Photography', image: '/photo10.jpg', label: 'Behind the scenes' },
+    { category: 'BTS', image: '/2I1A0386.JPG.jpeg', label: 'Lighting setup and framing' },
+    { category: 'BTS', image: '/2I1A0403.JPG.jpeg', label: 'Crew coordinating on set' },
+    { category: 'BTS', image: '/2I1A0407.JPG.jpeg', label: 'Camera prep and review' },
+    { category: 'BTS', image: '/2I1A0410.JPG.jpeg', label: 'Production day action' },
+    { category: 'Web Design', image: '/web.jpg', label: 'Website interface design' },
+    { category: 'Web Design', image: '/photo1.jpg', label: 'Digital brand presence' },
+    { category: 'Graphics Design', image: '/graphy2.png', label: 'Identity system' },
+    { category: 'Graphics Design', image: '/photo5.jpg', label: 'Campaign artwork' },
+    { category: 'Documentary', image: '/photo12.jpg', label: 'Long-form story frame' },
+    { category: 'Documentary', image: '/photo4.jpg', label: 'Field production moment' },
 ];
 
-const categories = ['All', 'Video', 'Live Streaming', 'Photography', 'Web Design', 'Graphics Design', 'Documentary'];
-const portfolioHeroImage = '/photo3.jpg';
+const categories = ['All', 'Video', 'BTS', 'Live Streaming', 'Photography', 'Web Design', 'Graphics Design', 'Documentary'];
 
-function toOneSentence(text?: string): string {
-    const value = (text || '').trim();
-
-    if (!value) {
-        return 'Watch this video production to see our cinematic approach in action.';
-    }
-
-    const firstSentenceMatch = value.match(/^(.+?[.!?])(?:\s|$)/);
-
-    if (firstSentenceMatch) {
-        return firstSentenceMatch[1].trim();
-    }
-
-    return `${value}.`;
+function toThreeWords(text: string) {
+    return text
+        .trim()
+        .split(/\s+/)
+        .slice(0, 3)
+        .join(' ');
 }
 
 const PortfolioPage: React.FC = () => {
@@ -127,44 +49,71 @@ const PortfolioPage: React.FC = () => {
         const onUpdate = (content: any) => {
             setStoredPortfolio(content.portfolio ?? []);
         };
+
         contentStore.onUpdate(onUpdate);
     }, []);
 
-    const portfolioVideos = useMemo<PortfolioCard[]>(() => {
-        return storedPortfolio
-            .filter((item) => item.videoUrl)
-            .map((item) => ({
-                category: 'Video',
-                videoUrl: item.videoUrl ?? '',
-                image: item.image,
-                label: item.title,
-                description: toOneSentence(item.description),
-                link: item.link || '#',
-                title: item.title,
-            }));
+    const portfolioMedia = useMemo<PortfolioCard[]>(() => {
+        return storedPortfolio.flatMap((item) => {
+            const label = toThreeWords(item.description?.trim() || item.title);
+            const entries: PortfolioCard[] = [];
+
+            if (item.videoUrl) {
+                entries.push({
+                    category: 'Video',
+                    videoUrl: item.videoUrl,
+                    image: item.image,
+                    label,
+                    title: item.title,
+                });
+            }
+
+            if (item.btsUrl) {
+                entries.push({
+                    category: 'BTS',
+                    btsUrl: item.btsUrl,
+                    image: item.image,
+                    label: `Behind the scenes: ${label}`,
+                    title: item.title,
+                });
+            }
+
+            return entries;
+        });
     }, [storedPortfolio]);
 
     const filteredItems = useMemo<PortfolioCard[]>(() => {
+        const storedBtsItems = portfolioMedia.filter((item) => item.category === 'BTS');
+        const staticBtsItems = portfolioItems.filter((item) => item.category === 'BTS');
+
         if (activeCategory === 'All') {
-            return [...portfolioVideos, ...portfolioItems];
+            return [...portfolioMedia, ...portfolioItems];
         }
 
         if (activeCategory === 'Video') {
-            return portfolioVideos;
+            return portfolioMedia.filter((item) => item.category === 'Video');
+        }
+
+        if (activeCategory === 'BTS') {
+            return [...storedBtsItems, ...staticBtsItems];
         }
 
         return portfolioItems.filter((item) => item.category === activeCategory);
-    }, [activeCategory, portfolioVideos]);
+    }, [activeCategory, portfolioMedia]);
 
     return (
         <div className="portfolio-page">
-            <section
-                className="portfoliopage-intro"
-                style={{ '--portfolio-hero-image': `url(${portfolioHeroImage})` } as React.CSSProperties}
-            >
-                <div className="portfoliopage-header-wrap">
-                    <Header />
-                </div>
+            {/* 
+                CRITICAL STRUCTURAL FIX: 
+                The Header Wrap is now a SIBLING to the Hero Section.
+                This ensures the header has a higher stacking context (z-index)
+                than the hero content, so the white background covers the text on scroll.
+            */}
+            <div className="portfoliopage-header-wrap">
+                <Header />
+            </div>
+
+            <section className="portfoliopage-intro">
                 <div className="portfoliopage-intro-content">
                     <p className="section-tag">Portfolio</p>
                     <h3>Selected work across our creative services</h3>
@@ -189,46 +138,51 @@ const PortfolioPage: React.FC = () => {
                     ))}
                 </div>
 
-                <div className="portfolio-grid gallery" aria-live="polite">
-                    {filteredItems.map((item, index) => (
-                        <article key={`${item.category}-${item.label}-${index}`} className="portfolio-card gallery-item">
-                            <div className="gallery-media">
-                                {item.videoUrl ? (
-                                    <div className="gallery-video-frame">
+                <div className="portfolio-grid" aria-live="polite">
+                    {filteredItems.map((item) => (
+                        <article key={`${item.category}-${item.label}`} className="portfolio-card">
+                            {item.videoUrl || item.btsUrl ? (
+                                <>
+                                    <div className="portfolio-video-frame">
                                         <iframe
-                                            src={toEmbedUrl(item.videoUrl)}
+                                            src={toEmbedUrl(item.videoUrl ?? item.btsUrl ?? '')}
                                             title={item.label}
                                             loading="lazy"
                                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                                             allowFullScreen
                                         />
                                     </div>
-                                ) : (
-                                    <img 
-                                        src={item.image} 
-                                        alt={`${item.category} project: ${item.label}`} 
-                                        className="gallery-image"
-                                        loading="lazy"
-                                    />
-                                )}
-                                {item.videoUrl && (
-                                    <div className="gallery-video-badge">YouTube</div>
-                                )}
-                            </div>
-
-                            <div className="gallery-content">
-                                <h3 className="gallery-title">{item.label}</h3>
-                                <p className="gallery-description">
-                                    {item.description}
-                                </p>
-                            </div>
+                                    <div className="portfolio-card-copy">
+                                        <span>{item.category}</span>
+                                        <h2>{item.label}</h2>
+                                        <div className="portfolio-card-actions">
+                                            <a
+                                                className="portfolio-card-button portfolio-card-button--primary"
+                                                href={item.videoUrl ?? item.btsUrl}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                            >
+                                                {item.category === 'BTS' ? 'Watch BTS' : 'Watch Video'}
+                                            </a>
+                                        </div>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <img src={item.image} alt={`${item.category} project: ${item.label}`} />
+                                    <div className="portfolio-card-copy">
+                                        <span>{item.category}</span>
+                                        <h2>{item.label}</h2>
+                                    </div>
+                                </>
+                            )}
                         </article>
                     ))}
                 </div>
 
-                <div className="portfolio-cta gallery-actions">
+                <div className="portfolio-cta">
                     <p>Need a visual direction for your next project? We can shape it from concept to delivery.</p>
-                    <a className="view-all-button portfolio-cta-button" href="/contact">
+                    <a className="portfolio-cta-button" href="/contact">
                         Start a Project
                     </a>
                 </div>

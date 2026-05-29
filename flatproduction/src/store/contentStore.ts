@@ -3,7 +3,7 @@ type SiteContent = {
   about: { heading: string; body: string };
   services: Array<{ id: string; title: string; description: string; image?: string }>;
   // UPDATED: Added 'link' property here to match your Gallery component usage
-  portfolio: Array<{ id: string; title: string; image?: string; videoUrl?: string; description?: string; link?: string }>;
+  portfolio: Array<{ id: string; title: string; image?: string; videoUrl?: string; btsUrl?: string; description?: string; link?: string }>;
   clientsIntro: string;
   clients: string[];
   clientLogos: string[];
@@ -85,15 +85,19 @@ const DEFAULT_SITE_CONTENT: SiteContent = {
     { 
       id: 'pf-2', 
       title: 'Video Production', 
-      image: '/photo3.jpg', 
+      image: '/2I1A0386.JPG.jpeg', 
       link: '#',
+      videoUrl: 'https://youtu.be/RjXqY31jpy0',
+      btsUrl: 'https://youtu.be/DHR85WBk4tY',
       description: 'We deliver high-end video production services tailored for commercials, events, and cinematic projects.' 
     },
     { 
       id: 'pf-3', 
       title: 'Live Streaming', 
-      image: '/live1.jpeg', 
+      image: '/2I1A0403.JPG.jpeg', 
       link: '#',
+      videoUrl: 'https://youtu.be/de6oWk6vGlM',
+      btsUrl: 'https://youtu.be/zWTFpxzQaes',
       description: 'We provide professional multi-camera live streaming solutions to connect you with a global audience instantly.' 
     },
     { 

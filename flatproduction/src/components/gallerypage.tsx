@@ -25,6 +25,13 @@ const galleryLabels: Record<string, string> = {
     web: 'web view',
     graphy33: 'brand look',
     iwacu1: 'clean frame',
+    '2i1a0386': 'bts lighting setup',
+    '2i1a0403': 'bts crew action',
+    '2i1a0407': 'bts camera prep',
+    '2i1a0410': 'bts production day',
+    marr0034: 'bts shoot moment',
+    marr0039: 'bts field frame',
+    marr0058: 'bts set detail',
 };
 
 const getGalleryTitle = (image: string, index: number): string => {
@@ -52,10 +59,21 @@ const GalleryPage: React.FC = () => {
         '/iwacu1.jpg',
     ];
 
-const categories = ['All', 'Live', 'Photography', 'Web', 'Graphics', 'Documentary'];
+const btsImages = [
+    '/2I1A0386.JPG.jpeg',
+    '/2I1A0403.JPG.jpeg',
+    '/2I1A0407.JPG.jpeg',
+    '/2I1A0410.JPG.jpeg',
+    '/MARR0034.JPG',
+    '/MARR0039.JPG',
+    '/MARR0058.JPG',
+];
+
+const categories = ['All', 'BTS', 'Live', 'Photography', 'Web', 'Graphics', 'Documentary'];
 
 const getCategoryFromFile = (path: string): string => {
     const name = path.split('/').pop()?.split('.')[0]?.toLowerCase() ?? '';
+    if (name.includes('2i1a') || name.includes('marr') || name.includes('bts')) return 'BTS';
     if (/^live/.test(name)) return 'Live';
     if (name.includes('web')) return 'Web';
     if (/^photo/.test(name)) return 'Photography';
@@ -64,7 +82,19 @@ const getCategoryFromFile = (path: string): string => {
     return 'Photography';
 };
 
-const buildGalleryItems = (images: string[]): GalleryItem[] => images.map((image, index) => ({
+const mergeGallerySources = (images: string[]): string[] => {
+    const merged = [...images];
+
+    for (const image of btsImages) {
+        if (!merged.includes(image)) {
+            merged.push(image);
+        }
+    }
+
+    return merged;
+};
+
+const buildGalleryItems = (images: string[]): GalleryItem[] => mergeGallerySources(images).map((image, index) => ({
     src: image,
     title: getGalleryTitle(image, index),
 }));

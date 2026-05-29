@@ -863,6 +863,13 @@ section {
     /* Removed top border to make it look cleaner with the text link */
 }
 
+.gallery-link-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
 .gallery-link {
     display: inline-flex;
     align-items: center;
@@ -887,6 +894,34 @@ section {
 
 .gallery-link:hover .arrow {
     transform: translateX(4px); /* Arrow slides right on hover */
+}
+
+.gallery-link--button {
+    padding: 9px 14px;
+    border-radius: 999px;
+    border: 1px solid #111111;
+    background: #111111;
+    color: #ffffff;
+    font-size: 0.8rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.gallery-link--button:hover {
+    color: #ffffff;
+    background: #333333;
+    border-color: #333333;
+    transform: translateY(-1px);
+}
+
+.gallery-link--ghost {
+    background: transparent;
+    color: #111111;
+}
+
+.gallery-link--ghost:hover {
+    background: #f3f4f6;
+    color: #111111;
 }
 
 /* Global Actions */
@@ -1051,6 +1086,61 @@ section {
 /* =========================================
    PORTFOLIO PAGE STYLES
    ========================================= */
+
+/* --- 1. HEADER WRAPPER (The Container) --- */
+.portfoliopage-header-wrap {
+    /* Keeps header fixed at the top */
+    position: fixed; 
+    top: 0;
+    left: 0;
+    width: 100%;
+    /* Ensures it sits ABOVE the hero section content */
+    z-index: 9999; 
+    /* Default state: Transparent background */
+    background: transparent;
+    transition: background-color 0.3s ease;
+}
+
+/* --- 2. HEADER INNER (The Nav Bar) --- */
+.portfoliopage-header-wrap .site-header {
+    position: relative;
+    background: transparent;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+    transition: all 0.3s ease;
+}
+
+/* --- 3. SCROLLED STATE (White BG, Black Text) --- */
+/* When the user scrolls, the .scrolled class is added (via JS in Header component) */
+.portfoliopage-header-wrap.scrolled .site-header {
+    background-color: #ffffff !important;
+    border-bottom: 1px solid rgba(17, 17, 17, 0.08) !important;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+/* Change text color to black when scrolled */
+.portfoliopage-header-wrap.scrolled .site-brand-text,
+.portfoliopage-header-wrap.scrolled .site-nav-item a,
+.portfoliopage-header-wrap.scrolled .site-nav-item a:hover {
+    color: #111111;
+}
+
+.portfoliopage-header-wrap.scrolled .site-nav-item a::after {
+    background-color: #111111;
+}
+
+.portfoliopage-header-wrap.scrolled .menu-toggle {
+    border-color: #111111;
+}
+
+.portfoliopage-header-wrap.scrolled .menu-toggle-bar {
+    background-color: #111111;
+}
+
+/* =========================================
+   HERO & MAIN CONTENT (Original Styles)
+   ========================================= */
+
 .portfoliopage-intro {
     padding: clamp(120px, 14vw, 160px) 20px clamp(48px, 8vw, 80px);
     min-height: 100svh;
@@ -1065,43 +1155,6 @@ section {
     background:
         linear-gradient(180deg, rgba(17, 17, 17, 0.5) 0%, rgba(17, 17, 17, 0.7) 100%),
         var(--portfolio-hero-image, url('/photo3.jpg')) center / cover no-repeat;
-}
-
-.portfoliopage-header-wrap {
-    position: relative;
-    z-index: 1001;
-}
-
-.portfoliopage-header-wrap .site-header {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    background: transparent;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.16);
-}
-
-.portfoliopage-header-wrap .site-header.scrolled {
-    background: transparent;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.16);
-}
-
-.portfoliopage-header-wrap .site-header.scrolled .site-brand-text,
-.portfoliopage-header-wrap .site-header.scrolled .site-nav-item a,
-.portfoliopage-header-wrap .site-header.scrolled .site-nav-item a:hover {
-    color: #ffffff;
-}
-
-.portfoliopage-header-wrap .site-header.scrolled .site-nav-item a::after {
-    background-color: #ffffff;
-}
-
-.portfoliopage-header-wrap .site-header.scrolled .menu-toggle {
-    border-color: #ffffff;
-}
-
-.portfoliopage-header-wrap .site-header.scrolled .menu-toggle-bar {
-    background-color: #ffffff;
 }
 
 .portfoliopage-intro-content {
@@ -1137,7 +1190,7 @@ section {
 
 .portfoliopage-main {
     padding: clamp(48px, 6vw, 80px) 20px;
-    background: #ffffff; /* Set to white for light mode consistency */
+    background: #ffffff; 
 }
 
 .portfolio-page {
@@ -1266,6 +1319,51 @@ section {
     margin-bottom: 8px;
 }
 
+.portfolio-card-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+}
+
+.portfolio-card-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    padding: 0 16px;
+    border-radius: 999px;
+    text-decoration: none;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.portfolio-card-button--primary {
+    background: #ffffff;
+    color: #111111;
+    border: 1px solid #ffffff;
+}
+
+.portfolio-card-button--primary:hover {
+    background: #f3f4f6;
+    transform: translateY(-1px);
+}
+
+.portfolio-card-button--ghost {
+    background: transparent;
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.portfolio-card-button--ghost:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: translateY(-1px);
+}
+
 .portfolio-cta {
     max-width: 1200px;
     margin: 0 auto;
@@ -1292,12 +1390,6 @@ section {
     background: linear-gradient(180deg, rgba(0, 0, 0, 0.16) 0%, rgba(0, 0, 0, 0.42) 100%);
     z-index: 1;
     pointer-events: none;
-}
-
-.portfoliopage-intro-content,
-.portfoliopage-header-wrap {
-    position: relative;
-    z-index: 2;
 }
 
 /* =========================================
@@ -1343,7 +1435,6 @@ section {
 
 /* =========================================
    FORCE MOBILE FIXES FOR PORTFOLIO PAGE
-   Paste this at the VERY BOTTOM of index.css
    ========================================= */
 
 /* Apply to Tablets and Mobile (Screens narrower than 768px) */
@@ -1361,10 +1452,10 @@ section {
 
     /* Adjust Typography so it fits screens */
     .portfoliopage-intro h3 {
-        font-size: 1.8rem !important; /* Smaller font size */
+        font-size: 1.8rem !important; 
         line-height: 1.2 !important;
         margin-bottom: 16px !important;
-        word-wrap: break-word !important; /* Prevents text overflowing */
+        word-wrap: break-word !important; 
     }
 
     .portfoliopage-intro p {
@@ -1376,10 +1467,10 @@ section {
     /* 2. FILTER BAR: Make it scrollable horizontally */
     .portfolio-filter-bar {
         display: flex !important;
-        flex-wrap: nowrap !important; /* Forces buttons onto one line */
-        overflow-x: auto !important; /* Enables horizontal scrolling */
-        justify-content: flex-start !important; /* Aligns to left */
-        padding-bottom: 20px !important; /* Space for touch scrolling */
+        flex-wrap: nowrap !important; 
+        overflow-x: auto !important; 
+        justify-content: flex-start !important; 
+        padding-bottom: 20px !important; 
         margin-bottom: 30px !important;
         -webkit-overflow-scrolling: touch !important;
     }
@@ -1398,7 +1489,7 @@ section {
     /* 3. GRID: Force Single Column Layout */
     .portfolio-grid {
         display: grid !important;
-        grid-template-columns: 1fr !important; /* 1 Item per row */
+        grid-template-columns: 1fr !important; 
         gap: 20px !important;
     }
 
@@ -1454,7 +1545,7 @@ section {
 /* Extra Small Fixes (iPhone SE, etc) */
 @media (max-width: 380px) {
     .portfoliopage-intro {
-        padding-top: 160px !important; /* Even more space for small notches */
+        padding-top: 160px !important; 
     }
     
     .portfoliopage-intro h3 {
