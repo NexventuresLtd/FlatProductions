@@ -66,7 +66,6 @@ function cloneContent(content: SiteContent): SiteContent {
   return {
     hero: { 
       ...content.hero,
-      // Ensure images array is deeply copied to avoid mutation bugs
       images: content.hero.images ? [...content.hero.images] : [],
       notes: content.hero.notes ? [...content.hero.notes] : []
     },
@@ -81,17 +80,30 @@ function cloneContent(content: SiteContent): SiteContent {
   };
 }
 
-
 function moveItem<T>(items: T[], fromIndex: number, toIndex: number) {
-  if (toIndex < 0 || toIndex >= items.length) {
-    return items;
-  }
-
+  if (toIndex < 0 || toIndex >= items.length) return items;
   const next = [...items];
   const [moved] = next.splice(fromIndex, 1);
   next.splice(toIndex, 0, moved);
   return next;
 }
+
+// Icons
+const Icons = {
+  Dashboard: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="9" x="3" y="3" rx="1" /><rect width="7" height="5" x="14" y="3" rx="1" /><rect width="7" height="9" x="14" y="12" rx="1" /><rect width="7" height="5" x="3" y="16" rx="1" /></svg>,
+  Layout: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2" /><line x1="3" x2="21" y1="9" y2="9" /><line x1="9" x2="9" y1="21" y2="9" /></svg>,
+  Layers: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z" /><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65" /><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65" /></svg>,
+  Users: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>,
+  Briefcase: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="14" x="2" y="7" rx="2" ry="2" /><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" /></svg>,
+  Image: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /></svg>,
+  LogOut: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" x2="9" y1="12" y2="12" /></svg>,
+  ChevronUp: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m18 15-6-6-6 6" /></svg>,
+  ChevronDown: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>,
+  Trash: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>,
+  Plus: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="M12 5v14" /></svg>,
+  ExternalLink: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" x2="21" y1="14" y2="3" /></svg>,
+  RotateCcw: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /></svg>,
+};
 
 const AdminDashboard: React.FC = () => {
   const [active, setActive] = useState<SectionKey>('hero');
@@ -109,957 +121,458 @@ const AdminDashboard: React.FC = () => {
   };
 
   const resetActiveSection = () => {
-    if (active === 'hero') {
-      persist({
-        ...draft,
-        hero: {
-          ...DEFAULT_SITE_CONTENT.hero,
-          images: DEFAULT_SITE_CONTENT.hero?.images || [],
-          notes: DEFAULT_SITE_CONTENT.hero?.notes || [],
-        },
-      });
-      return;
-    }
-
-    if (active === 'about') {
-      persist({ ...draft, about: { ...DEFAULT_SITE_CONTENT.about } });
-      return;
-    }
-
-    if (active === 'services') {
-      persist({ ...draft, services: DEFAULT_SITE_CONTENT.services.map((item) => ({ ...item })) });
-      return;
-    }
-
-    if (active === 'portfolio') {
-      persist({ ...draft, portfolio: DEFAULT_SITE_CONTENT.portfolio.map((item) => ({ ...item })) });
-      return;
-    }
-
-    if (active === 'gallery') {
-      persist({ ...draft, gallery: [...DEFAULT_SITE_CONTENT.gallery] });
-      return;
-    }
-
-    if (active === 'clients') {
-      persist({
-        ...draft,
-        clientsIntro: DEFAULT_SITE_CONTENT.clientsIntro,
-        clients: [...DEFAULT_SITE_CONTENT.clients],
-        clientLogos: [...DEFAULT_SITE_CONTENT.clientLogos],
-      });
-      return;
-    }
-
+    if (active === 'hero') { persist({ ...draft, hero: { ...DEFAULT_SITE_CONTENT.hero, images: DEFAULT_SITE_CONTENT.hero?.images || [], notes: DEFAULT_SITE_CONTENT.hero?.notes || [] } }); return; }
+    if (active === 'about') { persist({ ...draft, about: { ...DEFAULT_SITE_CONTENT.about } }); return; }
+    if (active === 'services') { persist({ ...draft, services: DEFAULT_SITE_CONTENT.services.map((item) => ({ ...item })) }); return; }
+    if (active === 'portfolio') { persist({ ...draft, portfolio: DEFAULT_SITE_CONTENT.portfolio.map((item) => ({ ...item })) }); return; }
+    if (active === 'gallery') { persist({ ...draft, gallery: [...DEFAULT_SITE_CONTENT.gallery] }); return; }
+    if (active === 'clients') { persist({ ...draft, clientsIntro: DEFAULT_SITE_CONTENT.clientsIntro, clients: [...DEFAULT_SITE_CONTENT.clients], clientLogos: [...DEFAULT_SITE_CONTENT.clientLogos] }); return; }
     persist({ ...draft, team: DEFAULT_SITE_CONTENT.team.map((item) => ({ ...item })) });
   };
 
-  const updateHero = (field: 'title' | 'subtitle', value: string) => {
-    persist({ ...draft, hero: { ...draft.hero, [field]: value } });
-  };
-
+  // Update functions
+  const updateHero = (field: 'title' | 'subtitle', value: string) => persist({ ...draft, hero: { ...draft.hero, [field]: value } });
   const updateHeroNote = (index: number, value: string) => {
     const currentNotes = draft.hero.notes || [];
     const nextNotes = [...currentNotes];
-
-    while (nextNotes.length < index) {
-      nextNotes.push('');
-    }
-
+    while (nextNotes.length < index) nextNotes.push('');
     nextNotes[index] = value;
     persist({ ...draft, hero: { ...draft.hero, notes: nextNotes } });
   };
-
   const getHeroImages = () => draft.hero.images || [];
-  const getHeroNotes = () => draft.hero.notes || [];
+  const updateHeroImage = (index: number, value: string) => persist({ ...draft, hero: { ...draft.hero, images: getHeroImages().map((img, i) => (i === index ? value : img)) } });
+  const addHeroImage = () => persist({ ...draft, hero: { ...draft.hero, images: [...getHeroImages(), '/photo1.jpg'], notes: [...(draft.hero.notes || []), 'Short slide caption'] } });
+  const moveHeroImage = (index: number, direction: -1 | 1) => persist({ ...draft, hero: { ...draft.hero, images: moveItem(getHeroImages(), index, index + direction), notes: moveItem(draft.hero.notes || [], index, index + direction) } });
+  const removeHeroImage = (index: number) => persist({ ...draft, hero: { ...draft.hero, images: getHeroImages().filter((_, i) => i !== index), notes: (draft.hero.notes || []).filter((_, i) => i !== index) } });
+  const clearHeroImages = () => persist({ ...draft, hero: { ...draft.hero, images: [], notes: [] } });
 
-  const updateHeroImage = (index: number, value: string) => {
-    const currentImages = getHeroImages();
-    const nextImages = currentImages.map((img, imgIndex) => (imgIndex === index ? value : img));
-    persist({ ...draft, hero: { ...draft.hero, images: nextImages } });
-  };
+  const updateAbout = (field: 'heading' | 'body', value: string) => persist({ ...draft, about: { ...draft.about, [field]: value } });
 
-  const addHeroImage = () => {
-    const currentImages = getHeroImages();
-    const currentNotes = getHeroNotes();
-    persist({
-      ...draft,
-      hero: {
-        ...draft.hero,
-        images: [...currentImages, '/photo1.jpg'],
-        notes: [...currentNotes, 'Short slide caption'],
-      },
-    });
-  };
-
-  const moveHeroImage = (index: number, direction: -1 | 1) => {
-    const currentImages = getHeroImages();
-    const currentNotes = getHeroNotes();
-    persist({
-      ...draft,
-      hero: {
-        ...draft.hero,
-        images: moveItem(currentImages, index, index + direction),
-        notes: moveItem(currentNotes, index, index + direction),
-      },
-    });
-  };
-
-  const removeHeroImage = (index: number) => {
-    const currentImages = getHeroImages();
-    const currentNotes = getHeroNotes();
-    persist({
-      ...draft,
-      hero: {
-        ...draft.hero,
-        images: currentImages.filter((_, i) => i !== index),
-        notes: currentNotes.filter((_, i) => i !== index),
-      },
-    });
-  };
-  
-  const clearHeroImages = () => {
-    persist({ ...draft, hero: { ...draft.hero, images: [], notes: [] } });
-  };
-
-  const updateAbout = (field: 'heading' | 'body', value: string) => {
-    persist({ ...draft, about: { ...draft.about, [field]: value } });
-  };
-
-  const updateService = (index: number, field: 'title' | 'description' | 'image', value: string) => {
-    const services = draft.services.map((service, serviceIndex) =>
-      serviceIndex === index ? { ...service, [field]: value } : service,
-    );
-    persist({ ...draft, services });
-  };
-
+  const updateService = (index: number, field: 'title' | 'description' | 'image', value: string) => persist({ ...draft, services: draft.services.map((s, i) => (i === index ? { ...s, [field]: value } : s)) });
   const addService = () => persist({ ...draft, services: [...draft.services, EMPTY_SERVICE()] });
-  const moveService = (index: number, direction: -1 | 1) =>
-    persist({ ...draft, services: moveItem(draft.services, index, index + direction) });
+  const moveService = (index: number, direction: -1 | 1) => persist({ ...draft, services: moveItem(draft.services, index, index + direction) });
   const clearServices = () => persist({ ...draft, services: [] });
   const removeService = (index: number) => persist({ ...draft, services: draft.services.filter((_, i) => i !== index) });
 
-  const updatePortfolio = (index: number, field: 'title' | 'image' | 'btsUrl', value: string) => {
-    const portfolio = draft.portfolio.map((item, itemIndex) =>
-      itemIndex === index ? { ...item, [field]: value } : item,
-    );
-    persist({ ...draft, portfolio });
-  };
-
-  const updatePortfolioVideo = (index: number, value: string) => {
-    const portfolio = draft.portfolio.map((item, itemIndex) =>
-      itemIndex === index ? { ...item, videoUrl: value } : item,
-    );
-    persist({ ...draft, portfolio });
-  };
-
-  const updatePortfolioBts = (index: number, value: string) => {
-    const portfolio = draft.portfolio.map((item, itemIndex) =>
-      itemIndex === index ? { ...item, btsUrl: value } : item,
-    );
-    persist({ ...draft, portfolio });
-  };
-
-  const updatePortfolioDescription = (index: number, value: string) => {
-    const portfolio = draft.portfolio.map((item, itemIndex) =>
-      itemIndex === index ? { ...item, description: toOneSentence(value) } : item,
-    );
-    persist({ ...draft, portfolio });
-  };
-
+  const updatePortfolio = (index: number, field: 'title' | 'image' | 'btsUrl', value: string) => persist({ ...draft, portfolio: draft.portfolio.map((item, i) => (i === index ? { ...item, [field]: value } : item)) });
+  const updatePortfolioVideo = (index: number, value: string) => persist({ ...draft, portfolio: draft.portfolio.map((item, i) => (i === index ? { ...item, videoUrl: value } : item)) });
+  const updatePortfolioBts = (index: number, value: string) => persist({ ...draft, portfolio: draft.portfolio.map((item, i) => (i === index ? { ...item, btsUrl: value } : item)) });
+  const updatePortfolioDescription = (index: number, value: string) => persist({ ...draft, portfolio: draft.portfolio.map((item, i) => (i === index ? { ...item, description: toOneSentence(value) } : item)) });
   const addPortfolio = () => persist({ ...draft, portfolio: [...draft.portfolio, EMPTY_PORTFOLIO()] });
-  const movePortfolio = (index: number, direction: -1 | 1) =>
-    persist({ ...draft, portfolio: moveItem(draft.portfolio, index, index + direction) });
+  const movePortfolio = (index: number, direction: -1 | 1) => persist({ ...draft, portfolio: moveItem(draft.portfolio, index, index + direction) });
   const clearPortfolio = () => persist({ ...draft, portfolio: [] });
-  const removePortfolio = (index: number) =>
-    persist({ ...draft, portfolio: draft.portfolio.filter((_, i) => i !== index) });
+  const removePortfolio = (index: number) => persist({ ...draft, portfolio: draft.portfolio.filter((_, i) => i !== index) });
 
-  const updateGalleryImage = (index: number, value: string) => {
-    const gallery = draft.gallery.map((image, imageIndex) => (imageIndex === index ? value : image));
-    persist({ ...draft, gallery });
-  };
-
+  const updateGalleryImage = (index: number, value: string) => persist({ ...draft, gallery: draft.gallery.map((img, i) => (i === index ? value : img)) });
   const addGalleryImage = () => persist({ ...draft, gallery: [...draft.gallery, '/photo1.jpg'] });
-  const moveGalleryImage = (index: number, direction: -1 | 1) =>
-    persist({ ...draft, gallery: moveItem(draft.gallery, index, index + direction) });
+  const moveGalleryImage = (index: number, direction: -1 | 1) => persist({ ...draft, gallery: moveItem(draft.gallery, index, index + direction) });
   const clearGallery = () => persist({ ...draft, gallery: [] });
-  const removeGalleryImage = (index: number) =>
-    persist({ ...draft, gallery: draft.gallery.filter((_, i) => i !== index) });
+  const removeGalleryImage = (index: number) => persist({ ...draft, gallery: draft.gallery.filter((_, i) => i !== index) });
 
   const updateClientsIntro = (value: string) => persist({ ...draft, clientsIntro: value });
-
-  const updateClient = (index: number, value: string) => {
-    const clients = draft.clients.map((client, clientIndex) => (clientIndex === index ? value : client));
-    persist({ ...draft, clients });
-  };
-
+  const updateClient = (index: number, value: string) => persist({ ...draft, clients: draft.clients.map((c, i) => (i === index ? value : c)) });
   const addClient = () => persist({ ...draft, clients: [...draft.clients, 'New client category'] });
-  const moveClient = (index: number, direction: -1 | 1) =>
-    persist({ ...draft, clients: moveItem(draft.clients, index, index + direction) });
+  const moveClient = (index: number, direction: -1 | 1) => persist({ ...draft, clients: moveItem(draft.clients, index, index + direction) });
   const clearClients = () => persist({ ...draft, clients: [] });
   const removeClient = (index: number) => persist({ ...draft, clients: draft.clients.filter((_, i) => i !== index) });
-
-  const updateClientLogo = (index: number, value: string) => {
-    const clientLogos = draft.clientLogos.map((logo, logoIndex) => (logoIndex === index ? value : logo));
-    persist({ ...draft, clientLogos });
-  };
-
+  const updateClientLogo = (index: number, value: string) => persist({ ...draft, clientLogos: draft.clientLogos.map((l, i) => (i === index ? value : l)) });
   const addClientLogo = () => persist({ ...draft, clientLogos: [...draft.clientLogos, '/clients.jpg'] });
-  const moveClientLogo = (index: number, direction: -1 | 1) =>
-    persist({ ...draft, clientLogos: moveItem(draft.clientLogos, index, index + direction) });
+  const moveClientLogo = (index: number, direction: -1 | 1) => persist({ ...draft, clientLogos: moveItem(draft.clientLogos, index, index + direction) });
   const clearClientLogos = () => persist({ ...draft, clientLogos: [] });
-  const removeClientLogo = (index: number) =>
-    persist({ ...draft, clientLogos: draft.clientLogos.filter((_, i) => i !== index) });
+  const removeClientLogo = (index: number) => persist({ ...draft, clientLogos: draft.clientLogos.filter((_, i) => i !== index) });
 
-  const updateTeam = (index: number, field: 'name' | 'role' | 'bio' | 'photo' | 'position', value: string) => {
-    const team = draft.team.map((member, memberIndex) =>
-      memberIndex === index ? { ...member, [field]: value } : member,
-    );
-    persist({ ...draft, team });
-  };
-
+  const updateTeam = (index: number, field: 'name' | 'role' | 'bio' | 'photo' | 'position', value: string) => persist({ ...draft, team: draft.team.map((m, i) => (i === index ? { ...m, [field]: value } : m)) });
   const addTeamMember = () => persist({ ...draft, team: [...draft.team, EMPTY_TEAM()] });
-  const moveTeamMember = (index: number, direction: -1 | 1) =>
-    persist({ ...draft, team: moveItem(draft.team, index, index + direction) });
+  const moveTeamMember = (index: number, direction: -1 | 1) => persist({ ...draft, team: moveItem(draft.team, index, index + direction) });
   const clearTeam = () => persist({ ...draft, team: [] });
   const removeTeamMember = (index: number) => persist({ ...draft, team: draft.team.filter((_, i) => i !== index) });
 
-  const previewWebsite = () => {
-    window.open('/', '_blank', 'noopener,noreferrer');
-  };
+  const previewWebsite = () => window.open('/', '_blank', 'noopener,noreferrer');
+  const logout = () => { sessionStorage.removeItem('flat_admin_auth'); window.location.pathname = '/login'; };
 
   const getActiveItemCount = () => {
-    if (active === 'hero') return (draft.hero.images?.length ?? 0).toString();
-    if (active === 'about') return '1 block';
-    if (active === 'services') return `${draft.services.length} cards`;
+    if (active === 'hero') return `${getHeroImages().length} slides`;
+    if (active === 'about') return '1 section';
+    if (active === 'services') return `${draft.services.length} services`;
     if (active === 'portfolio') return `${draft.portfolio.length} items`;
     if (active === 'gallery') return `${draft.gallery.length} images`;
-    if (active === 'clients') return `${draft.clients.length + draft.clientLogos.length} entries`;
+    if (active === 'clients') return `${draft.clients.length} tags + ${draft.clientLogos.length} logos`;
     return `${draft.team.length} members`;
   };
 
-  const getActiveGuidance = () => {
-    if (active === 'hero') return 'Slides and captions';
-    if (active === 'about') return 'Edit the intro story';
-    if (active === 'services') return 'Arrange service cards';
-    if (active === 'portfolio') return 'Video and BTS media';
-    if (active === 'gallery') return 'Visual image library';
-    if (active === 'clients') return 'Client tags and logos';
-    return 'Team bios and photos';
-  };
-
-  const totalContentGroups =
-    draft.services.length +
-    draft.portfolio.length +
-    draft.gallery.length +
-    draft.clients.length +
-    draft.clientLogos.length +
-    draft.team.length;
-
-  const logout = () => {
-    sessionStorage.removeItem('flat_admin_auth');
-    window.location.pathname = '/login';
-  };
-
-  const sectionTitle =
-    active === 'hero'
-      ? 'Hero'
-      : active === 'about'
-        ? 'About'
-        : active === 'services'
-          ? 'Services'
-          : active === 'portfolio'
-            ? 'Portfolio'
-            : active === 'gallery'
-              ? 'Gallery'
-              : active === 'clients'
-                ? 'Clients'
-                : 'Team';
-
   return (
-    <div className="admin-shell">
-      <aside className="admin-sidebar">
-        <div className="admin-brand">
-          <img className="admin-brand-logo" src="/flat production.jpg.jpeg" alt="Flat Production Logo" />
-          <div>
-            <h1>Flat Productions</h1>
-            <p>Admin Panel</p>
-          </div>
+    <div className="admin-dashboard">
+      {/* Sidebar */}
+      <aside className="sidebar">
+        <div className="sidebar-header">
+          <h1>Flat Admin</h1>
         </div>
 
-        <nav className="admin-nav" aria-label="Admin sections">
+        <nav className="sidebar-nav">
           {(['hero', 'about', 'services', 'portfolio', 'gallery', 'clients', 'team'] as SectionKey[]).map((section) => (
             <button
               key={section}
-              type="button"
-              className={`admin-nav-item ${active === section ? 'active' : ''}`}
+              className={`nav-item ${active === section ? 'active' : ''}`}
               onClick={() => setActive(section)}
             >
-              {section}
+              <span className="nav-icon">
+                {section === 'hero' && <Icons.Dashboard />}
+                {section === 'about' && <Icons.Layout />}
+                {section === 'services' && <Icons.Briefcase />}
+                {section === 'portfolio' && <Icons.Layers />}
+                {section === 'gallery' && <Icons.Image />}
+                {section === 'clients' && <Icons.Users />}
+                {section === 'team' && <Icons.Users />}
+              </span>
+              <span className="nav-text">{section.charAt(0).toUpperCase() + section.slice(1)}</span>
             </button>
           ))}
         </nav>
 
-        <div className="admin-sidebar-footer">
-          <button type="button" className="admin-secondary-button" onClick={logout}>
-            Logout
+        <div className="sidebar-footer">
+          <button className="logout-btn" onClick={logout}>
+            <Icons.LogOut /> <span>Logout</span>
           </button>
-          <p>Live updates are saved instantly and reflected on website.</p>
         </div>
       </aside>
 
-      <main className="admin-main">
-        <header className="admin-topbar">
+      {/* Main Content */}
+      <main className="main-content">
+        <header className="topbar">
           <div>
-            <p className="admin-eyebrow">Editing {sectionTitle}</p>
-            <h2>Content editor</h2>
+            <h2>{active.charAt(0).toUpperCase() + active.slice(1)}</h2>
+            <p className="breadcrumbs">Dashboard / {active}</p>
           </div>
-          <div className="admin-topbar-actions">
-            <span className="admin-status">Auto-save on change</span>
-            <button type="button" className="admin-secondary-button" onClick={previewWebsite}>
-              Preview site
+          
+          <div className="topbar-actions">
+            <div className="status-badge">
+              <span className="status-dot"></span>
+              <span>All changes saved</span>
+            </div>
+            <button className="btn btn-ghost" onClick={resetActiveSection}>
+              <Icons.RotateCcw /> Reset
             </button>
-            <button type="button" className="admin-secondary-button" onClick={resetActiveSection}>
-              Reset section
+            <button className="btn btn-primary" onClick={previewWebsite}>
+              <Icons.ExternalLink /> Preview Site
             </button>
           </div>
         </header>
 
-        <section className="admin-dashboard-summary" aria-label="Dashboard summary">
-          <article className="admin-summary-card admin-summary-card--accent">
-            <span className="admin-summary-label">Active section</span>
-            <strong>{sectionTitle}</strong>
-            <p>{getActiveGuidance()}</p>
-          </article>
-          <article className="admin-summary-card">
-            <span className="admin-summary-label">Visible items</span>
-            <strong>{getActiveItemCount()}</strong>
-            <p>What you are editing right now</p>
-          </article>
-          <article className="admin-summary-card">
-            <span className="admin-summary-label">Total content</span>
-            <strong>{totalContentGroups}</strong>
-            <p>Stored cards, images, and profiles</p>
-          </article>
-        </section>
-
-        <section className="admin-panel">
+        <div className="content-area">
+          
+          {/* HERO SECTION */}
           {active === 'hero' && (
-            <div className="admin-section-stack">
-              <div className="admin-section-actions admin-section-actions--bare">
-                <p>Shape the headline and supporting caption that appear on the home hero.</p>
-                <div className="admin-section-actions-group">
-                  <button type="button" className="admin-secondary-button" onClick={clearHeroImages} disabled={!getHeroImages().length}>
-                    Clear all
-                  </button>
-                  <button type="button" className="admin-primary-button" onClick={addHeroImage}>
-                    + Add Image
-                  </button>
+            <div className="section">
+              <div className="section-header-row">
+                <h3>Hero Slider</h3>
+                <div className="actions">
+                  <button className="btn btn-danger" onClick={clearHeroImages} disabled={!getHeroImages().length}>Clear All</button>
+                  <button className="btn btn-primary" onClick={addHeroImage}>Add Slide</button>
                 </div>
               </div>
 
-              <div className="admin-form-grid admin-form-grid-hero">
-                <Field label="Hero title">
-                  <input
-                    type="text"
-                    value={draft.hero.title}
-                    onChange={(event) => updateHero('title', event.target.value)}
-                  />
-                </Field>
-                <Field label="Hero subtitle">
-                  <textarea
-                    rows={5}
-                    value={draft.hero.subtitle}
-                    onChange={(event) => updateHero('subtitle', event.target.value)}
-                  />
-                </Field>
+              <div className="card card--no-padding">
+                <div className="form-group-grid">
+                  <Field label="Headline">
+                    <input value={draft.hero.title} onChange={(e) => updateHero('title', e.target.value)} placeholder="Enter headline..." />
+                  </Field>
+                  <Field label="Subtitle">
+                    <textarea rows={3} value={draft.hero.subtitle} onChange={(e) => updateHero('subtitle', e.target.value)} placeholder="Enter subtitle..." />
+                  </Field>
+                </div>
               </div>
 
-              <div className="admin-list-grid admin-list-grid-wide">
-                  {getHeroImages().map((image, index) => (
-                    <article className="admin-item-card admin-list-item" key={`${image}-${index}`}>
-                      <div className="admin-item-header">
-                        <h3>Image {index + 1}</h3>
-                        <div className="admin-item-header-actions">
-                          <button
-                            type="button"
-                            className="admin-secondary-button"
-                            onClick={() => moveHeroImage(index, -1)}
-                            disabled={index === 0}
-                          >
-                            Up
-                          </button>
-                          <button
-                            type="button"
-                            className="admin-secondary-button"
-                            onClick={() => moveHeroImage(index, 1)}
-                            disabled={index === getHeroImages().length - 1}
-                          >
-                            Down
-                          </button>
-                          <button
-                            type="button"
-                            className="admin-danger-button"
-                            onClick={() => removeHeroImage(index)}
-                          >
-                            Remove
-                          </button>
+              <div className="items-container">
+                {getHeroImages().map((image, index) => (
+                  <div className="item-card item-card--horizontal" key={`${image}-${index}`}>
+                    <div className="item-image-preview">
+                      <img src={image} alt={`Slide ${index}`} />
+                    </div>
+                    <div className="item-details">
+                      <div className="item-header">
+                        <h4>Slide {index + 1}</h4>
+                        <div className="item-controls">
+                          <button className="icon-btn" onClick={() => moveHeroImage(index, -1)} disabled={index === 0} title="Move Up"><Icons.ChevronUp /></button>
+                          <button className="icon-btn" onClick={() => moveHeroImage(index, 1)} disabled={index === getHeroImages().length - 1} title="Move Down"><Icons.ChevronDown /></button>
+                          <button className="icon-btn icon-btn-danger" onClick={() => removeHeroImage(index)} title="Delete"><Icons.Trash /></button>
                         </div>
                       </div>
-
-                      <div className="admin-item-preview admin-preview-square">
-                        <img src={image} alt={`Hero bg ${index + 1}`} />
+                      <div className="form-group">
+                        <Field label="Image URL">
+                          <input value={image} onChange={(e) => updateHeroImage(index, e.target.value)} />
+                        </Field>
+                        <Field label="Caption">
+                          <input value={draft.hero.notes?.[index] ?? ''} onChange={(e) => updateHeroNote(index, e.target.value)} />
+                        </Field>
                       </div>
-
-                      <Field label="Image URL">
-                        <input
-                          type="text"
-                          value={image}
-                          onChange={(event) => updateHeroImage(index, event.target.value)}
-                          placeholder="/photo1.jpg"
-                        />
-                      </Field>
-
-                      <Field label="Slide caption">
-                        <input
-                          type="text"
-                          value={getHeroNotes()[index] ?? ''}
-                          onChange={(event) => updateHeroNote(index, event.target.value)}
-                          placeholder="Short caption for this image"
-                        />
-                      </Field>
-
-                      <SuggestionRow
-                        label="Image helpers"
-                        values={IMAGE_SUGGESTIONS}
-                        onPick={(value) => updateHeroImage(index, value)}
-                      />
-                    </article>
-                  ))}
-              </div>
-            </div>
-          )}
-
-          {active === 'about' && (
-            <div className="admin-form-grid">
-              <Field label="About heading">
-                <input
-                  type="text"
-                  value={draft.about.heading}
-                  onChange={(event) => updateAbout('heading', event.target.value)}
-                />
-              </Field>
-              <Field label="About body">
-                <textarea
-                  rows={7}
-                  value={draft.about.body}
-                  onChange={(event) => updateAbout('body', event.target.value)}
-                />
-              </Field>
-            </div>
-          )}
-
-          {active === 'services' && (
-            <div className="admin-section-stack">
-              <div className="admin-section-actions admin-section-actions--bare">
-                <p>All original home services are preloaded. You can edit, reorder, remove, or add more.</p>
-                <div className="admin-section-actions-group">
-                  <button type="button" className="admin-secondary-button" onClick={clearServices}>
-                    Clear all
-                  </button>
-                  <button type="button" className="admin-primary-button" onClick={addService}>
-                    + Add Service
-                  </button>
-                </div>
-              </div>
-
-              {draft.services.map((service, index) => (
-                <article className="admin-item-card" key={service.id}>
-                  <div className="admin-item-header">
-                    <h3>Service {index + 1}</h3>
-                    <div className="admin-item-header-actions">
-                      <button
-                        type="button"
-                        className="admin-secondary-button"
-                        onClick={() => moveService(index, -1)}
-                        disabled={index === 0}
-                      >
-                        Up
-                      </button>
-                      <button
-                        type="button"
-                        className="admin-secondary-button"
-                        onClick={() => moveService(index, 1)}
-                        disabled={index === draft.services.length - 1}
-                      >
-                        Down
-                      </button>
-                      <button type="button" className="admin-danger-button" onClick={() => removeService(index)}>
-                        Remove
-                      </button>
+                      <SuggestionRow values={IMAGE_SUGGESTIONS} onPick={(val) => updateHeroImage(index, val)} />
                     </div>
                   </div>
-                  <div className="admin-item-layout">
-                    <div className="admin-item-preview admin-preview-tall">
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ABOUT SECTION */}
+          {active === 'about' && (
+            <div className="section">
+              <div className="section-header-row">
+                <h3>About Section</h3>
+              </div>
+              <div className="card">
+                <div className="form-group">
+                  <Field label="Heading">
+                    <input value={draft.about.heading} onChange={(e) => updateAbout('heading', e.target.value)} />
+                  </Field>
+                  <Field label="Body Content">
+                    <textarea rows={10} value={draft.about.body} onChange={(e) => updateAbout('body', e.target.value)} />
+                  </Field>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* SERVICES SECTION */}
+          {active === 'services' && (
+            <div className="section">
+              <div className="section-header-row">
+                <h3>Services</h3>
+                <div className="actions">
+                  <button className="btn btn-danger" onClick={clearServices}>Clear All</button>
+                  <button className="btn btn-primary" onClick={addService}>Add Service</button>
+                </div>
+              </div>
+              <div className="items-container">
+                {draft.services.map((service, index) => (
+                  <div className="item-card" key={service.id}>
+                    <div className="item-image-preview">
                       <img src={service.image ?? '/photo1.jpg'} alt={service.title} />
                     </div>
-                    <div className="admin-item-fields">
-                      <div className="admin-form-grid admin-form-grid-3">
-                        <Field label="Title">
-                          <input
-                            type="text"
-                            value={service.title}
-                            onChange={(event) => updateService(index, 'title', event.target.value)}
-                          />
-                        </Field>
-                        <Field label="Image URL">
-                          <input
-                            type="text"
-                            value={service.image ?? ''}
-                            onChange={(event) => updateService(index, 'image', event.target.value)}
-                            placeholder="/photo1.jpg"
-                          />
-                        </Field>
-                        <Field label="Short caption" className="field-span-2">
-                          <textarea
-                            rows={4}
-                            value={service.description}
-                            onChange={(event) => updateService(index, 'description', event.target.value)}
-                            placeholder="Two or three words"
-                          />
-                        </Field>
+                    <div className="item-details">
+                      <div className="item-header">
+                        <h4>Service {index + 1}</h4>
+                        <div className="item-controls">
+                          <button className="icon-btn" onClick={() => moveService(index, -1)} disabled={index === 0}><Icons.ChevronUp /></button>
+                          <button className="icon-btn" onClick={() => moveService(index, 1)} disabled={index === draft.services.length - 1}><Icons.ChevronDown /></button>
+                          <button className="icon-btn icon-btn-danger" onClick={() => removeService(index)}><Icons.Trash /></button>
+                        </div>
                       </div>
-                      <SuggestionRow
-                        label="Image helpers"
-                        values={IMAGE_SUGGESTIONS}
-                        onPick={(value) => updateService(index, 'image', value)}
-                      />
+                      <div className="form-group-grid">
+                        <Field label="Title"><input value={service.title} onChange={(e) => updateService(index, 'title', e.target.value)} /></Field>
+                        <Field label="Image URL"><input value={service.image ?? ''} onChange={(e) => updateService(index, 'image', e.target.value)} /></Field>
+                        <Field label="Description" className="col-span-2"><textarea rows={3} value={service.description} onChange={(e) => updateService(index, 'description', e.target.value)} /></Field>
+                      </div>
+                      <SuggestionRow values={IMAGE_SUGGESTIONS} onPick={(val) => updateService(index, 'image', val)} />
                     </div>
                   </div>
-                </article>
-              ))}
+                ))}
+              </div>
             </div>
           )}
 
+          {/* PORTFOLIO SECTION */}
           {active === 'portfolio' && (
-            <div className="admin-section-stack">
-              <div className="admin-section-actions">
-                <p>Portfolio cards support image, video, and BTS links. Add both to make each project card richer.</p>
-                <div className="admin-section-actions-group">
-                  <button type="button" className="admin-secondary-button" onClick={clearPortfolio}>
-                    Clear all
-                  </button>
-                  <button type="button" className="admin-primary-button" onClick={addPortfolio}>
-                    + Add Portfolio Item
-                  </button>
+            <div className="section">
+              <div className="section-header-row">
+                <h3>Portfolio</h3>
+                <div className="actions">
+                  <button className="btn btn-danger" onClick={clearPortfolio}>Clear All</button>
+                  <button className="btn btn-primary" onClick={addPortfolio}>Add Project</button>
                 </div>
               </div>
-
-              {draft.portfolio.map((item, index) => (
-                <article className="admin-item-card" key={item.id}>
-                  <div className="admin-item-header">
-                    <h3>Portfolio Item {index + 1}</h3>
-                    <div className="admin-item-header-actions">
-                      <button
-                        type="button"
-                        className="admin-secondary-button"
-                        onClick={() => movePortfolio(index, -1)}
-                        disabled={index === 0}
-                      >
-                        Up
-                      </button>
-                      <button
-                        type="button"
-                        className="admin-secondary-button"
-                        onClick={() => movePortfolio(index, 1)}
-                        disabled={index === draft.portfolio.length - 1}
-                      >
-                        Down
-                      </button>
-                      <button type="button" className="admin-danger-button" onClick={() => removePortfolio(index)}>
-                        Remove
-                      </button>
-                    </div>
-                  </div>
-                  <div className="admin-item-layout">
-                    <div className="admin-item-preview">
+              <div className="items-container">
+                {draft.portfolio.map((item, index) => (
+                  <div className="item-card item-card--horizontal" key={item.id}>
+                    <div className="item-image-preview">
                       <img src={item.image ?? '/photo1.jpg'} alt={item.title} />
                     </div>
-                    <div className="admin-item-fields">
-                      <div className="admin-form-grid admin-form-grid-2">
-                        <Field label="Title">
-                          <input
-                            type="text"
-                            value={item.title}
-                            onChange={(event) => updatePortfolio(index, 'title', event.target.value)}
-                          />
-                        </Field>
-                        <Field label="Image URL">
-                          <input
-                            type="text"
-                            value={item.image ?? ''}
-                            onChange={(event) => updatePortfolio(index, 'image', event.target.value)}
-                            placeholder="/photo1.jpg"
-                          />
-                        </Field>
-                        <Field label="YouTube video URL">
-                          <input
-                            type="text"
-                            value={item.videoUrl ?? ''}
-                            onChange={(event) => updatePortfolioVideo(index, event.target.value)}
-                            placeholder="https://www.youtube.com/watch?v=..."
-                          />
-                        </Field>
-                        <Field label="Behind the scenes URL">
-                          <input
-                            type="text"
-                            value={item.btsUrl ?? ''}
-                            onChange={(event) => updatePortfolioBts(index, event.target.value)}
-                            placeholder="https://youtu.be/..."
-                          />
-                        </Field>
-                        <Field label="Short description" className="field-span-2">
-                          <textarea
-                            rows={4}
-                            value={item.description ?? ''}
-                            onChange={(event) => updatePortfolioDescription(index, event.target.value)}
-                            placeholder="Describe video or project."
-                          />
-                        </Field>
+                    <div className="item-details">
+                      <div className="item-header">
+                        <h4>Project {index + 1}</h4>
+                        <div className="item-controls">
+                          <button className="icon-btn" onClick={() => movePortfolio(index, -1)} disabled={index === 0}><Icons.ChevronUp /></button>
+                          <button className="icon-btn" onClick={() => movePortfolio(index, 1)} disabled={index === draft.portfolio.length - 1}><Icons.ChevronDown /></button>
+                          <button className="icon-btn icon-btn-danger" onClick={() => removePortfolio(index)}><Icons.Trash /></button>
+                        </div>
                       </div>
-                      <SuggestionRow
-                        label="Image helpers"
-                        values={IMAGE_SUGGESTIONS}
-                        onPick={(value) => updatePortfolio(index, 'image', value)}
-                      />
-                      <SuggestionRow
-                        label="Video links"
-                        values={VIDEO_LINK_SUGGESTIONS}
-                        onPick={(value) => updatePortfolioVideo(index, value)}
-                      />
-                      <SuggestionRow
-                        label="BTS links"
-                        values={BTS_LINK_SUGGESTIONS}
-                        onPick={(value) => updatePortfolioBts(index, value)}
-                      />
+                      <div className="form-group-grid">
+                        <Field label="Title"><input value={item.title} onChange={(e) => updatePortfolio(index, 'title', e.target.value)} /></Field>
+                        <Field label="Image URL"><input value={item.image ?? ''} onChange={(e) => updatePortfolio(index, 'image', e.target.value)} /></Field>
+                        <Field label="Video URL"><input value={item.videoUrl ?? ''} onChange={(e) => updatePortfolioVideo(index, e.target.value)} placeholder="YouTube Link" /></Field>
+                        <Field label="BTS URL"><input value={item.btsUrl ?? ''} onChange={(e) => updatePortfolioBts(index, e.target.value)} placeholder="YouTube Link" /></Field>
+                        <Field label="Description" className="col-span-2"><textarea rows={2} value={item.description ?? ''} onChange={(e) => updatePortfolioDescription(index, e.target.value)} /></Field>
+                      </div>
+                      <SuggestionRow label="Images" values={IMAGE_SUGGESTIONS} onPick={(val) => updatePortfolio(index, 'image', val)} />
+                      <SuggestionRow label="Videos" values={VIDEO_LINK_SUGGESTIONS} onPick={(val) => updatePortfolioVideo(index, val)} />
+                      <SuggestionRow label="BTS" values={BTS_LINK_SUGGESTIONS} onPick={(val) => updatePortfolioBts(index, val)} />
                     </div>
                   </div>
-                </article>
-              ))}
+                ))}
+              </div>
             </div>
           )}
 
+          {/* GALLERY SECTION */}
           {active === 'gallery' && (
-            <div className="admin-section-stack">
-              <div className="admin-section-actions">
-                <p>Gallery images are used on gallery page.</p>
-                <div className="admin-section-actions-group">
-                  <button type="button" className="admin-secondary-button" onClick={clearGallery}>
-                    Clear all
-                  </button>
-                  <button type="button" className="admin-primary-button" onClick={addGalleryImage}>
-                    + Add Gallery Image
-                  </button>
+            <div className="section">
+              <div className="section-header-row">
+                <h3>Gallery</h3>
+                <div className="actions">
+                  <button className="btn btn-danger" onClick={clearGallery}>Clear All</button>
+                  <button className="btn btn-primary" onClick={addGalleryImage}>Add Image</button>
                 </div>
               </div>
-
-              <div className="admin-list-grid">
+              <div className="grid-container">
                 {draft.gallery.map((image, index) => (
-                  <article className="admin-item-card admin-list-item" key={`${image}-${index}`}>
-                    <div className="admin-item-header">
-                      <h3>Image {index + 1}</h3>
-                      <div className="admin-item-header-actions">
-                        <button
-                          type="button"
-                          className="admin-secondary-button"
-                          onClick={() => moveGalleryImage(index, -1)}
-                          disabled={index === 0}
-                        >
-                          Up
-                        </button>
-                        <button
-                          type="button"
-                          className="admin-secondary-button"
-                          onClick={() => moveGalleryImage(index, 1)}
-                          disabled={index === draft.gallery.length - 1}
-                        >
-                          Down
-                        </button>
-                        <button type="button" className="admin-danger-button" onClick={() => removeGalleryImage(index)}>
-                          Remove
-                        </button>
+                  <div className="grid-card" key={`${image}-${index}`}>
+                    <div className="grid-preview">
+                      <img src={image} alt={`Gallery ${index}`} />
+                      <div className="grid-overlay">
+                         <button className="icon-btn icon-btn-light" onClick={() => moveGalleryImage(index, -1)} disabled={index === 0}><Icons.ChevronUp /></button>
+                         <button className="icon-btn icon-btn-light" onClick={() => moveGalleryImage(index, 1)} disabled={index === draft.gallery.length - 1}><Icons.ChevronDown /></button>
+                         <button className="icon-btn icon-btn-danger" onClick={() => removeGalleryImage(index)}><Icons.Trash /></button>
                       </div>
                     </div>
-                    <div className="admin-item-preview admin-preview-square">
-                      <img src={image} alt={`Gallery image ${index + 1}`} />
-                    </div>
-                    <Field label="Image URL">
-                      <input
-                        type="text"
-                        value={image}
-                        onChange={(event) => updateGalleryImage(index, event.target.value)}
-                        placeholder="/photo1.jpg"
-                      />
-                    </Field>
-                    <SuggestionRow
-                      label="Image helpers"
-                      values={IMAGE_SUGGESTIONS}
-                      onPick={(value) => updateGalleryImage(index, value)}
-                    />
-                  </article>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {active === 'clients' && (
-            <div className="admin-section-stack">
-              <div className="admin-form-grid">
-                <Field label="Clients intro text">
-                  <textarea
-                    rows={4}
-                    value={draft.clientsIntro}
-                    onChange={(event) => updateClientsIntro(event.target.value)}
-                  />
-                </Field>
-              </div>
-
-              <div className="admin-section-actions">
-                <p>Client category tags for pills section.</p>
-                <div className="admin-section-actions-group">
-                  <button type="button" className="admin-secondary-button" onClick={clearClients}>
-                    Clear tags
-                  </button>
-                  <button type="button" className="admin-primary-button" onClick={addClient}>
-                    + Add Client Tag
-                  </button>
-                </div>
-              </div>
-
-              <div className="admin-list-grid admin-list-grid-wide">
-                {draft.clients.map((client, index) => (
-                  <article className="admin-item-card admin-list-item" key={`${client}-${index}`}>
-                    <div className="admin-item-header">
-                      <h3>Tag {index + 1}</h3>
-                      <div className="admin-item-header-actions">
-                        <button
-                          type="button"
-                          className="admin-secondary-button"
-                          onClick={() => moveClient(index, -1)}
-                          disabled={index === 0}
-                        >
-                          Up
-                        </button>
-                        <button
-                          type="button"
-                          className="admin-secondary-button"
-                          onClick={() => moveClient(index, 1)}
-                          disabled={index === draft.clients.length - 1}
-                        >
-                          Down
-                        </button>
-                        <button type="button" className="admin-danger-button" onClick={() => removeClient(index)}>
-                          Remove
-                        </button>
-                      </div>
-                    </div>
-                    <Field label="Label">
-                      <input
-                        type="text"
-                        value={client}
-                        onChange={(event) => updateClient(index, event.target.value)}
-                        placeholder="Corporate"
-                      />
-                    </Field>
-                  </article>
-                ))}
-              </div>
-
-              <div className="admin-section-actions">
-                <p>Add and reorder client logo image URLs.</p>
-                <div className="admin-section-actions-group">
-                  <button type="button" className="admin-secondary-button" onClick={clearClientLogos}>
-                    Clear logos
-                  </button>
-                  <button type="button" className="admin-primary-button" onClick={addClientLogo}>
-                    + Add Client Logo
-                  </button>
-                </div>
-              </div>
-
-              <div className="admin-list-grid">
-                {draft.clientLogos.map((logo, index) => (
-                  <article className="admin-item-card admin-list-item" key={`${logo}-${index}`}>
-                    <div className="admin-item-header">
-                      <h3>Logo {index + 1}</h3>
-                      <div className="admin-item-header-actions">
-                        <button
-                          type="button"
-                          className="admin-secondary-button"
-                          onClick={() => moveClientLogo(index, -1)}
-                          disabled={index === 0}
-                        >
-                          Up
-                        </button>
-                        <button
-                          type="button"
-                          className="admin-secondary-button"
-                          onClick={() => moveClientLogo(index, 1)}
-                          disabled={index === draft.clientLogos.length - 1}
-                        >
-                          Down
-                        </button>
-                        <button type="button" className="admin-danger-button" onClick={() => removeClientLogo(index)}>
-                          Remove
-                        </button>
-                      </div>
-                    </div>
-                    <div className="admin-item-preview admin-preview-square">
-                      <img src={logo} alt={`Client logo ${index + 1}`} />
-                    </div>
-                    <Field label="Logo URL">
-                      <input
-                        type="text"
-                        value={logo}
-                        onChange={(event) => updateClientLogo(index, event.target.value)}
-                        placeholder="/clients.jpg"
-                      />
-                    </Field>
-                    <SuggestionRow
-                      label="Image helpers"
-                      values={IMAGE_SUGGESTIONS}
-                      onPick={(value) => updateClientLogo(index, value)}
-                    />
-                  </article>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {active === 'team' && (
-            <div className="admin-section-stack">
-              <div className="admin-section-actions">
-                <p>Add team members with a name, role, bio, and photo URL.</p>
-                <div className="admin-section-actions-group">
-                  <button type="button" className="admin-secondary-button" onClick={clearTeam}>
-                    Clear all
-                  </button>
-                  <button type="button" className="admin-primary-button" onClick={addTeamMember}>
-                    + Add Team Member
-                  </button>
-                </div>
-              </div>
-
-              {draft.team.map((member, index) => (
-                <article className="admin-item-card" key={member.id}>
-                  <div className="admin-item-header">
-                    <h3>Team Member {index + 1}</h3>
-                    <div className="admin-item-header-actions">
-                      <button
-                        type="button"
-                        className="admin-secondary-button"
-                        onClick={() => moveTeamMember(index, -1)}
-                        disabled={index === 0}
-                      >
-                        Up
-                      </button>
-                      <button
-                        type="button"
-                        className="admin-secondary-button"
-                        onClick={() => moveTeamMember(index, 1)}
-                        disabled={index === draft.team.length - 1}
-                      >
-                        Down
-                      </button>
-                      <button type="button" className="admin-danger-button" onClick={() => removeTeamMember(index)}>
-                        Remove
-                      </button>
+                    <div className="grid-details">
+                      <Field label="URL" compact><input value={image} onChange={(e) => updateGalleryImage(index, e.target.value)} /></Field>
+                      <SuggestionRow values={IMAGE_SUGGESTIONS} onPick={(val) => updateGalleryImage(index, val)} />
                     </div>
                   </div>
-                  <div className="admin-item-layout">
-                    <div className="admin-item-preview admin-preview-tall">
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* CLIENTS SECTION */}
+          {active === 'clients' && (
+            <div className="section">
+              <div className="section-header-row"><h3>Clients</h3></div>
+              
+              <div className="subsection">
+                <h4>Intro Text</h4>
+                <div className="card">
+                  <Field label="Introduction">
+                    <textarea rows={2} value={draft.clientsIntro} onChange={(e) => updateClientsIntro(e.target.value)} />
+                  </Field>
+                </div>
+              </div>
+
+              <div className="subsection">
+                <div className="subsection-header">
+                  <h4>Client Tags</h4>
+                  <div className="actions">
+                    <button className="btn-sm btn-danger" onClick={clearClients}>Clear</button>
+                    <button className="btn-sm btn-primary" onClick={addClient}>Add Tag</button>
+                  </div>
+                </div>
+                <div className="tags-list">
+                  {draft.clients.map((client, index) => (
+                    <div key={index} className="tag-row">
+                      <div className="tag-input-wrapper">
+                        <Field label={`Tag ${index+1}`} compact>
+                          <div className="input-group">
+                            <input value={client} onChange={(e) => updateClient(index, e.target.value)} />
+                            <button className="icon-btn icon-btn-danger" onClick={() => removeClient(index)}><Icons.Trash /></button>
+                          </div>
+                        </Field>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="subsection">
+                <div className="subsection-header">
+                  <h4>Client Logos</h4>
+                  <div className="actions">
+                    <button className="btn-sm btn-danger" onClick={clearClientLogos}>Clear</button>
+                    <button className="btn-sm btn-primary" onClick={addClientLogo}>Add Logo</button>
+                  </div>
+                </div>
+                <div className="grid-container">
+                  {draft.clientLogos.map((logo, index) => (
+                    <div className="grid-card" key={`${logo}-${index}`}>
+                      <div className="grid-preview">
+                        <img src={logo} alt={`Logo ${index}`} />
+                        <div className="grid-overlay">
+                          <button className="icon-btn icon-btn-light" onClick={() => moveClientLogo(index, -1)} disabled={index === 0}><Icons.ChevronUp /></button>
+                          <button className="icon-btn icon-btn-light" onClick={() => moveClientLogo(index, 1)} disabled={index === draft.clientLogos.length - 1}><Icons.ChevronDown /></button>
+                          <button className="icon-btn icon-btn-danger" onClick={() => removeClientLogo(index)}><Icons.Trash /></button>
+                        </div>
+                      </div>
+                      <div className="grid-details">
+                        <Field label="URL" compact><input value={logo} onChange={(e) => updateClientLogo(index, e.target.value)} /></Field>
+                        <SuggestionRow values={IMAGE_SUGGESTIONS} onPick={(val) => updateClientLogo(index, val)} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TEAM SECTION */}
+          {active === 'team' && (
+            <div className="section">
+              <div className="section-header-row">
+                <h3>Team</h3>
+                <div className="actions">
+                  <button className="btn btn-danger" onClick={clearTeam}>Clear All</button>
+                  <button className="btn btn-primary" onClick={addTeamMember}>Add Member</button>
+                </div>
+              </div>
+              <div className="items-container">
+                {draft.team.map((member, index) => (
+                  <div className="item-card" key={member.id}>
+                    <div className="item-image-preview">
                       <img src={member.photo ?? '/kadaff.jpg'} alt={member.name} />
                     </div>
-                    <div className="admin-item-fields">
-                      <div className="admin-form-grid admin-form-grid-3">
-                        <Field label="Name">
-                          <input
-                            type="text"
-                            value={member.name}
-                            onChange={(event) => updateTeam(index, 'name', event.target.value)}
-                          />
-                        </Field>
-                        <Field label="Role">
-                          <input
-                            type="text"
-                            value={member.role}
-                            onChange={(event) => updateTeam(index, 'role', event.target.value)}
-                          />
-                        </Field>
-                        <Field label="Bio" className="field-span-2">
-                          <textarea
-                            rows={4}
-                            value={member.bio ?? ''}
-                            onChange={(event) => updateTeam(index, 'bio', event.target.value)}
-                            placeholder="Short paragraph about this team member"
-                          />
-                        </Field>
-                        <Field label="Photo URL">
-                          <input
-                            type="text"
-                            value={member.photo ?? ''}
-                            onChange={(event) => updateTeam(index, 'photo', event.target.value)}
-                            placeholder="/kadaff.jpg"
-                          />
-                        </Field>
+                    <div className="item-details">
+                      <div className="item-header">
+                        <h4>Member {index + 1}</h4>
+                        <div className="item-controls">
+                          <button className="icon-btn" onClick={() => moveTeamMember(index, -1)} disabled={index === 0}><Icons.ChevronUp /></button>
+                          <button className="icon-btn" onClick={() => moveTeamMember(index, 1)} disabled={index === draft.team.length - 1}><Icons.ChevronDown /></button>
+                          <button className="icon-btn icon-btn-danger" onClick={() => removeTeamMember(index)}><Icons.Trash /></button>
+                        </div>
                       </div>
-                      <SuggestionRow
-                        label="Image helpers"
-                        values={IMAGE_SUGGESTIONS}
-                        onPick={(value) => updateTeam(index, 'photo', value)}
-                      />
+                      <div className="form-group-grid">
+                        <Field label="Name"><input value={member.name} onChange={(e) => updateTeam(index, 'name', e.target.value)} /></Field>
+                        <Field label="Role"><input value={member.role} onChange={(e) => updateTeam(index, 'role', e.target.value)} /></Field>
+                        <Field label="Photo URL"><input value={member.photo ?? ''} onChange={(e) => updateTeam(index, 'photo', e.target.value)} /></Field>
+                        <Field label="Bio" className="col-span-2"><textarea rows={2} value={member.bio ?? ''} onChange={(e) => updateTeam(index, 'bio', e.target.value)} /></Field>
+                      </div>
+                      <SuggestionRow values={IMAGE_SUGGESTIONS} onPick={(val) => updateTeam(index, 'photo', val)} />
                     </div>
                   </div>
-                </article>
-              ))}
+                ))}
+              </div>
             </div>
           )}
-        </section>
+        </div>
       </main>
     </div>
   );
 };
 
-function Field({ label, children, className }: { label: string; children: React.ReactNode; className?: string }) {
-  return (
-    <label className={`admin-field ${className ?? ''}`.trim()}>
-      <span>{label}</span>
-      {children}
-    </label>
-  );
-}
+const Field = ({ label, children, className, compact }: { label: string; children: React.ReactNode; className?: string; compact?: boolean }) => (
+  <div className={`field ${compact ? 'field-compact' : ''} ${className ?? ''}`.trim()}>
+    <label>{label}</label>
+    {children}
+  </div>
+);
 
-function SuggestionRow({
-  label,
-  values,
-  onPick,
-}: {
-  label: string;
-  values: string[];
-  onPick: (value: string) => void;
-}) {
-  return (
-    <div className="admin-suggestions">
-      <span>{label}</span>
-      <div className="admin-suggestions-list">
-        {values.map((value) => (
-          <button key={value} type="button" className="admin-suggestion-button" onClick={() => onPick(value)}>
-            {value}
-          </button>
-        ))}
-      </div>
+const SuggestionRow = ({ label, values, onPick }: { label?: string; values: string[]; onPick: (value: string) => void }) => (
+  <div className="suggestions">
+    {label && <span className="suggestions-label">{label}</span>}
+    <div className="chips">
+      {values.map((value) => (
+        <button key={value} type="button" className="chip" onClick={() => onPick(value)} title={value}>
+          {value.length > 20 ? `...${value.slice(-15)}` : value}
+        </button>
+      ))}
     </div>
-  );
-}
+  </div>
+);
 
 export default AdminDashboard;
