@@ -3,7 +3,7 @@ type SiteContent = {
   about: { heading: string; body: string };
   services: Array<{ id: string; title: string; description: string; image?: string }>;
   // UPDATED: Added 'link' property here to match your Gallery component usage
-  portfolio: Array<{ id: string; title: string; image?: string; videoUrl?: string; btsUrl?: string; description?: string; link?: string }>;
+  portfolio: Array<{ id: string; title: string; image?: string; videoUrl?: string; btsUrl?: string; description?: string; link?: string; serviceId?: string; category?: string }>;
   clientsIntro: string;
   clients: string[];
   clientLogos: string[];
