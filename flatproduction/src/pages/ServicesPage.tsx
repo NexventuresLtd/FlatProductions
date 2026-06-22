@@ -55,10 +55,14 @@ const ServicesPage: React.FC = () => {
     const [services, setServices] = useState<ServiceItem[]>(() =>
         buildServices(contentStore.read().services)
     );
+    const [heroData, setHeroData] = useState(() => contentStore.read().pageHeroes.services);
     const [modal, setModal] = useState<ServiceItem | null>(null);
 
     useEffect(() => {
-        contentStore.onUpdate((c: any) => setServices(buildServices(c.services ?? [])));
+        contentStore.onUpdate((c: any) => {
+            setServices(buildServices(c.services ?? []));
+            if (c.pageHeroes?.services) setHeroData(c.pageHeroes.services);
+        });
     }, []);
 
     useEffect(() => {
@@ -76,14 +80,15 @@ const ServicesPage: React.FC = () => {
     return (
         <div className="bg-[#0b0d10] text-white min-h-screen">
             {/* ── Hero ── */}
-            <section className="relative min-h-[78vh] flex items-center justify-center overflow-hidden bg-[linear-gradient(160deg,rgba(5,7,10,0.72)_0%,rgba(5,7,10,0.92)_100%),url('/live2.jpeg')_center_18%/cover_no-repeat] border-b border-white/[0.08]">
+            <section className="relative min-h-[78vh] flex items-center justify-center overflow-hidden border-b border-white/[0.08]"
+                style={{ background: `linear-gradient(160deg,rgba(5,7,10,0.72) 0%,rgba(5,7,10,0.92) 100%),url('${heroData.image || '/live2.jpeg'}') center 18%/cover no-repeat` }}>
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(229,231,235,0.18)_0%,transparent_42%)] pointer-events-none" />
                 <div className="absolute inset-x-0 top-0 z-[3]"><Header /></div>
                 <div className="relative z-[2] max-w-[1280px] w-full mx-auto px-5 pt-[140px] pb-[80px]">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-7 items-center">
                         <div className="py-7">
                             <h1 className="text-white font-bold leading-[0.98] tracking-[-0.04em] text-[clamp(2.8rem,7vw,5.6rem)] mb-[18px]">
-                                Creative services built to help your brand stand out.
+                                {heroData.title || 'Creative services built to help your brand stand out.'}
                             </h1>
                             <p className="text-white/80 text-[1.05rem] max-w-[760px]">
                                 Visual production, digital design, live coverage, and storytelling — with a focused team and a polished finish.

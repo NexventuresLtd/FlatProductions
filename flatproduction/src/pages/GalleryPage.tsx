@@ -60,13 +60,15 @@ const GalleryPage: React.FC = () => {
     const [galleryItems, setGalleryItems] = useState<GalleryItem[]>(() =>
         buildItems(contentStore.read().gallery.length ? contentStore.read().gallery : defaultImages)
     );
+    const [heroData, setHeroData] = useState(() => contentStore.read().pageHeroes.gallery);
     const [activeCategory, setActiveCategory] = useState('All');
     const [lightbox, setLightbox] = useState<number | null>(null);
 
     useEffect(() => {
-        contentStore.onUpdate((c: any) =>
-            setGalleryItems(buildItems(c.gallery?.length ? c.gallery : defaultImages))
-        );
+        contentStore.onUpdate((c: any) => {
+            setGalleryItems(buildItems(c.gallery?.length ? c.gallery : defaultImages));
+            if (c.pageHeroes?.gallery) setHeroData(c.pageHeroes.gallery);
+        });
     }, []);
 
     const displayedItems = useMemo(() => {
@@ -103,14 +105,14 @@ const GalleryPage: React.FC = () => {
     return (
         <div className="flex flex-col min-h-screen bg-[#e5e7eb]">
             <section className="relative h-[40vh] min-h-[260px] bg-[#111] flex items-end pb-10 overflow-hidden">
-                <div className="absolute inset-0 bg-[url('/photo12.jpg')] bg-cover bg-center opacity-40" />
+                <div className="absolute inset-0 bg-cover bg-center opacity-40" style={{ backgroundImage: `url('${heroData.image || '/photo12.jpg'}')` }} />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#111] via-black/50 to-transparent" />
                 <div className="absolute top-0 left-0 right-0 z-[10]">
                     <Header />
                 </div>
                 <div className="relative z-[2] px-6 md:px-10">
                     <p className="text-white/60 text-xs font-bold uppercase tracking-[0.2em] mb-2">Our Work</p>
-                    <p className="text-white font-bold text-[clamp(2rem,5vw,3.5rem)] tracking-tight">Captured Moments</p>
+                    <p className="text-white font-bold text-[clamp(2rem,5vw,3.5rem)] tracking-tight">{heroData.title || 'Captured Moments'}</p>
                 </div>
             </section>
 

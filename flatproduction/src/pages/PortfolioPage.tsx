@@ -55,11 +55,15 @@ type ImageModal = { src: string; label: string; category: string };
 const PortfolioPage: React.FC = () => {
     const [activeCategory, setActiveCategory] = useState('All');
     const [storedPortfolio, setStoredPortfolio] = useState(() => contentStore.read().portfolio);
+    const [heroData, setHeroData] = useState(() => contentStore.read().pageHeroes.portfolio);
     const [videoModal, setVideoModal] = useState<VideoModal | null>(null);
     const [imageModal, setImageModal] = useState<ImageModal | null>(null);
 
     useEffect(() => {
-        contentStore.onUpdate((c: any) => setStoredPortfolio(c.portfolio ?? []));
+        contentStore.onUpdate((c: any) => {
+            setStoredPortfolio(c.portfolio ?? []);
+            if (c.pageHeroes?.portfolio) setHeroData(c.pageHeroes.portfolio);
+        });
     }, []);
 
     // Lock body scroll when any modal is open
@@ -113,7 +117,7 @@ const PortfolioPage: React.FC = () => {
 
             {/* Hero with background image */}
             <section className="relative min-h-[58vh] flex items-end pb-14 bg-black overflow-hidden">
-                <div className="absolute inset-0 bg-[url('/photo14.jpg')] bg-cover bg-[center_30%] opacity-45" aria-hidden="true" />
+                <div className="absolute inset-0 bg-cover bg-[center_30%] opacity-45" style={{ backgroundImage: `url('${heroData.image || '/photo14.jpg'}')` }} aria-hidden="true" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-transparent" aria-hidden="true" />
                 {/* Side accent images */}
                 <div className="absolute right-0 top-0 bottom-0 w-[38%] hidden lg:block overflow-hidden">
@@ -132,7 +136,7 @@ const PortfolioPage: React.FC = () => {
                 <div className="relative z-[2] px-5 md:px-10 max-w-[760px]">
                     <p className="inline-block bg-white text-[#111] text-[0.7rem] font-bold uppercase tracking-[0.2em] px-3.5 py-1.5 rounded-full mb-5">Portfolio</p>
                     <h1 className="text-white font-bold text-[clamp(2rem,5vw,3.4rem)] leading-[1.08] tracking-tight mb-4">
-                        Selected work across our creative services
+                        {heroData.title || 'Selected work across our creative services'}
                     </h1>
                     <p className="text-white/60 text-base leading-relaxed max-w-[520px]">
                         Choose a category to explore the matching visuals, or browse the full collection.

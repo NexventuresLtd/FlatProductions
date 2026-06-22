@@ -1,9 +1,15 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import { contentStore } from '../store/contentStore';
 
 const ContactPage: React.FC = () => {
     const [formStatus, setFormStatus] = useState<'idle' | 'submitting' | 'success'>('idle');
+    const [heroData, setHeroData] = useState(() => contentStore.read().pageHeroes.contact);
+
+    useEffect(() => {
+        contentStore.onUpdate(c => { if (c.pageHeroes?.contact) setHeroData(c.pageHeroes.contact); });
+    }, []);
     const [showToast, setShowToast] = useState(false);
     const whatsappLink = 'https://wa.me/250781691713?text=Hello%20Flat%20Production%2C%20I%20would%20like%20to%20book%20your%20services.';
 
@@ -27,14 +33,13 @@ const ContactPage: React.FC = () => {
                     <Header />
                 </div>
                 {/* Background */}
-                <div className="absolute inset-0 bg-[url('/live2.jpeg')] bg-cover bg-center opacity-25" aria-hidden="true" />
+                <div className="absolute inset-0 bg-cover bg-center opacity-25" style={{ backgroundImage: `url('${heroData.image || '/live2.jpeg'}')` }} aria-hidden="true" />
                 <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/60 to-[#0a0a0a]" aria-hidden="true" />
 
                 <div className="relative z-[5] max-w-[1200px] mx-auto px-5 w-full">
                     <p className="text-[#818cf8] text-xs font-bold uppercase tracking-[0.25em] mb-5">Get In Touch</p>
                     <h1 className="text-white font-bold text-[clamp(2.4rem,6vw,4.5rem)] leading-[1.05] tracking-[-0.02em] mb-5">
-                        Let's Create Something<br className="hidden sm:block" />
-                        <span className="text-white/60"> Extraordinary</span>
+                        {heroData.title || "Let's Create Something Extraordinary"}
                     </h1>
                     <p className="text-white/55 text-base max-w-[460px] leading-relaxed">
                         Tell us about your vision and we'll shape it into something that lasts.

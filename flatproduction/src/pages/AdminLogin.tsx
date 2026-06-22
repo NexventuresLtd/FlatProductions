@@ -111,8 +111,10 @@ const AdminLogin: React.FC = () => {
     setTimeout(() => {
       const safe = email.trim().toLowerCase();
       if (safe === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-        sessionStorage.setItem('flat_admin_auth', '1');
+        const tok = Math.random().toString(36).slice(2) + Date.now().toString(36);
+        sessionStorage.setItem('flat_admin_tok', tok);
         sessionStorage.setItem('flat_admin_email', safe);
+        localStorage.setItem('flat_admin_tok', tok);
         window.location.pathname = '/admin';
         return;
       }
@@ -201,47 +203,56 @@ const AdminLogin: React.FC = () => {
     <div className="min-h-screen bg-white flex overflow-hidden">
 
       {/* ── Left branding panel ── */}
-      <aside className="hidden lg:flex flex-col justify-between w-[44%] bg-[#f5f6f8] border-r border-[#e8eaed] p-12 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-[0.04]"
-          style={{ backgroundImage: 'radial-gradient(circle,#111 1px,transparent 1px)', backgroundSize: '22px 22px' }} />
+      <aside className="hidden lg:flex flex-col justify-between w-[44%] bg-[#0a0a0a] p-12 relative overflow-hidden">
+        <div className="absolute inset-0 opacity-[0.06]"
+          style={{ backgroundImage: 'radial-gradient(circle,#fff 1px,transparent 1px)', backgroundSize: '24px 24px' }} />
 
         <div className="relative flex items-center gap-3">
-          <img src="/flat production.jpg.jpeg" alt="Flat Productions"
-            className="w-10 h-10 rounded-xl object-cover shadow-md" />
-          <span className="text-[#111] font-bold text-sm tracking-wide">Flat Productions</span>
+          <div className="w-11 h-11 rounded-xl overflow-hidden ring-2 ring-white/20 flex-shrink-0">
+            <img src="/flat production.jpg.jpeg" alt="Flat Productions" className="w-full h-full object-cover" />
+          </div>
+          <div>
+            <span className="text-white font-bold text-base tracking-wide block">Flat Productions</span>
+            <span className="text-white/40 text-xs">Admin Portal</span>
+          </div>
         </div>
 
         <div className="relative">
-          <div className="grid grid-cols-2 gap-2.5 max-w-[340px] mb-10">
-            <img src="/photo3.jpg"    alt="" className="rounded-2xl h-[170px] object-cover shadow-md ring-1 ring-black/5" />
-            <img src="/live1.jpeg"   alt="" className="rounded-2xl h-[170px] object-cover shadow-md ring-1 ring-black/5 mt-10" />
-            <img src="/photo10.jpg"  alt="" className="rounded-2xl h-[160px] object-cover shadow-md ring-1 ring-black/5 -mt-3" />
-            <img src="/graphy33.jpg" alt="" className="rounded-2xl h-[160px] object-cover shadow-md ring-1 ring-black/5 mt-5" />
+          <div className="grid grid-cols-2 gap-3 max-w-[360px] mb-10">
+            <img src="/photo3.jpg"    alt="" className="rounded-2xl h-[170px] object-cover shadow-xl ring-1 ring-white/10" />
+            <img src="/live1.jpeg"    alt="" className="rounded-2xl h-[170px] object-cover shadow-xl ring-1 ring-white/10 mt-10" />
+            <img src="/photo10.jpg"   alt="" className="rounded-2xl h-[160px] object-cover shadow-xl ring-1 ring-white/10 -mt-3" />
+            <img src="/graphy33.jpg"  alt="" className="rounded-2xl h-[160px] object-cover shadow-xl ring-1 ring-white/10 mt-5" />
           </div>
-          <h2 className="text-[#111] font-bold text-[1.55rem] leading-[1.2] tracking-tight mb-3">
+          <h2 className="text-white font-bold text-3xl leading-[1.18] tracking-tight mb-4">
             Manage your creative<br />vision from one place.
           </h2>
-          <p className="text-[#666] text-sm leading-relaxed max-w-[300px]">
+          <p className="text-white/55 text-base leading-relaxed max-w-[320px]">
             Edit content, manage media, and control every section of your website — saved instantly.
           </p>
-          <div className="flex flex-wrap gap-2 mt-6">
-            {['Hero', 'Services', 'Portfolio', 'Gallery', 'Team', 'Clients'].map(f => (
-              <span key={f} className="bg-white border border-[#e0e3e8] text-[#555] text-[0.7rem] font-semibold px-3 py-1.5 rounded-full shadow-sm">{f}</span>
+          <div className="flex flex-wrap gap-2 mt-7">
+            {['Hero', 'Services', 'Portfolio', 'Gallery', 'Team', 'Clients', 'About'].map(f => (
+              <span key={f} className="bg-white/[0.08] border border-white/[0.12] text-white/70 text-xs font-semibold px-3.5 py-2 rounded-full">{f}</span>
             ))}
           </div>
         </div>
 
-        <p className="relative text-[#bbb] text-xs">© {new Date().getFullYear()} Flat Productions · Kigali, Rwanda</p>
+        <p className="relative text-white/25 text-sm">© {new Date().getFullYear()} Flat Productions · Kigali, Rwanda</p>
       </aside>
 
       {/* ── Right panel ── */}
       <div className="flex-1 flex items-start justify-center p-6 py-12 overflow-y-auto bg-white">
-        <div className="w-full max-w-[430px]">
+        <div className="w-full max-w-[460px]">
 
           {/* Mobile logo */}
-          <div className="flex lg:hidden items-center gap-2.5 mb-10">
-            <img src="/flat production.jpg.jpeg" alt="Logo" className="w-9 h-9 rounded-xl object-cover shadow" />
-            <span className="text-[#111] font-bold text-sm">Flat Productions</span>
+          <div className="flex lg:hidden items-center gap-3 mb-10">
+            <div className="w-10 h-10 rounded-xl overflow-hidden ring-2 ring-black/10 flex-shrink-0">
+              <img src="/flat production.jpg.jpeg" alt="Logo" className="w-full h-full object-cover" />
+            </div>
+            <div>
+              <span className="text-[#111] font-bold text-base block">Flat Productions</span>
+              <span className="text-[#999] text-xs">Admin Portal</span>
+            </div>
           </div>
 
           {/* ═══════════════════════════════════
@@ -250,14 +261,14 @@ const AdminLogin: React.FC = () => {
           {step === 'verify' && (
             <div>
               <div className="mb-8">
-                <div className="inline-flex items-center gap-2 bg-[#f5f6f8] border border-[#e0e3e8] rounded-full px-3.5 py-1.5 mb-4">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2.3">
+                <div className="inline-flex items-center gap-2 bg-[#f5f6f8] border border-[#e0e3e8] rounded-full px-4 py-2 mb-5">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2.3">
                     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                   </svg>
-                  <span className="text-[#111] text-[0.7rem] font-bold uppercase tracking-[0.12em]">Human Verification</span>
+                  <span className="text-[#111] text-xs font-bold uppercase tracking-[0.12em]">Human Verification</span>
                 </div>
-                <h1 className="text-[#111] font-bold text-[1.9rem] tracking-tight mb-1.5">Verify you're human</h1>
-                <p className="text-[#777] text-sm">
+                <h1 className="text-[#111] font-bold text-4xl tracking-tight mb-3">Verify you're human</h1>
+                <p className="text-[#555] text-base leading-relaxed">
                   Choose <strong className="text-[#111]">one</strong> verification method below and solve it to continue.
                 </p>
               </div>
@@ -291,8 +302,8 @@ const AdminLogin: React.FC = () => {
                         </div>
 
                         <div className="flex-1 min-w-0">
-                          <p className="text-[#111] font-bold text-sm">{meta.label}</p>
-                          <p className="text-[#888] text-[0.75rem]">{meta.desc}</p>
+                          <p className="text-[#111] font-bold text-base">{meta.label}</p>
+                          <p className="text-[#666] text-sm mt-0.5">{meta.desc}</p>
                         </div>
 
                         {/* Status */}
@@ -342,7 +353,7 @@ const AdminLogin: React.FC = () => {
               <button
                 onClick={() => solved && setStep('login')}
                 disabled={!solved}
-                className={`mt-6 w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-sm transition-all border-0 font-[inherit] ${
+                className={`mt-7 w-full flex items-center justify-center gap-2 py-4 rounded-xl font-bold text-base transition-all border-0 font-[inherit] ${
                   solved
                     ? 'bg-[#111] text-white cursor-pointer hover:bg-[#222] hover:-translate-y-px shadow-[0_4px_14px_rgba(17,17,17,0.16)] hover:shadow-[0_6px_20px_rgba(17,17,17,0.22)]'
                     : 'bg-[#e5e7eb] text-[#9ca3af] cursor-not-allowed'
@@ -381,35 +392,35 @@ const AdminLogin: React.FC = () => {
                 </span>
               </div>
 
-              <h1 className="text-[#111] font-bold text-[2rem] tracking-tight mb-1">Welcome back</h1>
-              <p className="text-[#777] text-sm mb-8">Sign in to access the admin dashboard.</p>
+              <h1 className="text-[#111] font-bold text-4xl tracking-tight mb-2">Welcome back</h1>
+              <p className="text-[#555] text-base mb-8">Sign in to access the admin dashboard.</p>
 
               <form onSubmit={submit} className="flex flex-col gap-5">
                 <div>
-                  <label htmlFor="adm-email" className="block text-[#333] text-[0.72rem] font-bold uppercase tracking-[0.12em] mb-2">Email</label>
+                  <label htmlFor="adm-email" className="block text-[#222] text-xs font-bold uppercase tracking-[0.12em] mb-2.5">Email address</label>
                   <input
                     id="adm-email" type="email" value={email}
                     onChange={e => setEmail(e.target.value)}
                     placeholder="admin@flatproduction.rw"
                     required autoComplete="email" disabled={loading}
-                    className="w-full bg-white border border-[#d0d5dd] text-[#111] rounded-xl px-4 py-3.5 text-sm outline-none transition-all placeholder:text-[#bbb] focus:border-[#111] focus:shadow-[0_0_0_3px_rgba(17,17,17,0.08)] font-[inherit] disabled:opacity-50 shadow-sm"
+                    className="w-full bg-white border-2 border-[#e0e3e8] text-[#111] rounded-xl px-4 py-4 text-base outline-none transition-all placeholder:text-[#bbb] focus:border-[#111] focus:shadow-[0_0_0_3px_rgba(17,17,17,0.08)] font-[inherit] disabled:opacity-50"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="adm-pass" className="block text-[#333] text-[0.72rem] font-bold uppercase tracking-[0.12em] mb-2">Password</label>
+                  <label htmlFor="adm-pass" className="block text-[#222] text-xs font-bold uppercase tracking-[0.12em] mb-2.5">Password</label>
                   <input
                     id="adm-pass" type="password" value={password}
                     onChange={e => setPassword(e.target.value)}
                     placeholder="••••••••"
                     required autoComplete="current-password" disabled={loading}
-                    className="w-full bg-white border border-[#d0d5dd] text-[#111] rounded-xl px-4 py-3.5 text-sm outline-none transition-all placeholder:text-[#bbb] focus:border-[#111] focus:shadow-[0_0_0_3px_rgba(17,17,17,0.08)] font-[inherit] disabled:opacity-50 shadow-sm"
+                    className="w-full bg-white border-2 border-[#e0e3e8] text-[#111] rounded-xl px-4 py-4 text-base outline-none transition-all placeholder:text-[#bbb] focus:border-[#111] focus:shadow-[0_0_0_3px_rgba(17,17,17,0.08)] font-[inherit] disabled:opacity-50"
                   />
                 </div>
 
                 {loginErr && (
-                  <div className="rounded-xl py-3 px-4 bg-[#fef2f2] border border-[#fca5a5] text-[#dc2626] text-sm font-medium flex items-center gap-2">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <div className="rounded-xl py-4 px-5 bg-[#fef2f2] border-2 border-[#fca5a5] text-[#dc2626] text-sm font-semibold flex items-center gap-2.5">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
                       <circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>
                     </svg>
                     {loginErr}
@@ -418,7 +429,7 @@ const AdminLogin: React.FC = () => {
 
                 <button
                   type="submit" disabled={loading}
-                  className="mt-1 flex items-center justify-center gap-2.5 bg-[#111] hover:bg-[#222] text-white font-bold py-3.5 rounded-xl text-sm transition-all border-0 cursor-pointer font-[inherit] shadow-[0_4px_14px_rgba(17,17,17,0.18)] hover:shadow-[0_6px_20px_rgba(17,17,17,0.24)] hover:-translate-y-px disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none"
+                  className="mt-1 flex items-center justify-center gap-2.5 bg-[#111] hover:bg-[#222] text-white font-bold py-4 rounded-xl text-base transition-all border-0 cursor-pointer font-[inherit] shadow-[0_4px_14px_rgba(17,17,17,0.18)] hover:shadow-[0_6px_20px_rgba(17,17,17,0.24)] hover:-translate-y-px disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none"
                 >
                   {loading
                     ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Signing in…</>
@@ -427,8 +438,8 @@ const AdminLogin: React.FC = () => {
               </form>
 
               <div className="mt-8 pt-6 border-t border-[#f0f2f5] flex items-center gap-3">
-                <span className="w-2 h-2 rounded-full bg-[#22c55e] flex-shrink-0" />
-                <p className="text-[#ccc] text-xs">Session secured · localStorage content sync</p>
+                <span className="w-2.5 h-2.5 rounded-full bg-[#22c55e] flex-shrink-0" />
+                <p className="text-[#999] text-sm font-medium">Session secured · single-browser lock active</p>
               </div>
             </div>
           )}

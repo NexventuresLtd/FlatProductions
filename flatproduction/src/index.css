@@ -93,3 +93,44 @@
 
 /* ── Marquee pause on hover ── */
 .marquee-wrapper:hover .marquee-track { animation-play-state: paused; }
+
+/* ── Dashboard / admin animations ── */
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.94); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes pop-in {
+  0%   { opacity: 0; transform: scale(0.88); }
+  65%  { transform: scale(1.03); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes slide-in-bottom {
+  from { opacity: 0; transform: translateY(32px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes shimmer {
+  0%   { background-position: -400% 0; }
+  100% { background-position: 400% 0; }
+}
+
+@layer utilities {
+  .animate-fade-in-up   { animation: fade-in-up 0.45s cubic-bezier(0.16,1,0.3,1) both; }
+  .animate-fade-in      { animation: fade-in 0.3s ease both; }
+  .animate-scale-in     { animation: scale-in 0.35s cubic-bezier(0.16,1,0.3,1) both; }
+  .animate-pop-in       { animation: pop-in 0.4s cubic-bezier(0.16,1,0.3,1) both; }
+  .animate-slide-right  { animation: slide-in-right 0.4s cubic-bezier(0.16,1,0.3,1) both; }
+  .animate-slide-bottom { animation: slide-in-bottom 0.45s cubic-bezier(0.16,1,0.3,1) both; }
+  .animate-shimmer      { animation: shimmer 2s linear infinite; background: linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%); background-size: 400% 100%; }
+}
