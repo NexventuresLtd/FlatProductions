@@ -216,6 +216,7 @@ const ServiceModal: React.FC<{initial?:ServiceItem;onSave:(item:ServiceItem)=>vo
 };
 
 /* ─── Portfolio Modal ────────────────────────────────────────────── */
+const PORTFOLIO_CATS = ['Photography','Video Production','Live Streaming','Web & Digital','Graphics Design','Branding','Documentary','Event & Entertainment'];
 const PortfolioModal: React.FC<{initial?:PortfolioItem;services:ServiceItem[];onSave:(item:PortfolioItem)=>void;onClose:()=>void}> =
   ({initial,services,onSave,onClose})=>{
   const [t,setT]=useState(initial?.title??'');
@@ -224,11 +225,26 @@ const PortfolioModal: React.FC<{initial?:PortfolioItem;services:ServiceItem[];on
   const [vid,setVid]=useState(initial?.videoUrl??'');
   const [bts,setBts]=useState(initial?.btsUrl??'');
   const [svc,setSvc]=useState(initial?.serviceId??'');
+  const [cat,setCat]=useState(()=>{
+    const c=initial?.category??'';
+    return PORTFOLIO_CATS.includes(c)?c:'';
+  });
+  const [lnk,setLnk]=useState(initial?.link??'');
   return(
     <ModalShell title={initial?'Edit Project':'Add Project'} wide onClose={onClose}>
       <ImageField value={img} onChange={setImg} label="Cover / Thumbnail"/>
       <div className="grid grid-cols-2 gap-3">
         <Field label="Project Title"><input value={t} onChange={e=>setT(e.target.value)} placeholder="Title"/></Field>
+        <div className="flex flex-col gap-1">
+          <label className="text-[0.7rem] font-bold text-[#111] uppercase tracking-[0.09em]">Category</label>
+          <select value={cat} onChange={e=>setCat(e.target.value)} className="w-full py-2 px-3 border border-[#ddd] rounded-xl text-[0.82rem] text-[#111] bg-white outline-none font-[inherit] focus:border-[#111] transition-all cursor-pointer">
+            <option value="">— Select category —</option>
+            {PORTFOLIO_CATS.map(c=><option key={c} value={c}>{c}</option>)}
+          </select>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Description"><textarea rows={2} value={d} onChange={e=>setD(e.target.value)} placeholder="One-line description…"/></Field>
         <div className="flex flex-col gap-1">
           <label className="text-[0.7rem] font-bold text-[#111] uppercase tracking-[0.09em]">Linked Service</label>
           <select value={svc} onChange={e=>setSvc(e.target.value)} className="w-full py-2 px-3 border border-[#ddd] rounded-xl text-[0.82rem] text-[#111] bg-white outline-none font-[inherit] focus:border-[#111] transition-all cursor-pointer">
@@ -237,7 +253,7 @@ const PortfolioModal: React.FC<{initial?:PortfolioItem;services:ServiceItem[];on
           </select>
         </div>
       </div>
-      <Field label="Description"><textarea rows={2} value={d} onChange={e=>setD(e.target.value)} placeholder="One-line description…"/></Field>
+      <Field label="Project Link (optional)"><input value={lnk} onChange={e=>setLnk(e.target.value)} placeholder="/portfolio or https://…"/></Field>
       <div className="border-t border-[#f5f5f5] pt-4">
         <p className="text-[0.7rem] font-bold text-[#aaa] uppercase tracking-[0.09em] mb-3 flex items-center gap-1.5"><Video size={12}/>Video Links</p>
         <div className="grid grid-cols-2 gap-3">
@@ -246,7 +262,7 @@ const PortfolioModal: React.FC<{initial?:PortfolioItem;services:ServiceItem[];on
         </div>
       </div>
       <div className="flex gap-2 pt-2">
-        <button className={b.primary} onClick={()=>{if(t.trim())onSave({id:initial?.id??uid(),title:t,description:toOneSentence(d),image:img,videoUrl:vid,btsUrl:bts,serviceId:svc,category:vid?'video':'image'});}}><Save size={13}/>{initial?'Save Changes':'Add Project'}</button>
+        <button className={b.primary} onClick={()=>{if(t.trim())onSave({id:initial?.id??uid(),title:t,description:toOneSentence(d),image:img,videoUrl:vid,btsUrl:bts,serviceId:svc,link:lnk||'#',category:cat||t});}}><Save size={13}/>{initial?'Save Changes':'Add Project'}</button>
         <button className={b.ghost} onClick={onClose}>Cancel</button>
       </div>
     </ModalShell>

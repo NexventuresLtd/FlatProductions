@@ -11,7 +11,7 @@ const About: React.FC = () => {
     const [about, setAbout] = useState(() => contentStore.read().about);
 
     useEffect(() => {
-        contentStore.onUpdate((c: any) => setAbout(c.about ?? { heading: '', body: '' }));
+        contentStore.onUpdate((c: any) => { if (c.about) setAbout(c.about); });
     }, []);
 
     return (
@@ -22,17 +22,17 @@ const About: React.FC = () => {
                 <div className="relative grid grid-cols-2 min-h-[420px] lg:min-h-0">
                     {/* Tall left image */}
                     <div className="relative overflow-hidden row-span-2">
-                        <img src="/photo3.jpg" alt="Flat Production event coverage" className="absolute inset-0 w-full h-full object-cover" />
+                        <img src={about.image1 || '/photo3.jpg'} alt="Flat Production event coverage" className="absolute inset-0 w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-black/25" />
                     </div>
                     {/* Top-right image */}
                     <div className="relative overflow-hidden">
-                        <img src="/photo6.jpg" alt="Live production" className="absolute inset-0 w-full h-full object-cover" />
+                        <img src={about.image2 || '/photo6.jpg'} alt="Live production" className="absolute inset-0 w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-black/25" />
                     </div>
                     {/* Bottom-right image */}
                     <div className="relative overflow-hidden">
-                        <img src="/live1.jpeg" alt="On-site crew" className="absolute inset-0 w-full h-full object-cover" />
+                        <img src={about.image3 || '/live1.jpeg'} alt="On-site crew" className="absolute inset-0 w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-black/25" />
                     </div>
                     {/* Location pill */}
@@ -50,14 +50,14 @@ const About: React.FC = () => {
 
                 {/* Right — content */}
                 <div className="flex flex-col justify-center px-8 md:px-14 py-16 lg:py-24">
-                    <p className="text-[#818cf8] text-[0.7rem] font-bold uppercase tracking-[0.28em] mb-6">About Flat Productions</p>
+                    <p className="text-[#dc2626] text-[0.7rem] font-bold uppercase tracking-[0.28em] mb-6">About Flat Productions</p>
 
                     <h2 className="text-white font-bold text-[clamp(1.9rem,3.8vw,2.9rem)] leading-[1.08] tracking-[-0.02em] mb-6">
                         {about.heading || 'Where Light Becomes Memory'}
                     </h2>
 
                     <p className="text-white/60 text-[0.97rem] leading-[1.85] mb-10 max-w-[500px]">
-                        {about.body || 'Every frame is crafted with patience, emotion, and intent, turning ordinary scenes into cinematic moments that feel personal, timeless, and alive.'}
+                        {about.history || about.body || 'Every frame is crafted with patience, emotion, and intent, turning ordinary scenes into cinematic moments that feel personal, timeless, and alive.'}
                     </p>
 
                     {/* Stats */}

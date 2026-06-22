@@ -1,50 +1,303 @@
-# Modern Photography Portfolio
+# Flat Productions — Website & Admin Dashboard
 
-This is a modern photography portfolio website built with React. The website features a dark color theme and showcases the photographer's work through various components.
+A full-featured creative agency website for **Flat Productions Limited** (Kigali, Rwanda) with a built-in admin dashboard for live content management. All public pages update in real time when content is changed from the dashboard — no server, no database, no redeploy needed.
 
-## Features
+---
 
-- **Header**: Navigation menu and title of the portfolio.
-- **Hero Section**: A prominent image or video with a brief introduction.
-- **Gallery**: A grid of photographs with hover effects and lightbox functionality.
-- **About Section**: Information about the photographer's background and style.
-- **Contact Form**: A form for visitors to reach out, along with social media links.
-- **Footer**: Copyright information and additional links.
+## Tech Stack
 
-## Technologies Used
+| Layer | Technology |
+|---|---|
+| Framework | React 19.2.5 + TypeScript |
+| Build tool | Vite 8 |
+| Styling | Tailwind CSS v4.2.2 via `@tailwindcss/vite` |
+| Icons | lucide-react v0.268.0 |
+| Storage | `localStorage` + `BroadcastChannel` (no backend) |
+| Routing | Custom pathname-based routing in `App.tsx` |
 
-- React
-- TypeScript
-- CSS
+---
 
-## Setup Instructions
+## Project Structure
 
-1. Clone the repository:
-   ```
-   git clone <repository-url>
-   ```
+```
+flatproduction/
+├── public/                  # Static assets (photos, logos, videos)
+├── src/
+│   ├── App.tsx              # Router, AdminBar, visit counter, session helpers
+│   ├── store/
+│   │   └── contentStore.ts  # Central data store (localStorage + BroadcastChannel)
+│   ├── pages/
+│   │   ├── HomePage.tsx         # Landing page (assembles components)
+│   │   ├── AboutPage.tsx        # /about
+│   │   ├── ServicesPage.tsx     # /services
+│   │   ├── PortfolioPage.tsx    # /portfolio
+│   │   ├── GalleryPage.tsx      # /gallery
+│   │   ├── ContactPage.tsx      # /contact
+│   │   ├── AdminLogin.tsx       # /login
+│   │   └── AdminDashboard.tsx   # /admin
+│   └── components/
+│       ├── Header.tsx
+│       ├── Footer.tsx
+│       ├── Hero.tsx             # Homepage hero slideshow
+│       ├── About.tsx            # Homepage about section
+│       ├── Services.tsx         # Homepage services grid
+│       ├── Gallery.tsx          # Homepage portfolio preview
+│       ├── Clients.tsx          # Homepage client logos marquee
+│       └── Team.tsx             # Homepage team grid
+```
 
-2. Navigate to the project directory:
-   ```
-   cd flatproduction
-   ```
+---
 
-3. Install the dependencies:
-   ```
-   npm install
-   ```
+## Getting Started
 
-4. Start the development server:
-   ```
-   npm start
-   ```
+```bash
+# Install dependencies (uses pnpm lock file)
+npm install
+# or
+pnpm install
 
-5. Open your browser and go to `http://localhost:3000` to view the portfolio.
+# Start development server
+npm run dev
+# → http://localhost:5173
 
-## Usage
+# Type check
+npx tsc --noEmit
 
-Feel free to customize the components and styles to fit your personal photography style. Add your own images to the gallery and update the content in the About and Contact sections.
+# Production build
+npm run build
+
+# Preview production build
+npm run preview
+```
+
+---
+
+## Routing
+
+Routing is handled by `window.location.pathname` matching in `App.tsx` — no React Router dependency.
+
+| Path | Page |
+|---|---|
+| `/` | Homepage |
+| `/about` | About page |
+| `/services` | Services page |
+| `/portfolio` | Portfolio page |
+| `/gallery` | Gallery page |
+| `/contact` | Contact page |
+| `/login` | Admin login |
+| `/admin` | Admin dashboard (requires auth) |
+
+---
+
+## Content Store
+
+**File:** [`src/store/contentStore.ts`](src/store/contentStore.ts)
+
+All site content is stored in `localStorage` under the key `flatproduction_site_content_v2`. Changes broadcast to other tabs via `BroadcastChannel('flatproduction_content')`.
+
+### Data shape (`SiteContent`)
+
+```typescript
+{
+  hero: {
+    title: string;
+    subtitle: string;
+    images: string[];    // slideshow background images
+    notes: string[];     // per-slide caption text
+  };
+  about: {
+    heading: string;
+    body: string;        // legacy fallback body text
+    history?: string;    // main long-form text (editable from dashboard)
+    mission?: string;
+    vision?: string;
+    value?: string;
+    image1?: string;     // photo mosaic images (used on About page + homepage About section)
+    image2?: string;
+    image3?: string;
+    image4?: string;
+  };
+  testimonials: Array<{ id, name, logoSrc, quote }>;
+  services: Array<{ id, title, description, image }>;
+  portfolio: Array<{
+    id, title, image, description,
+    videoUrl?,    // YouTube link → enables video play on Portfolio page
+    btsUrl?,      // YouTube BTS link → appears in BTS filter tab
+    category?,    // display category (e.g. 'Photography', 'Live Streaming')
+    link?,        // optional project URL
+    serviceId?,   // links to a service for filtering
+  }>;
+  clientsIntro: string;
+  clients: string[];        // category tags shown in Clients section
+  clientLogos: string[];    // logo image paths
+  team: Array<{ id, name, role, bio, photo, position }>;
+  gallery: string[];        // image paths for Gallery page
+  pageHeroes: {
+    about:     { title: string; image: string };
+    services:  { title: string; image: string };
+    portfolio: { title: string; image: string };
+    gallery:   { title: string; image: string };
+    contact:   { title: string; image: string };
+  };
+}
+```
+
+### How live updates work
+
+Every component that displays content:
+1. Initialises state from `contentStore.read()` on mount
+2. Subscribes to updates via `contentStore.onUpdate(callback)` — fired when the dashboard saves to the same or another tab
+
+```typescript
+// Pattern used in every component
+const [data, setData] = useState(() => contentStore.read().someField);
+useEffect(() => {
+  contentStore.onUpdate(c => setData(c.someField));
+}, []);
+```
+
+---
+
+## Admin Dashboard
+
+**Route:** `/admin` (requires authentication)
+
+### Authentication & Session Lock
+
+Login is at `/login`. On successful login:
+- A random token is written to both `sessionStorage.flat_admin_tok` and `localStorage.flat_admin_tok`
+- `isAdminAuthed()` checks `sessionStorage.flat_admin_tok === localStorage.flat_admin_tok`
+- Logging in from a second browser overwrites the `localStorage` token, invalidating the first session — only one active admin session at a time
+
+Puzzle-based login: one of three randomly selected challenges (arithmetic, number sequence, or word copy) must be solved before the password is accepted.
+
+### Dashboard Sections
+
+| Section | What you can edit |
+|---|---|
+| **Overview** | View stats, website visit counter, quick navigation |
+| **Hero** | Slideshow images + per-slide captions, headline, subtitle |
+| **About** | Heading, history text, 4 photo mosaic images, mission, vision, value |
+| **Services** | Add / edit / delete / reorder services (title, description, image) |
+| **Portfolio** | Add / edit / delete / reorder projects (title, image, category, video URL, BTS URL, link) |
+| **Gallery** | Add / edit / delete / reorder gallery images |
+| **Clients** | Intro text, client category tags, client logo images |
+| **Team** | Add / edit / delete / reorder team members (name, role, bio, photo) |
+| **Testimonials** | Add / edit / delete / reorder client testimonials (logo, name, quote) |
+| **Page Heroes** | Banner image + headline for each of the 5 public pages |
+
+### Admin Bar
+
+When logged in, a floating "Dashboard" button appears on every public page (bottom-right corner). It only appears if `isAdminAuthed()` returns true and disappears when the session ends.
+
+### Website Visit Counter
+
+A visit is counted (via `localStorage.flat_visit_count`) on every non-admin page load. The counter is displayed on the Overview screen and can be reset from there.
+
+---
+
+## Public Pages — Data Connections
+
+Every public page reads live from `contentStore` and re-renders when the dashboard saves.
+
+### Homepage (`/`)
+
+| Component | Data source |
+|---|---|
+| `Hero` | `hero.images`, `hero.notes`, `hero.title`, `hero.subtitle` |
+| `About` | `about.heading`, `about.history \|\| about.body`, `about.image1–3` |
+| `Services` | `services[]` |
+| `Gallery` | `portfolio[]` (preview cards with video/BTS links) |
+| `Clients` | `clientsIntro`, `clients[]`, `clientLogos[]` |
+| `Team` | `team[]` |
+
+### About Page (`/about`)
+
+- Hero banner: `pageHeroes.about.title` + `pageHeroes.about.image`
+- 4-image mosaic: `about.image1–4`
+- History text: `about.history || about.body`
+- Mission / Vision / Value cards (hidden when empty)
+- Testimonials grid: `testimonials[]`
+
+### Services Page (`/services`)
+
+- Hero: `pageHeroes.services`
+- Service cards: `services[]` with modal detail view
+
+### Portfolio Page (`/portfolio`)
+
+- Hero: `pageHeroes.portfolio`
+- Hero accent images: first two `portfolio[]` item images
+- All portfolio items from `portfolio[]` — each item appears once in 'All' view
+- 'Video' filter tab: items where `videoUrl` is set (opens YouTube embed)
+- 'BTS' filter tab: items where `btsUrl` is set
+- Other filter tabs: dynamically generated from each item's `category` field
+- Click image → full-screen lightbox; click video thumbnail → embedded player
+
+### Gallery Page (`/gallery`)
+
+- Hero: `pageHeroes.gallery`
+- Image grid: `gallery[]` — click to open lightbox with category filter
+
+### Contact Page (`/contact`)
+
+- Hero: `pageHeroes.contact`
+- All accent colors: red (`#dc2626`)
+- Contact form (no backend — extend with email service as needed)
+
+---
+
+## Portfolio Category System
+
+When adding or editing a project in the dashboard, you select a **category** from:
+
+> Photography · Video Production · Live Streaming · Web & Digital · Graphics Design · Branding · Documentary · Event & Entertainment
+
+This category determines which filter tab the project appears under on the Portfolio page. Items also automatically appear in:
+- **Video** tab — if a YouTube `videoUrl` is set
+- **BTS** tab — if a `btsUrl` is set
+
+Legacy items with `category: 'video'` or `'image'` fall back to using their title as the display category.
+
+---
+
+## Color System
+
+The site uses a **red accent** color scheme (`#dc2626` / Tailwind `red-600`). Blue, indigo, and violet have been replaced throughout. Neutral grays (`#64748b`, `#374151`, etc.) are kept as-is since they are UI structural colors, not brand colors.
+
+---
+
+## Development Notes
+
+### Adding a new page
+
+1. Create `src/pages/NewPage.tsx` — read from `contentStore.read()` and subscribe with `contentStore.onUpdate()`
+2. Add the route in `App.tsx` alongside the other `currentPath` checks
+3. If it needs a hero banner, add `newpage: PageHero` to the `pageHeroes` type in `contentStore.ts` with a default, and add a `PageHeroCard` in the dashboard `pages` section
+
+### Resetting content
+
+The dashboard header has a **Reset Content** button that restores all defaults. Alternatively, clear `localStorage` key `flatproduction_site_content_v2` in DevTools.
+
+### localStorage key
+
+`flatproduction_site_content_v2` — the `v2` suffix was added when the schema was extended with `testimonials`, `pageHeroes`, and expanded `about` fields. A `normalize()` function in `contentStore.ts` merges stored data with defaults so old saved data doesn't break new fields.
+
+---
+
+## Key Files Reference
+
+| File | Purpose |
+|---|---|
+| [`src/store/contentStore.ts`](src/store/contentStore.ts) | Single source of truth — types, defaults, normalize, read/write, BroadcastChannel |
+| [`src/App.tsx`](src/App.tsx) | Route matching, `isAdminAuthed()`, visit counter, AdminBar |
+| [`src/pages/AdminDashboard.tsx`](src/pages/AdminDashboard.tsx) | Full dashboard UI — all section editors, modals, CRUD handlers |
+| [`src/pages/AdminLogin.tsx`](src/pages/AdminLogin.tsx) | Puzzle-gated login, session token generation |
+| [`src/pages/PortfolioPage.tsx`](src/pages/PortfolioPage.tsx) | Fully store-driven portfolio with dynamic category tabs |
+| [`src/pages/AboutPage.tsx`](src/pages/AboutPage.tsx) | About page with history, 4-image mosaic, mission/vision/value, testimonials |
+
+---
 
 ## License
 
-This project is licensed under the MIT License.
+Private project — Flat Productions Limited, Kigali, Rwanda.

@@ -38,7 +38,7 @@ const PUZZLE_META = [
   {
     label: 'Arithmetic',
     desc:  'Solve a simple math equation',
-    accent: '#3b82f6', bg: '#eff6ff', border: '#bfdbfe',
+    accent: '#dc2626', bg: '#fef2f2', border: '#fecaca',
     Icon: () => (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
         <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
@@ -49,7 +49,7 @@ const PUZZLE_META = [
   {
     label: 'Number Sequence',
     desc:  'Find the next number in the pattern',
-    accent: '#9333ea', bg: '#faf5ff', border: '#d8b4fe',
+    accent: '#dc2626', bg: '#fef2f2', border: '#fecaca',
     Icon: () => (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
         <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
@@ -176,13 +176,13 @@ const AdminLogin: React.FC = () => {
     return (
       <div className="mt-4">
         <div className="rounded-xl overflow-hidden border border-[#e0e3e8] mb-3 select-none">
-          <div className="bg-[linear-gradient(135deg,#f0f4ff,#fff4f0,#f0fff4)] py-4 px-6 text-center relative">
+          <div className="bg-[linear-gradient(135deg,#fff0f0,#fff4f0,#f0fff4)] py-4 px-6 text-center relative">
             <svg className="absolute inset-0 w-full h-full opacity-10 pointer-events-none" aria-hidden="true">
               {[0,1,2,3].map(i => (
                 <line key={i} x1={`${rand(0,30)}%`} y1={`${rand(0,100)}%`} x2={`${rand(70,100)}%`} y2={`${rand(0,100)}%`} stroke="#555" strokeWidth="1"/>
               ))}
             </svg>
-            <span className="relative font-mono font-black text-[2rem] tracking-[0.35em] text-[#1a1a2e]"
+            <span className="relative font-mono font-black text-[2rem] tracking-[0.35em] text-[#1a1a1a]"
               style={{ textShadow: '1px 1px 0 rgba(0,0,0,0.12)' }}>
               {word}
             </span>
@@ -227,14 +227,6 @@ const AdminLogin: React.FC = () => {
           <h2 className="text-white font-bold text-3xl leading-[1.18] tracking-tight mb-4">
             Manage your creative<br />vision from one place.
           </h2>
-          <p className="text-white/55 text-base leading-relaxed max-w-[320px]">
-            Edit content, manage media, and control every section of your website — saved instantly.
-          </p>
-          <div className="flex flex-wrap gap-2 mt-7">
-            {['Hero', 'Services', 'Portfolio', 'Gallery', 'Team', 'Clients', 'About'].map(f => (
-              <span key={f} className="bg-white/[0.08] border border-white/[0.12] text-white/70 text-xs font-semibold px-3.5 py-2 rounded-full">{f}</span>
-            ))}
-          </div>
         </div>
 
         <p className="relative text-white/25 text-sm">© {new Date().getFullYear()} Flat Productions · Kigali, Rwanda</p>
@@ -265,7 +257,7 @@ const AdminLogin: React.FC = () => {
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2.3">
                     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                   </svg>
-                  <span className="text-[#111] text-xs font-bold uppercase tracking-[0.12em]">Human Verification</span>
+                  <span className="text-[#111] text-xs font-bold uppercase tracking-[0.12em]">Nex Verification</span>
                 </div>
                 <h1 className="text-[#111] font-bold text-4xl tracking-tight mb-3">Verify you're human</h1>
                 <p className="text-[#555] text-base leading-relaxed">
@@ -436,11 +428,6 @@ const AdminLogin: React.FC = () => {
                     : 'Sign in to Dashboard →'}
                 </button>
               </form>
-
-              <div className="mt-8 pt-6 border-t border-[#f0f2f5] flex items-center gap-3">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#22c55e] flex-shrink-0" />
-                <p className="text-[#999] text-sm font-medium">Session secured · single-browser lock active</p>
-              </div>
             </div>
           )}
 

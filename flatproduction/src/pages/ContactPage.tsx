@@ -37,7 +37,7 @@ const ContactPage: React.FC = () => {
                 <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/60 to-[#0a0a0a]" aria-hidden="true" />
 
                 <div className="relative z-[5] max-w-[1200px] mx-auto px-5 w-full">
-                    <p className="text-[#818cf8] text-xs font-bold uppercase tracking-[0.25em] mb-5">Get In Touch</p>
+                    <p className="text-[#dc2626] text-xs font-bold uppercase tracking-[0.25em] mb-5">Get In Touch</p>
                     <h1 className="text-white font-bold text-[clamp(2.4rem,6vw,4.5rem)] leading-[1.05] tracking-[-0.02em] mb-5">
                         {heroData.title || "Let's Create Something Extraordinary"}
                     </h1>
@@ -65,14 +65,14 @@ const ContactPage: React.FC = () => {
                                         <label htmlFor="fullName" className="block text-[#374151] text-sm font-semibold mb-1.5">Full Name</label>
                                         <input id="fullName" name="fullName" type="text" placeholder="Alex Niyongira" required
                                             disabled={formStatus === 'submitting'}
-                                            className="w-full border border-[#e2e8f0] bg-[#f8fafc] text-[#111] rounded-xl px-4 py-3 text-sm outline-none transition-all focus:border-[#6366f1] focus:bg-white focus:shadow-[0_0_0_3px_rgba(99,102,241,0.1)] disabled:opacity-60 font-[inherit]"
+                                            className="w-full border border-[#e2e8f0] bg-[#f8fafc] text-[#111] rounded-xl px-4 py-3 text-sm outline-none transition-all focus:border-[#dc2626] focus:bg-white focus:shadow-[0_0_0_3px_rgba(220,38,38,0.1)] disabled:opacity-60 font-[inherit]"
                                         />
                                     </div>
                                     <div>
                                         <label htmlFor="email" className="block text-[#374151] text-sm font-semibold mb-1.5">Email Address</label>
                                         <input id="email" name="email" type="email" placeholder="alex@example.com" required
                                             disabled={formStatus === 'submitting'}
-                                            className="w-full border border-[#e2e8f0] bg-[#f8fafc] text-[#111] rounded-xl px-4 py-3 text-sm outline-none transition-all focus:border-[#6366f1] focus:bg-white focus:shadow-[0_0_0_3px_rgba(99,102,241,0.1)] disabled:opacity-60 font-[inherit]"
+                                            className="w-full border border-[#e2e8f0] bg-[#f8fafc] text-[#111] rounded-xl px-4 py-3 text-sm outline-none transition-all focus:border-[#dc2626] focus:bg-white focus:shadow-[0_0_0_3px_rgba(220,38,38,0.1)] disabled:opacity-60 font-[inherit]"
                                         />
                                     </div>
                                 </div>
@@ -81,14 +81,14 @@ const ContactPage: React.FC = () => {
                                     <label htmlFor="phone" className="block text-[#374151] text-sm font-semibold mb-1.5">Phone <span className="text-[#94a3b8] font-normal">(optional)</span></label>
                                     <input id="phone" name="phone" type="tel" placeholder="+250 780 000 000"
                                         disabled={formStatus === 'submitting'}
-                                        className="w-full border border-[#e2e8f0] bg-[#f8fafc] text-[#111] rounded-xl px-4 py-3 text-sm outline-none transition-all focus:border-[#6366f1] focus:bg-white focus:shadow-[0_0_0_3px_rgba(99,102,241,0.1)] disabled:opacity-60 font-[inherit]"
+                                        className="w-full border border-[#e2e8f0] bg-[#f8fafc] text-[#111] rounded-xl px-4 py-3 text-sm outline-none transition-all focus:border-[#dc2626] focus:bg-white focus:shadow-[0_0_0_3px_rgba(220,38,38,0.1)] disabled:opacity-60 font-[inherit]"
                                     />
                                 </div>
 
                                 <div>
                                     <label htmlFor="service" className="block text-[#374151] text-sm font-semibold mb-1.5">Service</label>
                                     <select id="service" name="service" disabled={formStatus === 'submitting'}
-                                        className="w-full border border-[#e2e8f0] bg-[#f8fafc] text-[#111] rounded-xl px-4 py-3 text-sm outline-none transition-all focus:border-[#6366f1] focus:bg-white focus:shadow-[0_0_0_3px_rgba(99,102,241,0.1)] disabled:opacity-60 cursor-pointer font-[inherit]"
+                                        className="w-full border border-[#e2e8f0] bg-[#f8fafc] text-[#111] rounded-xl px-4 py-3 text-sm outline-none transition-all focus:border-[#dc2626] focus:bg-white focus:shadow-[0_0_0_3px_rgba(220,38,38,0.1)] disabled:opacity-60 cursor-pointer font-[inherit]"
                                     >
                                         <option value="">Select a service…</option>
                                         <option>Photography &amp; Video Production</option>
@@ -106,7 +106,7 @@ const ContactPage: React.FC = () => {
                                     <textarea id="message" name="message" rows={5}
                                         placeholder="Tell us about your vision, timeline, and budget…"
                                         required disabled={formStatus === 'submitting'}
-                                        className="w-full border border-[#e2e8f0] bg-[#f8fafc] text-[#111] rounded-xl px-4 py-3 text-sm outline-none transition-all focus:border-[#6366f1] focus:bg-white focus:shadow-[0_0_0_3px_rgba(99,102,241,0.1)] resize-y min-h-[140px] disabled:opacity-60 font-[inherit]"
+                                        className="w-full border border-[#e2e8f0] bg-[#f8fafc] text-[#111] rounded-xl px-4 py-3 text-sm outline-none transition-all focus:border-[#dc2626] focus:bg-white focus:shadow-[0_0_0_3px_rgba(220,38,38,0.1)] resize-y min-h-[140px] disabled:opacity-60 font-[inherit]"
                                     />
                                 </div>
 
@@ -146,19 +146,19 @@ const ContactPage: React.FC = () => {
                                 <ul className="flex flex-col gap-4">
                                     {[
                                         {
-                                            icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>,
+                                            icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>,
                                             label: 'Studio Address', value: 'Kabeza KK 18 Ave, Kigali, Rwanda',
                                         },
                                         {
-                                            icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>,
+                                            icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>,
                                             label: 'Phone', value: '+250 781 691 713',
                                         },
                                         {
-                                            icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>,
+                                            icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>,
                                             label: 'Email', value: 'info@flatproduction.rw',
                                         },
                                         {
-                                            icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+                                            icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
                                             label: 'Working Hours', value: 'Mon – Sat, 8:00 AM – 6:00 PM',
                                         },
                                     ].map(({ icon, label, value }) => (
@@ -174,8 +174,8 @@ const ContactPage: React.FC = () => {
                             </div>
 
                             {/* Social links */}
-                            <div className="bg-[#eef2ff] rounded-2xl p-7 border border-[#c7d2fe]">
-                                <h3 className="font-bold text-[#312e81] mb-3">Follow Our Work</h3>
+                            <div className="bg-white rounded-2xl p-7 border border-red-700">
+                                <h3 className="font-bold text-red-700 mb-3">Follow Our Work</h3>
                                 <div className="flex gap-3">
                                     {[
                                         { label: 'Instagram', href: 'https://instagram.com', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg> },
@@ -183,7 +183,7 @@ const ContactPage: React.FC = () => {
                                         { label: 'LinkedIn', href: 'https://linkedin.com', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg> },
                                     ].map(({ label, href, icon }) => (
                                         <a key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={label}
-                                            className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-[#4338ca] border border-[#c7d2fe] hover:bg-[#6366f1] hover:text-white hover:border-[#6366f1] transition-all"
+                                            className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-[#dc2626] border border-[#fca5a5] hover:bg-[#dc2626] hover:text-white hover:border-[#dc2626] transition-all"
                                         >
                                             {icon}
                                         </a>

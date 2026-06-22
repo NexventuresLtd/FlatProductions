@@ -12,29 +12,33 @@ type PortfolioCard = {
     btsUrl?: string;
 };
 
-const portfolioItems: PortfolioCard[] = [
-    { category: 'Live Streaming', image: '/live1.jpeg', label: 'Launch night coverage' },
-    { category: 'Live Streaming', image: '/photo6.jpg', label: 'Conference live feed' },
-    { category: 'Live Streaming', image: '/photo14.jpg', label: 'Event stage stream' },
-    { category: 'Photography', image: '/photo3.jpg', label: 'Portrait storytelling' },
-    { category: 'Photography', image: '/photo8.jpg', label: 'Event highlights' },
-    { category: 'Photography', image: '/photo10.jpg', label: 'Behind the scenes' },
-    { category: 'BTS', image: '/2I1A0386.JPG.jpeg', label: 'Lighting setup and framing' },
-    { category: 'BTS', image: '/2I1A0403.JPG.jpeg', label: 'Crew coordinating on set' },
-    { category: 'BTS', image: '/2I1A0407.JPG.jpeg', label: 'Camera prep and review' },
-    { category: 'BTS', image: '/2I1A0410.JPG.jpeg', label: 'Production day action' },
-    { category: 'Web Design', image: '/web.jpg', label: 'Website interface design' },
-    { category: 'Web Design', image: '/photo1.jpg', label: 'Digital brand presence' },
-    { category: 'Graphics Design', image: '/graphy2.png', label: 'Identity system' },
-    { category: 'Graphics Design', image: '/photo5.jpg', label: 'Campaign artwork' },
-    { category: 'Documentary', image: '/photo12.jpg', label: 'Long-form story frame' },
-    { category: 'Documentary', image: '/photo4.jpg', label: 'Field production moment' },
+/* Static fallback — shown only when store portfolio is completely empty */
+const STATIC_FALLBACK: PortfolioCard[] = [
+    { category: 'Live Streaming',   image: '/live1.jpeg',           label: 'Launch night coverage' },
+    { category: 'Live Streaming',   image: '/photo6.jpg',           label: 'Conference live feed' },
+    { category: 'Live Streaming',   image: '/photo14.jpg',          label: 'Event stage stream' },
+    { category: 'Photography',      image: '/photo3.jpg',           label: 'Portrait storytelling' },
+    { category: 'Photography',      image: '/photo8.jpg',           label: 'Event highlights' },
+    { category: 'Photography',      image: '/photo10.jpg',          label: 'Behind the scenes' },
+    { category: 'BTS',              image: '/2I1A0386.JPG.jpeg',    label: 'Lighting setup and framing' },
+    { category: 'BTS',              image: '/2I1A0403.JPG.jpeg',    label: 'Crew coordinating on set' },
+    { category: 'BTS',              image: '/2I1A0407.JPG.jpeg',    label: 'Camera prep and review' },
+    { category: 'BTS',              image: '/2I1A0410.JPG.jpeg',    label: 'Production day action' },
+    { category: 'Web Design',       image: '/web.jpg',              label: 'Website interface design' },
+    { category: 'Web Design',       image: '/photo1.jpg',           label: 'Digital brand presence' },
+    { category: 'Graphics Design',  image: '/graphy2.png',          label: 'Identity system' },
+    { category: 'Graphics Design',  image: '/photo5.jpg',           label: 'Campaign artwork' },
+    { category: 'Documentary',      image: '/photo12.jpg',          label: 'Long-form story frame' },
+    { category: 'Documentary',      image: '/photo4.jpg',           label: 'Field production moment' },
 ];
 
-const categories = ['All', 'Video', 'BTS', 'Live Streaming', 'Photography', 'Web Design', 'Graphics Design', 'Documentary'];
+/* Reserved filter names — never used as an item category */
+const RESERVED = new Set(['Video', 'BTS', 'video', 'image']);
 
-function toThreeWords(text: string) {
-    return text.trim().split(/\s+/).slice(0, 3).join(' ');
+function getItemCategory(item: { category?: string; title: string }): string {
+    if (item.category && !RESERVED.has(item.category)) return item.category;
+    /* legacy fallback: use title (default items have meaningful titles) */
+    return item.title;
 }
 
 function toEmbedUrl(url: string): string {
@@ -66,19 +70,14 @@ const PortfolioPage: React.FC = () => {
         });
     }, []);
 
-    // Lock body scroll when any modal is open
     useEffect(() => {
         document.body.style.overflow = (videoModal || imageModal) ? 'hidden' : '';
         return () => { document.body.style.overflow = ''; };
     }, [videoModal, imageModal]);
 
-    // ESC closes any open modal
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') {
-                setVideoModal(null);
-                setImageModal(null);
-            }
+            if (e.key === 'Escape') { setVideoModal(null); setImageModal(null); }
         };
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
@@ -90,24 +89,45 @@ const PortfolioPage: React.FC = () => {
     const openImage = (src: string, label: string, category: string) =>
         setImageModal({ src, label, category });
 
-    const portfolioMedia = useMemo<PortfolioCard[]>(() => {
-        return storedPortfolio.flatMap((item) => {
-            const label = toThreeWords(item.description?.trim() || item.title);
-            const entries: PortfolioCard[] = [];
-            if (item.videoUrl) entries.push({ category: 'Video', videoUrl: item.videoUrl, image: item.image, label, title: item.title });
-            if (item.btsUrl) entries.push({ category: 'BTS', btsUrl: item.btsUrl, image: item.image, label: `BTS: ${label}`, title: item.title });
-            return entries;
-        });
+    /* Build display cards from store — each item appears once.
+       'Video' / 'BTS' filter tabs are derived from videoUrl / btsUrl presence. */
+    const allCards = useMemo<PortfolioCard[]>(() => {
+        if (!storedPortfolio.length) return STATIC_FALLBACK;
+        return storedPortfolio.map(item => ({
+            category:  getItemCategory(item),
+            image:     item.image,
+            label:     item.title,
+            title:     item.title,
+            videoUrl:  item.videoUrl || undefined,
+            btsUrl:    item.btsUrl   || undefined,
+        }));
     }, [storedPortfolio]);
 
+    /* Dynamic category tabs: content-type tabs first, then alphabetical main cats */
+    const categories = useMemo(() => {
+        const hasVideo = allCards.some(c => !!c.videoUrl);
+        const hasBts   = allCards.some(c => !!c.btsUrl);
+        const mainCats = [...new Set(allCards.map(c => c.category))].sort();
+        return ['All', ...mainCats, ...(hasVideo ? ['Video'] : []), ...(hasBts ? ['BTS'] : [])];
+    }, [allCards]);
+
+    /* Reset active tab if it no longer exists after store update */
+    useEffect(() => {
+        if (activeCategory !== 'All' && !categories.includes(activeCategory)) {
+            setActiveCategory('All');
+        }
+    }, [categories, activeCategory]);
+
     const filteredItems = useMemo<PortfolioCard[]>(() => {
-        const storedBts = portfolioMedia.filter(i => i.category === 'BTS');
-        const staticBts = portfolioItems.filter(i => i.category === 'BTS');
-        if (activeCategory === 'All') return [...portfolioMedia, ...portfolioItems];
-        if (activeCategory === 'Video') return portfolioMedia.filter(i => i.category === 'Video');
-        if (activeCategory === 'BTS') return [...storedBts, ...staticBts];
-        return portfolioItems.filter(i => i.category === activeCategory);
-    }, [activeCategory, portfolioMedia]);
+        if (activeCategory === 'All')   return allCards;
+        if (activeCategory === 'Video') return allCards.filter(c => !!c.videoUrl);
+        if (activeCategory === 'BTS')   return allCards.filter(c => !!c.btsUrl);
+        return allCards.filter(c => c.category === activeCategory);
+    }, [activeCategory, allCards]);
+
+    /* First two stored images for hero accent panel */
+    const accent1 = storedPortfolio[0]?.image || '/live1.jpeg';
+    const accent2 = storedPortfolio[1]?.image || '/photo3.jpg';
 
     return (
         <div className="flex flex-col min-h-screen bg-white">
@@ -123,11 +143,11 @@ const PortfolioPage: React.FC = () => {
                 <div className="absolute right-0 top-0 bottom-0 w-[38%] hidden lg:block overflow-hidden">
                     <div className="grid grid-rows-2 h-full gap-0.5">
                         <div className="relative overflow-hidden">
-                            <img src="/live1.jpeg" alt="" aria-hidden="true" className="w-full h-full object-cover opacity-60" />
+                            <img src={accent1} alt="" aria-hidden="true" className="w-full h-full object-cover opacity-60" />
                             <div className="absolute inset-0 bg-black/40" />
                         </div>
                         <div className="relative overflow-hidden">
-                            <img src="/photo3.jpg" alt="" aria-hidden="true" className="w-full h-full object-cover opacity-60" />
+                            <img src={accent2} alt="" aria-hidden="true" className="w-full h-full object-cover opacity-60" />
                             <div className="absolute inset-0 bg-black/40" />
                         </div>
                     </div>
@@ -160,6 +180,9 @@ const PortfolioPage: React.FC = () => {
                         const hasVideo = !!(item.videoUrl || item.btsUrl);
                         const videoSrc = item.videoUrl ?? item.btsUrl ?? '';
                         const imgSrc = item.image ?? '';
+                        const displayCat = activeCategory === 'Video' ? 'Video'
+                            : activeCategory === 'BTS' ? 'BTS'
+                            : item.category;
 
                         return (
                             <article key={`${item.category}-${item.label}-${idx}`} className="overflow-hidden rounded-2xl bg-[#f8f8f8] border border-[rgba(17,17,17,0.08)] transition-all hover:-translate-y-1 hover:shadow-xl group">
@@ -168,9 +191,9 @@ const PortfolioPage: React.FC = () => {
                                     <>
                                         <div
                                             className="relative aspect-video bg-black cursor-pointer overflow-hidden"
-                                            onClick={() => openVideo(videoSrc, item.label, item.category)}
+                                            onClick={() => openVideo(videoSrc, item.label, displayCat)}
                                             role="button" tabIndex={0}
-                                            onKeyDown={e => e.key === 'Enter' && openVideo(videoSrc, item.label, item.category)}
+                                            onKeyDown={e => e.key === 'Enter' && openVideo(videoSrc, item.label, displayCat)}
                                             aria-label={`Play ${item.label}`}
                                         >
                                             {imgSrc
@@ -184,17 +207,17 @@ const PortfolioPage: React.FC = () => {
                                                 </div>
                                             </div>
                                             <div className="absolute top-3 left-3">
-                                                <span className="bg-black/70 backdrop-blur-sm text-white text-[0.65rem] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full">{item.category}</span>
+                                                <span className="bg-black/70 backdrop-blur-sm text-white text-[0.65rem] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full">{displayCat}</span>
                                             </div>
                                         </div>
                                         <div className="p-4">
                                             <h2 className="text-[#111] font-bold text-sm leading-snug mb-3">{item.label}</h2>
                                             <button
                                                 className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#111] text-white text-xs font-bold transition-all hover:bg-black cursor-pointer border-0 font-[inherit]"
-                                                onClick={() => openVideo(videoSrc, item.label, item.category)}
+                                                onClick={() => openVideo(videoSrc, item.label, displayCat)}
                                             >
                                                 <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
-                                                {item.category === 'BTS' ? 'Watch BTS' : 'Watch Video'}
+                                                {activeCategory === 'BTS' || (!item.videoUrl && item.btsUrl) ? 'Watch BTS' : 'Watch Video'}
                                             </button>
                                         </div>
                                     </>
@@ -203,13 +226,13 @@ const PortfolioPage: React.FC = () => {
                                     <>
                                         <div
                                             className="relative aspect-[4/3] overflow-hidden bg-[#eee] cursor-pointer"
-                                            onClick={() => imgSrc && openImage(imgSrc, item.label, item.category)}
+                                            onClick={() => imgSrc && openImage(imgSrc, item.label, displayCat)}
                                             role="button" tabIndex={0}
-                                            onKeyDown={e => e.key === 'Enter' && imgSrc && openImage(imgSrc, item.label, item.category)}
+                                            onKeyDown={e => e.key === 'Enter' && imgSrc && openImage(imgSrc, item.label, displayCat)}
                                             aria-label={`View ${item.label}`}
                                         >
                                             {imgSrc && (
-                                                <img src={imgSrc} alt={`${item.category}: ${item.label}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                                <img src={imgSrc} alt={`${displayCat}: ${item.label}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                                             )}
                                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/45 transition-all duration-300 flex items-center justify-center">
                                                 <div className="w-11 h-11 rounded-full bg-white/90 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 shadow-lg">
@@ -219,11 +242,11 @@ const PortfolioPage: React.FC = () => {
                                                 </div>
                                             </div>
                                             <div className="absolute top-3 left-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                                <span className="bg-black/70 backdrop-blur-sm text-white text-[0.65rem] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full">{item.category}</span>
+                                                <span className="bg-black/70 backdrop-blur-sm text-white text-[0.65rem] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full">{displayCat}</span>
                                             </div>
                                         </div>
                                         <div className="p-4">
-                                            <span className="text-[#888] text-[0.7rem] font-bold uppercase tracking-widest mb-1 block">{item.category}</span>
+                                            <span className="text-[#888] text-[0.7rem] font-bold uppercase tracking-widest mb-1 block">{displayCat}</span>
                                             <h2 className="text-[#111] font-bold text-sm leading-snug">{item.label}</h2>
                                         </div>
                                     </>
