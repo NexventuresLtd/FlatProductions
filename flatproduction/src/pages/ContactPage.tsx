@@ -147,7 +147,7 @@ const ContactPage: React.FC = () => {
                                     {[
                                         {
                                             icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>,
-                                            label: 'Studio Address', value: 'Kabeza KK 18 Ave, Kigali, Rwanda',
+                                            label: 'Studio Address', value: 'TCB house, KN 4 Avenue, Kigali, Rwanda',
                                         },
                                         {
                                             icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>,
@@ -197,7 +197,7 @@ const ContactPage: React.FC = () => {
                     <div className="mt-12 rounded-2xl overflow-hidden border border-[#e2e8f0] h-[420px] shadow-[0_4px_24px_rgba(0,0,0,0.06)]">
                         <iframe
                             title="Flat Production location"
-                            src="https://maps.google.com/maps?q=KK%2018%20Avenue,%20Kigali,%20Rwanda&z=15&output=embed"
+                            src="https://maps.google.com/maps?q=KN%204%20Avenue%2C%20Kigali%2C%20Rwanda&z=15&output=embed"
                             loading="lazy"
                             referrerPolicy="no-referrer-when-downgrade"
                             className="w-full h-full border-0"

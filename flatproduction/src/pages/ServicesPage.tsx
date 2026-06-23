@@ -184,7 +184,7 @@ const ServicesPage: React.FC = () => {
                             Let's turn your next idea into something people remember.
                         </h2>
                     </div>
-                    <a href="/contact" className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full border border-[rgba(17,17,17,0.08)] bg-[#e5e7eb] text-[#111] text-sm font-semibold cursor-pointer transition-all hover:bg-[#d9dde3] hover:-translate-y-0.5 hover:shadow-md flex-shrink-0">
+                    <a href="https://wa.me/250781691713?text=Hello%20Flat%20Production%2C%20I%20would%20like%20to%20book%20a%20project.%20Please%20let%20me%20know%20your%20availability." target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full border border-[rgba(17,17,17,0.08)] bg-[#e5e7eb] text-[#111] text-sm font-semibold cursor-pointer transition-all hover:bg-[#d9dde3] hover:-translate-y-0.5 hover:shadow-md flex-shrink-0">
                         Book a project
                     </a>
                 </section>
@@ -239,7 +239,9 @@ const ServicesPage: React.FC = () => {
                             {/* CTA */}
                             <div className="flex items-center gap-3 flex-wrap">
                                 <a
-                                    href="/contact"
+                                    href={`https://wa.me/250781691713?text=Hello%20Flat%20Production%2C%20I%20would%20like%20to%20book%20your%20${encodeURIComponent(modal?.title ?? 'service')}.%20Please%20let%20me%20know%20your%20availability.`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
                                     className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl bg-[#111] text-white font-bold text-sm hover:bg-black transition-all hover:-translate-y-px"
                                 >
                                     Book this service →

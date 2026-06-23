@@ -134,7 +134,7 @@ const Services: React.FC = () => {
                             )}
 
                             <div className="flex gap-3 flex-wrap">
-                                <a href="/contact" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#111] text-white font-bold text-sm hover:bg-black transition-all">
+                                <a href={`https://wa.me/250781691713?text=Hello%20Flat%20Production%2C%20I%20would%20like%20to%20book%20your%20${encodeURIComponent(modal?.title ?? 'service')}.%20Please%20let%20me%20know%20your%20availability.`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#111] text-white font-bold text-sm hover:bg-black transition-all">
                                     Book this service →
                                 </a>
                                 <button

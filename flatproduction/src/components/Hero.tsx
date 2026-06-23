@@ -107,7 +107,7 @@ const Hero: React.FC = () => {
             <a href="/portfolio" className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white text-black text-sm font-bold tracking-wide hover:bg-white/90 transition-colors">
               View Our Work
             </a>
-            <a href="/contact" className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-white/30 text-white text-sm font-bold tracking-wide hover:border-white hover:bg-white/10 transition-all">
+            <a href="https://wa.me/250781691713?text=Hello%20Flat%20Production%2C%20I%20would%20like%20to%20book%20a%20project.%20Please%20let%20me%20know%20your%20availability." target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-white/30 text-white text-sm font-bold tracking-wide hover:border-white hover:bg-white/10 transition-all">
               Book a Project
             </a>
           </div>

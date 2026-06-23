@@ -46,7 +46,7 @@ const Footer: React.FC = () => {
                 </div>
                 <div>
                     <div className="flex flex-col gap-3">
-                        <a className="block px-4 py-3 rounded-lg border border-white/20 text-white text-sm font-semibold text-center transition-colors hover:bg-white hover:text-black" href="mailto:info@flatproduction.com">Book Us</a>
+                        <a className="block px-4 py-3 rounded-lg border border-white/20 text-white text-sm font-semibold text-center transition-colors hover:bg-white hover:text-black" href="https://wa.me/250781691713?text=Hello%20Flat%20Production%2C%20I%20would%20like%20to%20book%20your%20services.%20Please%20get%20back%20to%20me%20with%20more%20details." target="_blank" rel="noopener noreferrer">Book Us</a>
                         <a className="block px-4 py-3 rounded-lg border border-white/20 text-white text-sm font-semibold text-center transition-colors hover:bg-white hover:text-black" href="mailto:support@flatproduction.com">Contact Support</a>
                     </div>
                 </div>
