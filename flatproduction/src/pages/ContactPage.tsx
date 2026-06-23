@@ -8,7 +8,7 @@ const ContactPage: React.FC = () => {
     const [heroData, setHeroData] = useState(() => contentStore.read().pageHeroes.contact);
 
     useEffect(() => {
-        contentStore.onUpdate(c => { if (c.pageHeroes?.contact) setHeroData(c.pageHeroes.contact); });
+        return contentStore.onUpdate(c => { if (c.pageHeroes?.contact) setHeroData(c.pageHeroes.contact); });
     }, []);
     const [showToast, setShowToast] = useState(false);
     const whatsappLink = 'https://wa.me/250781691713?text=Hello%20Flat%20Production%2C%20I%20would%20like%20to%20book%20your%20services.';

@@ -91,6 +91,8 @@ const DEFAULT_SITE_CONTENT: SiteContent = {
     '/photo1.jpg', '/photo2.jpg', '/photo3.jpg', '/photo4.jpg', '/photo5.jpg', '/photo6.jpg',
     '/photo8.jpg', '/photo9.jpg', '/photo10.jpg', '/photo12.jpg', '/photo14.jpg',
     '/live1.jpeg', '/live2.jpeg', '/web.jpg', '/graphy33.jpg', '/iwacu1.jpg',
+    '/2I1A0386.JPG.jpeg', '/2I1A0403.JPG.jpeg', '/2I1A0407.JPG.jpeg',
+    '/2I1A0410.JPG.jpeg', '/MARR0034.JPG', '/MARR0039.JPG', '/MARR0058.JPG',
   ],
   pageHeroes: {
     about:     { title: 'Real Moments.\nBold Stories.\nTimeless Impact.', image: '/photo12.jpg' },
@@ -185,23 +187,59 @@ class ContentStore {
     catch { return cloneContent(DEFAULT_SITE_CONTENT); }
   }
 
-  write(payload: Partial<SiteContent>) {
+  write(payload: Partial<SiteContent>): SiteContent {
     const merged = normalize({ ...this.read(), ...payload });
-    localStorage.setItem(KEY, JSON.stringify(merged));
+    try {
+      localStorage.setItem(KEY, JSON.stringify(merged));
+    } catch {
+      console.warn('[contentStore] localStorage write failed (quota exceeded?)');
+      return this.read();
+    }
     this.channel?.postMessage({ type: 'update', payload: merged });
+    /* Also dispatch a CustomEvent so same-tab listeners (e.g. bfcache-restored
+       pages or components that missed the BroadcastChannel) pick up the change. */
+    window.dispatchEvent(new CustomEvent('flatproduction_update', { detail: merged }));
     return merged;
   }
 
   clear() {
     localStorage.removeItem(KEY);
     this.channel?.postMessage({ type: 'clear' });
+    window.dispatchEvent(new CustomEvent('flatproduction_update', { detail: cloneContent(DEFAULT_SITE_CONTENT) }));
   }
 
-  onUpdate(cb: (content: SiteContent) => void) {
-    this.channel?.addEventListener('message', ev => {
-      if (ev.data?.type === 'update') cb(ev.data.payload);
+  /** Subscribe to content changes from any tab.
+   *  Returns an unsubscribe function — use it as the useEffect cleanup. */
+  onUpdate(cb: (content: SiteContent) => void): () => void {
+    /* BroadcastChannel: fires when ANOTHER tab calls write() */
+    const msgHandler = (ev: MessageEvent) => {
+      if (ev.data?.type === 'update') cb(ev.data.payload as SiteContent);
       if (ev.data?.type === 'clear')  cb(cloneContent(DEFAULT_SITE_CONTENT));
-    });
+    };
+    /* window.storage: native cross-tab localStorage change event (reliable fallback) */
+    const storageHandler = (e: StorageEvent) => {
+      if (e.key !== KEY) return;
+      if (e.newValue) {
+        try { cb(normalize(JSON.parse(e.newValue) as Partial<SiteContent>)); } catch {}
+      } else {
+        cb(cloneContent(DEFAULT_SITE_CONTENT));
+      }
+    };
+    /* CustomEvent: fires in the SAME tab when write() is called directly
+       (covers bfcache-restored pages and any non-admin same-tab consumers) */
+    const customHandler = (e: Event) => {
+      cb((e as CustomEvent<SiteContent>).detail);
+    };
+
+    this.channel?.addEventListener('message', msgHandler);
+    window.addEventListener('storage', storageHandler);
+    window.addEventListener('flatproduction_update', customHandler);
+
+    return () => {
+      this.channel?.removeEventListener('message', msgHandler);
+      window.removeEventListener('storage', storageHandler);
+      window.removeEventListener('flatproduction_update', customHandler);
+    };
   }
 }
 

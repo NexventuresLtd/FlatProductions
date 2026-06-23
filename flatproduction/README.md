@@ -12,7 +12,7 @@ A full-featured creative agency website for **Flat Productions Limited** (Kigali
 | Build tool | Vite 8 |
 | Styling | Tailwind CSS v4.2.2 via `@tailwindcss/vite` |
 | Icons | lucide-react v0.268.0 |
-| Storage | `localStorage` + `BroadcastChannel` (no backend) |
+| Storage | `localStorage` + `BroadcastChannel` + `window.storage` event (no backend) |
 | Routing | Custom pathname-based routing in `App.tsx` |
 
 ---
@@ -146,15 +146,27 @@ All site content is stored in `localStorage` under the key `flatproduction_site_
 
 Every component that displays content:
 1. Initialises state from `contentStore.read()` on mount
-2. Subscribes to updates via `contentStore.onUpdate(callback)` — fired when the dashboard saves to the same or another tab
+2. Subscribes to updates via `contentStore.onUpdate(callback)` and returns the cleanup function so React removes listeners on unmount
 
 ```typescript
 // Pattern used in every component
 const [data, setData] = useState(() => contentStore.read().someField);
 useEffect(() => {
-  contentStore.onUpdate(c => setData(c.someField));
+  return contentStore.onUpdate(c => setData(c.someField));
 }, []);
 ```
+
+`onUpdate` listens on three channels simultaneously so updates are reliable regardless of scenario:
+
+| Channel | What it covers |
+|---|---|
+| `BroadcastChannel` | Changes made in **another browser tab** |
+| `window.storage` event | Native cross-tab localStorage fallback (more reliable than BroadcastChannel in some browsers) |
+| `flatproduction_update` CustomEvent | Changes made **within the same tab** (e.g. dashboard and preview open together) |
+
+`write()` dispatches to all three and wraps `localStorage.setItem` in a try/catch — if storage is full (e.g. too many large base64 images), it logs a warning and returns the current state unchanged instead of silently corrupting data.
+
+`App.tsx` also listens for the browser's `pageshow` event. When `event.persisted === true` (the page was restored from the back/forward cache), it forces a full reload so React re-reads fresh data from localStorage.
 
 ---
 

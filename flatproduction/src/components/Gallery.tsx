@@ -107,7 +107,7 @@ const Gallery: React.FC = () => {
                     link: it.link || '/portfolio'
                 })) : defaultItems);
         };
-        contentStore.onUpdate(onUpdate);
+        return contentStore.onUpdate(onUpdate);
     }, []);
 
     return (

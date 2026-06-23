@@ -60,6 +60,16 @@ const App: React.FC = () => {
     if (!isAdminRoute) trackVisit();
   }, [isAdminRoute]);
 
+  /* bfcache fix: when browser restores page from back/forward cache,
+     React state may be stale. Force a reload so localStorage is re-read. */
+  useEffect(() => {
+    const handlePageShow = (e: PageTransitionEvent) => {
+      if (e.persisted) window.location.reload();
+    };
+    window.addEventListener('pageshow', handlePageShow);
+    return () => window.removeEventListener('pageshow', handlePageShow);
+  }, []);
+
   if (currentPath === '/about')     return <><AboutPage /><AdminBar /></>;
   if (currentPath === '/gallery')   return <><GalleryPage /><AdminBar /></>;
   if (currentPath === '/portfolio') return <><PortfolioPage /><AdminBar /></>;

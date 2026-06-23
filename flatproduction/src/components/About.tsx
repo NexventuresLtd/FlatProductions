@@ -11,7 +11,7 @@ const About: React.FC = () => {
     const [about, setAbout] = useState(() => contentStore.read().about);
 
     useEffect(() => {
-        contentStore.onUpdate((c: any) => { if (c.about) setAbout(c.about); });
+        return contentStore.onUpdate((c: any) => { if (c.about) setAbout(c.about); });
     }, []);
 
     return (

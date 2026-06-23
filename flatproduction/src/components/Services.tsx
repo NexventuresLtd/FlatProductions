@@ -32,7 +32,7 @@ const Services: React.FC = () => {
     const [modal, setModal] = useState<ModalService | null>(null);
 
     useEffect(() => {
-        contentStore.onUpdate((c: any) => {
+        return contentStore.onUpdate((c: any) => {
             if (c.services && c.services.length) setServices(c.services);
         });
     }, []);

@@ -13,7 +13,7 @@ const AboutPage: React.FC = () => {
   const [content, setContent] = useState<SiteContent>(() => contentStore.read());
 
   useEffect(() => {
-    contentStore.onUpdate(c => setContent(c));
+    return contentStore.onUpdate(c => setContent(c));
   }, []);
 
   const { about, testimonials, pageHeroes } = content;

@@ -59,7 +59,7 @@ const ServicesPage: React.FC = () => {
     const [modal, setModal] = useState<ServiceItem | null>(null);
 
     useEffect(() => {
-        contentStore.onUpdate((c: any) => {
+        return contentStore.onUpdate((c: any) => {
             setServices(buildServices(c.services ?? []));
             if (c.pageHeroes?.services) setHeroData(c.pageHeroes.services);
         });

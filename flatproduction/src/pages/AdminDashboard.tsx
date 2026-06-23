@@ -364,21 +364,6 @@ const Overview: React.FC<{draft:SiteContent;go:(s:SectionKey)=>void;visits:numbe
         <p className="text-[#888] text-base mt-1">Manage your site content from here.</p>
       </div>
 
-      {/* Visit counter banner */}
-      <div className="bg-[#0a0a0a] rounded-2xl p-5 mb-6 flex items-center justify-between animate-fade-in-up" style={{animationDelay:'30ms'}}>
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center"><Eye size={20} className="text-white"/></div>
-          <div>
-            <p className="text-white font-bold text-3xl tabular-nums">{visits.toLocaleString()}</p>
-            <p className="text-white/50 text-sm mt-0.5">Total website visits</p>
-          </div>
-        </div>
-        <button className="px-4 py-2.5 rounded-xl border border-white/20 text-white/60 text-sm font-semibold hover:border-white/40 hover:text-white transition-all cursor-pointer bg-transparent font-[inherit]"
-          onClick={()=>{localStorage.setItem('flat_visit_count','0');window.dispatchEvent(new Event('storage'));}}>
-          Reset
-        </button>
-      </div>
-
       {/* Stat tiles — 6 across two rows */}
       <div className="grid grid-cols-3 gap-4 mb-4">
         <StatCard target={draft.hero.images?.length??0} label="Hero Slides"    icon={<Film size={18}/>}      onClick={()=>go('hero')}         delay={0}/>
@@ -600,7 +585,7 @@ const AdminDashboard: React.FC = ()=>{
   const [views,setViews]   = useState<Record<string,ViewMode>>({services:'grid',portfolio:'list',team:'grid'});
   const [visits,setVisits] = useState(()=>parseInt(localStorage.getItem('flat_visit_count')||'0',10));
 
-  useEffect(()=>{ contentStore.onUpdate(c=>setDraft(cloneContent(c))); },[]);
+  useEffect(()=>{ return contentStore.onUpdate(c=>setDraft(cloneContent(c))); },[]);
   useEffect(()=>{ setQuery(''); setPfSvc(''); setPfType(''); },[active]);
   useEffect(()=>{
     const iv=setInterval(()=>setVisits(parseInt(localStorage.getItem('flat_visit_count')||'0',10)),5000);

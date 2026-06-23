@@ -52,7 +52,7 @@ const Team: React.FC = () => {
 
     useEffect(() => {
         const onUpdate = (c: any) => setTeam((c.team && c.team.length) ? c.team : defaultTeam);
-        contentStore.onUpdate(onUpdate);
+        return contentStore.onUpdate(onUpdate);
     }, []);
 
     useEffect(() => {

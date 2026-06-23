@@ -27,14 +27,11 @@ const defaultImages = [
     '/photo5.jpg', '/photo6.jpg', '/photo8.jpg', '/photo9.jpg',
     '/photo10.jpg', '/photo12.jpg', '/photo14.jpg', '/live1.jpeg',
     '/live2.jpeg', '/web.jpg', '/graphy33.jpg', '/iwacu1.jpg',
-];
-
-const btsImages = [
     '/2I1A0386.JPG.jpeg', '/2I1A0403.JPG.jpeg', '/2I1A0407.JPG.jpeg',
     '/2I1A0410.JPG.jpeg', '/MARR0034.JPG', '/MARR0039.JPG', '/MARR0058.JPG',
 ];
 
-const categories = ['All', 'BTS', 'Live', 'Photography', 'Web', 'Graphics', 'Documentary'];
+const ALL_CATEGORIES = ['All', 'BTS', 'Live', 'Photography', 'Web', 'Graphics', 'Documentary'];
 
 const getCategory = (path: string): string => {
     const name = path.split('/').pop()?.split('.')[0]?.toLowerCase() ?? '';
@@ -45,16 +42,8 @@ const getCategory = (path: string): string => {
     return 'Photography';
 };
 
-const mergeAll = (images: string[]): string[] => {
-    const merged = [...images];
-    for (const img of btsImages) {
-        if (!merged.includes(img)) merged.push(img);
-    }
-    return merged;
-};
-
 const buildItems = (images: string[]): GalleryItem[] =>
-    mergeAll(images).map((src, i) => ({ src, title: getTitle(src, i) }));
+    images.map((src, i) => ({ src, title: getTitle(src, i) }));
 
 const GalleryPage: React.FC = () => {
     const [galleryItems, setGalleryItems] = useState<GalleryItem[]>(() =>
@@ -65,16 +54,29 @@ const GalleryPage: React.FC = () => {
     const [lightbox, setLightbox] = useState<number | null>(null);
 
     useEffect(() => {
-        contentStore.onUpdate((c: any) => {
+        return contentStore.onUpdate((c: any) => {
             setGalleryItems(buildItems(c.gallery?.length ? c.gallery : defaultImages));
             if (c.pageHeroes?.gallery) setHeroData(c.pageHeroes.gallery);
         });
     }, []);
 
+    /* Only show category tabs that have at least one image */
+    const visibleCategories = useMemo(() => {
+        const present = new Set(galleryItems.map(item => getCategory(item.src)));
+        return ALL_CATEGORIES.filter(cat => cat === 'All' || present.has(cat));
+    }, [galleryItems]);
+
     const displayedItems = useMemo(() => {
         if (activeCategory === 'All') return galleryItems;
         return galleryItems.filter(item => getCategory(item.src) === activeCategory);
     }, [galleryItems, activeCategory]);
+
+    // If the active category is deleted/filtered out, fall back to 'All'
+    useEffect(() => {
+        if (activeCategory !== 'All' && !visibleCategories.includes(activeCategory)) {
+            setActiveCategory('All');
+        }
+    }, [visibleCategories, activeCategory]);
 
     // Close lightbox when filter changes
     useEffect(() => { setLightbox(null); }, [activeCategory]);
@@ -117,9 +119,9 @@ const GalleryPage: React.FC = () => {
             </section>
 
             <main className="max-w-[1400px] mx-auto px-5 py-10 w-full">
-                {/* Filter tabs */}
+                {/* Filter tabs — only categories present in the current gallery */}
                 <div className="flex flex-wrap gap-2 mb-8" role="tablist" aria-label="Gallery categories">
-                    {categories.map(cat => (
+                    {visibleCategories.map(cat => (
                         <button key={cat} type="button"
                             className={`px-4 py-2 rounded-full border text-sm font-semibold cursor-pointer transition-all ${activeCategory === cat ? 'bg-[#111] text-white border-[#111]' : 'border-[rgba(17,17,17,0.14)] bg-white text-[#111] hover:border-[#111]'}`}
                             onClick={() => setActiveCategory(cat)} aria-pressed={activeCategory === cat}

@@ -15,7 +15,7 @@ const Clients: React.FC = () => {
             setLogos(c.clientLogos ?? []);
             setIntro(c.clientsIntro ?? '');
         };
-        contentStore.onUpdate(onUpdate);
+        return contentStore.onUpdate(onUpdate);
     }, []);
 
     // --- AUTO-FIX FOR OLD DATA ---

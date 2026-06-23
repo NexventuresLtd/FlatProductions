@@ -12,14 +12,13 @@ const Hero: React.FC = () => {
   const [isTransitioning, setIsTransitioning] = useState(false);
 
   useEffect(() => {
-    const onUpdate = (c: any) => {
-      const nextHero = c.hero ?? initialHero;
-      setHeroContent(nextHero);
-      setImages(nextHero.images || []);
+    return contentStore.onUpdate((c: any) => {
+      if (!c.hero) return;
+      setHeroContent(c.hero);
+      setImages(c.hero.images || []);
       setCurrentImageIndex(0);
-    };
-    contentStore.onUpdate(onUpdate);
-  }, [initialHero]);
+    });
+  }, []);
 
   const goTo = useCallback((index: number) => {
     if (isTransitioning) return;

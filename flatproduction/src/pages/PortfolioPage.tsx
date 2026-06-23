@@ -64,7 +64,7 @@ const PortfolioPage: React.FC = () => {
     const [imageModal, setImageModal] = useState<ImageModal | null>(null);
 
     useEffect(() => {
-        contentStore.onUpdate((c: any) => {
+        return contentStore.onUpdate((c: any) => {
             setStoredPortfolio(c.portfolio ?? []);
             if (c.pageHeroes?.portfolio) setHeroData(c.pageHeroes.portfolio);
         });
