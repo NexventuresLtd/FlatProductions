@@ -98,12 +98,23 @@ const Services: React.FC = () => {
                         <div className="p-7">
                             <p className="text-[#333] text-[0.95rem] leading-[1.8] mb-6">{modal.extendedDescription || modal.description}</p>
 
-                            <div className="flex gap-3 flex-wrap">
-                                <a href={`https://wa.me/${whatsapp}?text=Hello%20Flat%20Production%2C%20I%20would%20like%20to%20book%20your%20${encodeURIComponent(modal?.title ?? 'service')}.%20Please%20let%20me%20know%20your%20availability.`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#111] text-white font-bold text-sm hover:bg-black transition-all">
+                            <div className="flex gap-3 flex-wrap items-center">
+                                <a
+                                    href={`https://wa.me/${whatsapp}?text=Hello%20Flat%20Production%2C%20I%20would%20like%20to%20book%20your%20${encodeURIComponent(modal?.title ?? 'service')}.%20Please%20let%20me%20know%20your%20availability.`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#111] text-white font-bold text-sm hover:bg-black transition-all"
+                                >
                                     Book this service →
                                 </a>
+                                <a
+                                    href={`/portfolio?filter=${encodeURIComponent(modal.title)}`}
+                                    className="inline-flex items-center gap-2 px-5 py-3 rounded-xl border border-[rgba(17,17,17,0.15)] text-[#111] font-semibold text-sm hover:border-[#111] hover:bg-[#f5f5f5] transition-all"
+                                >
+                                    View Our Work →
+                                </a>
                                 <button
-                                    className="px-5 py-3 rounded-xl border border-[rgba(17,17,17,0.15)] text-[#555] font-semibold text-sm hover:border-[#111] hover:text-[#111] transition-all cursor-pointer bg-transparent font-[inherit]"
+                                    className="ml-auto text-[#888] text-sm font-medium hover:text-[#111] transition-colors cursor-pointer bg-transparent border-0 font-[inherit] underline underline-offset-2"
                                     onClick={() => setModal(null)}
                                 >
                                     Close

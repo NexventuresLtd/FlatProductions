@@ -10,6 +10,17 @@ type ContactInfo = {
   socials: { instagram: string; youtube: string; linkedin: string };
 };
 
+export const GALLERY_CATEGORIES = [
+  'Event Photography',
+  'Sports Photography',
+  'Wedding Photography',
+  'Portrait Photography',
+  'Advertising Photography',
+  'Behind The Scenes',
+] as const;
+export type GalleryCategory = typeof GALLERY_CATEGORIES[number];
+type GalleryItem = { src: string; category: string };
+
 type SiteContent = {
   hero: { title: string; subtitle: string; images?: string[]; notes?: string[] };
   about: {
@@ -33,7 +44,7 @@ type SiteContent = {
   clients: string[];
   clientLogos: string[];
   team: Array<{ id: string; name: string; role: string; bio?: string; photo?: string; position?: string }>;
-  gallery: string[];
+  gallery: GalleryItem[];
   contact: ContactInfo;
   pageHeroes: {
     about:     PageHero;
@@ -106,11 +117,29 @@ const DEFAULT_SITE_CONTENT: SiteContent = {
     { id: 'team-5', name: 'ishimwe samuel kelly',        role: 'GRAPHICS DESIGNER',        bio: 'Brings bold concepts to life through graphics, branding, and polished design details.',    photo: '/onekelly.jpg', position: '50% 20%' },
   ],
   gallery: [
-    '/photo1.jpg', '/photo2.jpg', '/photo3.jpg', '/photo4.jpg', '/photo5.jpg', '/photo6.jpg',
-    '/photo8.jpg', '/photo9.jpg', '/photo10.jpg', '/photo12.jpg', '/photo14.jpg',
-    '/live1.jpeg', '/live2.jpeg', '/web.jpg', '/graphy33.jpg', '/iwacu1.jpg',
-    '/2I1A0386.JPG.jpeg', '/2I1A0403.JPG.jpeg', '/2I1A0407.JPG.jpeg',
-    '/2I1A0410.JPG.jpeg', '/MARR0034.JPG', '/MARR0039.JPG', '/MARR0058.JPG',
+    { src: '/photo1.jpg',            category: 'Advertising Photography' },
+    { src: '/photo2.jpg',            category: 'Portrait Photography'    },
+    { src: '/photo3.jpg',            category: 'Portrait Photography'    },
+    { src: '/photo4.jpg',            category: 'Event Photography'       },
+    { src: '/photo5.jpg',            category: 'Advertising Photography' },
+    { src: '/photo6.jpg',            category: 'Event Photography'       },
+    { src: '/photo8.jpg',            category: 'Event Photography'       },
+    { src: '/photo9.jpg',            category: 'Portrait Photography'    },
+    { src: '/photo10.jpg',           category: 'Portrait Photography'    },
+    { src: '/photo12.jpg',           category: 'Event Photography'       },
+    { src: '/photo14.jpg',           category: 'Event Photography'       },
+    { src: '/live1.jpeg',            category: 'Event Photography'       },
+    { src: '/live2.jpeg',            category: 'Event Photography'       },
+    { src: '/web.jpg',               category: 'Advertising Photography' },
+    { src: '/graphy33.jpg',          category: 'Advertising Photography' },
+    { src: '/iwacu1.jpg',            category: 'Event Photography'       },
+    { src: '/2I1A0386.JPG.jpeg',     category: 'Behind The Scenes'       },
+    { src: '/2I1A0403.JPG.jpeg',     category: 'Behind The Scenes'       },
+    { src: '/2I1A0407.JPG.jpeg',     category: 'Behind The Scenes'       },
+    { src: '/2I1A0410.JPG.jpeg',     category: 'Behind The Scenes'       },
+    { src: '/MARR0034.JPG',          category: 'Wedding Photography'     },
+    { src: '/MARR0039.JPG',          category: 'Wedding Photography'     },
+    { src: '/MARR0058.JPG',          category: 'Wedding Photography'     },
   ],
   contact: {
     phone:    '+250 781 691 713',
@@ -146,7 +175,7 @@ function cloneContent(c: SiteContent): SiteContent {
     clients:      [...c.clients],
     clientLogos:  [...c.clientLogos],
     team:         c.team.map(m => ({ ...m })),
-    gallery:      [...c.gallery],
+    gallery:      c.gallery.map(g => ({ ...g })),
     contact:      { ...c.contact, socials: { ...c.contact.socials } },
     pageHeroes: {
       about:     { ...c.pageHeroes.about },
@@ -195,7 +224,16 @@ function normalize(parsed: Partial<SiteContent>): SiteContent {
     clients:      parsed.clients      ?? [...DEFAULT_SITE_CONTENT.clients],
     clientLogos:  finalLogos,
     team:         parsed.team         ?? [...DEFAULT_SITE_CONTENT.team],
-    gallery:      parsed.gallery      ?? [...DEFAULT_SITE_CONTENT.gallery],
+    gallery: (() => {
+      const raw: any[] = (parsed.gallery && (parsed.gallery as any[]).length)
+        ? (parsed.gallery as any[])
+        : DEFAULT_SITE_CONTENT.gallery;
+      return raw.map((item: any, i: number): GalleryItem =>
+        typeof item === 'string'
+          ? { src: item, category: DEFAULT_SITE_CONTENT.gallery[i]?.category ?? 'Event Photography' }
+          : { src: item.src ?? '', category: item.category ?? 'Event Photography' }
+      );
+    })(),
     contact: {
       ...DEFAULT_SITE_CONTENT.contact,
       ...parsed.contact,
@@ -284,4 +322,4 @@ class ContentStore {
 
 export const contentStore = new ContentStore();
 export { DEFAULT_SITE_CONTENT };
-export type { SiteContent, Testimonial, PageHero, StatItem, ContactInfo };
+export type { SiteContent, Testimonial, PageHero, StatItem, ContactInfo, GalleryItem };

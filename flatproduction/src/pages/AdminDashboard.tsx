@@ -15,7 +15,9 @@ import {
   type SiteContent,
   type Testimonial,
   type StatItem,
+  type GalleryItem,
   DEFAULT_SITE_CONTENT,
+  GALLERY_CATEGORIES,
   toOneSentence,
 } from '../store/contentStore';
 import { isAdminAuthed } from '../App';
@@ -29,6 +31,16 @@ type ViewMode = 'grid'|'list';
 
 const uid = () => `id-${Math.random().toString(36).slice(2,9)}`;
 
+function resolveImageUrl(url: string): string {
+  if (!url) return url;
+  if (!url.includes('drive.google.com') && !url.includes('docs.google.com')) return url;
+  const fileMatch = url.match(/\/d\/([a-zA-Z0-9_-]{10,})/);
+  if (fileMatch) return `https://drive.google.com/thumbnail?id=${fileMatch[1]}&sz=w1200`;
+  const idMatch = url.match(/[?&]id=([a-zA-Z0-9_-]{10,})/);
+  if (idMatch) return `https://drive.google.com/thumbnail?id=${idMatch[1]}&sz=w1200`;
+  return url;
+}
+
 function cloneContent(c: SiteContent): SiteContent {
   return {
     hero:         { ...c.hero, images:[...(c.hero.images??[])], notes:[...(c.hero.notes??[])] },
@@ -40,7 +52,7 @@ function cloneContent(c: SiteContent): SiteContent {
     clients:      [...c.clients],
     clientLogos:  [...c.clientLogos],
     team:         c.team.map(m=>({...m})),
-    gallery:      [...c.gallery],
+    gallery:      c.gallery.map(g => ({ ...g })),
     contact:      { ...c.contact, socials: { ...c.contact.socials } },
     pageHeroes: {
       about:     { ...c.pageHeroes.about },
@@ -109,7 +121,7 @@ const ImageField: React.FC<{value:string;onChange:(v:string)=>void;label?:string
       <label className="text-[0.7rem] font-bold text-[#111] uppercase tracking-[0.09em]">{label}</label>
       {value&&(
         <div className="relative rounded-xl overflow-hidden border border-[#e5e5e5] bg-[#f5f5f5] animate-scale-in" style={{aspectRatio:'16/7',maxHeight:108}}>
-          <img src={value} alt="" className="w-full h-full object-cover"/>
+          <img src={resolveImageUrl(value)} alt="" className="w-full h-full object-cover"/>
           <button className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80 transition-colors cursor-pointer border-0 font-[inherit]" onClick={()=>onChange('')}><X size={11}/></button>
         </div>
       )}
@@ -291,14 +303,21 @@ const SlideModal: React.FC<{initial?:{image:string;note:string};onSave:(img:stri
 };
 
 /* ─── Gallery Modal ──────────────────────────────────────────────── */
-const GalleryModal: React.FC<{initial?:string;onSave:(url:string)=>void;onClose:()=>void}> =
+const GalleryModal: React.FC<{initial?:GalleryItem;onSave:(item:GalleryItem)=>void;onClose:()=>void}> =
   ({initial,onSave,onClose})=>{
-  const [url,setUrl]=useState(initial??'');
+  const [url,setUrl]=useState(initial?.src??'');
+  const [cat,setCat]=useState<string>(initial?.category??'Event Photography');
   return(
-    <ModalShell title={initial!==undefined?'Edit Image':'Add Gallery Image'} onClose={onClose}>
+    <ModalShell title={initial?'Edit Image':'Add Gallery Image'} onClose={onClose}>
       <ImageField value={url} onChange={setUrl}/>
+      <div className="flex flex-col gap-1.5">
+        <label className="text-[0.7rem] font-bold text-[#111] uppercase tracking-[0.09em]">Category</label>
+        <select value={cat} onChange={e=>setCat(e.target.value)} className="w-full py-2.5 px-3.5 border border-[#ddd] rounded-xl text-sm text-[#111] bg-white outline-none font-[inherit] focus:border-[#111] transition-all cursor-pointer">
+          {GALLERY_CATEGORIES.map(c=><option key={c} value={c}>{c}</option>)}
+        </select>
+      </div>
       <div className="flex gap-2 pt-2">
-        <button className={b.primary} onClick={()=>{if(url.trim())onSave(url);}}><Save size={13}/>{initial!==undefined?'Save Changes':'Add Image'}</button>
+        <button className={b.primary} onClick={()=>{if(url.trim())onSave({src:url,category:cat});}}><Save size={13}/>{initial?'Save Changes':'Add Image'}</button>
         <button className={b.ghost} onClick={onClose}>Cancel</button>
       </div>
     </ModalShell>
@@ -626,7 +645,7 @@ const AdminDashboard: React.FC = ()=>{
   const movePf = (i:number,d:-1|1)=>persist({...draft,portfolio:move(draft.portfolio,i,i+d)});
   const delPf  = (i:number)=>persist({...draft,portfolio:draft.portfolio.filter((_,j)=>j!==i)},'Project deleted');
 
-  const saveGal = (url:string,i?:number)=>persist({...draft,gallery:i===undefined?[...draft.gallery,url]:draft.gallery.map((x,j)=>j===i?url:x)},i===undefined?'Image added':'Image saved');
+  const saveGal = (item:GalleryItem,i?:number)=>persist({...draft,gallery:i===undefined?[...draft.gallery,item]:draft.gallery.map((x,j)=>j===i?item:x)},i===undefined?'Image added':'Image saved');
   const moveGal = (i:number,d:-1|1)=>persist({...draft,gallery:move(draft.gallery,i,i+d)});
   const delGal  = (i:number)=>persist({...draft,gallery:draft.gallery.filter((_,j)=>j!==i)},'Image deleted');
 
@@ -658,7 +677,7 @@ const AdminDashboard: React.FC = ()=>{
     if(pfType==='image'&&p.videoUrl)return false;
     return true;
   });
-  const filtGal=draft.gallery.filter(img=>!q||img.toLowerCase().includes(q));
+  const filtGal=draft.gallery.filter(g=>!q||g.src.toLowerCase().includes(q)||g.category.toLowerCase().includes(q));
   const filtTm=draft.team.filter(m=>!q||m.name.toLowerCase().includes(q)||m.role.toLowerCase().includes(q));
 
   return(
@@ -1030,12 +1049,12 @@ const AdminDashboard: React.FC = ()=>{
                   :<Empty label="gallery image" onAdd={()=>setModal({k:'add-gal'})} icon={<ImageIcon size={36}/>}/>
                 )}
                 <div className="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-3">
-                  {filtGal.map(img=>{
-                    const i=draft.gallery.indexOf(img);
+                  {filtGal.map(g=>{
+                    const i=draft.gallery.indexOf(g);
                     return(
-                      <div key={`${img}-${i}`} className="bg-white border border-[#ebebeb] rounded-2xl overflow-hidden group hover:border-[#ccc] hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 animate-fade-in-up" style={{animationDelay:`${i*25}ms`}}>
+                      <div key={`${g.src}-${i}`} className="bg-white border border-[#ebebeb] rounded-2xl overflow-hidden group hover:border-[#ccc] hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 animate-fade-in-up" style={{animationDelay:`${i*25}ms`}}>
                         <div className="relative aspect-square bg-[#f5f5f5]">
-                          {img&&<img src={img} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-600"/>}
+                          <img src={g.src} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-600"/>
                           <div className="absolute inset-0 bg-black/65 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-1.5">
                             <button className={b.iconLt} onClick={()=>moveGal(i,-1)} disabled={i===0}><ChevronUp size={13}/></button>
                             <button className={b.iconLt} onClick={()=>moveGal(i,1)} disabled={i===draft.gallery.length-1}><ChevronDown size={13}/></button>
@@ -1044,7 +1063,10 @@ const AdminDashboard: React.FC = ()=>{
                           </div>
                           <div className="absolute top-1.5 left-1.5 bg-black/40 text-white text-[0.6rem] font-bold px-1.5 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity tabular-nums">#{i+1}</div>
                         </div>
-                        <p className="text-[#ccc] text-[0.62rem] truncate px-2 py-1.5 font-mono group-hover:text-[#888] transition-colors">{img.split('/').pop()}</p>
+                        <div className="px-2 py-1.5">
+                          <p className="text-[#888] text-[0.6rem] font-bold uppercase tracking-wide truncate group-hover:text-[#111] transition-colors">{g.category}</p>
+                          <p className="text-[#ccc] text-[0.6rem] truncate font-mono group-hover:text-[#888] transition-colors">{g.src.split('/').pop()}</p>
+                        </div>
                       </div>
                     );
                   })}
@@ -1255,8 +1277,8 @@ const AdminDashboard: React.FC = ()=>{
       {modal?.k==='edit-pf'&&    <PortfolioModal initial={draft.portfolio[modal.i]}   services={draft.services} onSave={item=>{savePf(item,modal.i);setModal(null);}} onClose={()=>setModal(null)}/>}
       {modal?.k==='add-slide'&&  <SlideModal     onSave={(img,n)=>{addSlide(img,n);setModal(null);}}                        onClose={()=>setModal(null)}/>}
       {modal?.k==='edit-slide'&& <SlideModal     initial={{image:imgs()[modal.i],note:nts()[modal.i]??''}} onSave={(img,n)=>{editSlide(modal.i,img,n);setModal(null);}} onClose={()=>setModal(null)}/>}
-      {modal?.k==='add-gal'&&    <GalleryModal   onSave={url=>{saveGal(url);setModal(null);}}                               onClose={()=>setModal(null)}/>}
-      {modal?.k==='edit-gal'&&   <GalleryModal   initial={draft.gallery[modal.i]}    onSave={url=>{saveGal(url,modal.i);setModal(null);}}   onClose={()=>setModal(null)}/>}
+      {modal?.k==='add-gal'&&    <GalleryModal   onSave={item=>{saveGal(item);setModal(null);}}                              onClose={()=>setModal(null)}/>}
+      {modal?.k==='edit-gal'&&   <GalleryModal   initial={draft.gallery[modal.i]}    onSave={item=>{saveGal(item,modal.i);setModal(null);}} onClose={()=>setModal(null)}/>}
       {modal?.k==='add-tm'&&     <TeamModal       onSave={item=>{saveTm(item);setModal(null);}}                              onClose={()=>setModal(null)}/>}
       {modal?.k==='edit-tm'&&    <TeamModal       initial={draft.team[modal.i]}       onSave={item=>{saveTm(item,modal.i);setModal(null);}}  onClose={()=>setModal(null)}/>}
       {modal?.k==='add-logo'&&   <LogoModal       onSave={url=>{saveLogo(url);setModal(null);}}                              onClose={()=>setModal(null)}/>}

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { contentStore } from '../store/contentStore';
@@ -56,12 +56,46 @@ function toWatchUrl(url: string): string {
 type VideoModal = { embedUrl: string; watchUrl: string; title: string; category: string };
 type ImageModal = { src: string; label: string; category: string };
 
+/* Match a service title to the best portfolio category tab.
+   Handles all-caps titles and partial/prefix word matches (e.g. "WEBSITE DESIGN" → "Web & Digital"). */
+function matchCategory(filter: string, categories: string[]): string {
+    const f = filter.toLowerCase().trim();
+    const avail = categories.filter(c => c !== 'All' && c !== 'Video' && c !== 'BTS');
+
+    // 1. Exact (case-insensitive)
+    const exact = avail.find(c => c.toLowerCase() === f);
+    if (exact) return exact;
+
+    // 2. Entire category name contained within the filter
+    //    e.g. "photography" inside "photography & video production"
+    const catInFilter = avail.find(c => f.includes(c.toLowerCase()));
+    if (catInFilter) return catInFilter;
+
+    // 3. Filter contained within category
+    const filterInCat = avail.find(c => c.toLowerCase().includes(f));
+    if (filterInCat) return filterInCat;
+
+    // 4. Word-prefix matching — handles "WEBSITE DESIGN" → "Web & Digital"
+    //    Split on spaces, &, -, commas; keep tokens ≥ 2 chars
+    const filterWords = f.split(/[\s&\-,|/]+/).filter(w => w.length >= 2);
+    const prefixMatch = avail.find(cat => {
+        const catWords = cat.toLowerCase().split(/[\s&\-,|/]+/).filter(w => w.length >= 2);
+        return catWords.some(cw =>
+            filterWords.some(fw => fw.startsWith(cw) || cw.startsWith(fw))
+        );
+    });
+    if (prefixMatch) return prefixMatch;
+
+    return 'All';
+}
+
 const PortfolioPage: React.FC = () => {
     const [activeCategory, setActiveCategory] = useState('All');
     const [storedPortfolio, setStoredPortfolio] = useState(() => contentStore.read().portfolio);
     const [heroData, setHeroData] = useState(() => contentStore.read().pageHeroes.portfolio);
     const [videoModal, setVideoModal] = useState<VideoModal | null>(null);
     const [imageModal, setImageModal] = useState<ImageModal | null>(null);
+    const filterApplied = useRef(false);
 
     useEffect(() => {
         return contentStore.onUpdate((c: any) => {
@@ -110,6 +144,16 @@ const PortfolioPage: React.FC = () => {
         const mainCats = [...new Set(allCards.map(c => c.category))].sort();
         return ['All', ...mainCats, ...(hasVideo ? ['Video'] : []), ...(hasBts ? ['BTS'] : [])];
     }, [allCards]);
+
+    /* Apply ?filter= URL param exactly once, after categories are ready */
+    useEffect(() => {
+        if (filterApplied.current || categories.length <= 1) return;
+        const param = new URLSearchParams(window.location.search).get('filter');
+        if (!param) return;
+        const matched = matchCategory(param, categories);
+        setActiveCategory(matched);   // sets 'All' if no match, which is fine
+        filterApplied.current = true;
+    }, [categories]);
 
     /* Reset active tab if it no longer exists after store update */
     useEffect(() => {
@@ -187,13 +231,13 @@ const PortfolioPage: React.FC = () => {
                         return (
                             <article key={`${item.category}-${item.label}-${idx}`} className="overflow-hidden rounded-2xl bg-[#f8f8f8] border border-[rgba(17,17,17,0.08)] transition-all hover:-translate-y-1 hover:shadow-xl group">
                                 {hasVideo ? (
-                                    /* ── Video card: thumbnail + play button ── */
+                                    /* ── Video card: thumbnail + per-video play buttons ── */
                                     <>
                                         <div
                                             className="relative aspect-video bg-black cursor-pointer overflow-hidden"
-                                            onClick={() => openVideo(videoSrc, item.label, displayCat)}
+                                            onClick={() => openVideo(item.videoUrl ?? item.btsUrl ?? '', item.label, displayCat)}
                                             role="button" tabIndex={0}
-                                            onKeyDown={e => e.key === 'Enter' && openVideo(videoSrc, item.label, displayCat)}
+                                            onKeyDown={e => e.key === 'Enter' && openVideo(item.videoUrl ?? item.btsUrl ?? '', item.label, displayCat)}
                                             aria-label={`Play ${item.label}`}
                                         >
                                             {imgSrc
@@ -206,19 +250,35 @@ const PortfolioPage: React.FC = () => {
                                                     <svg width="22" height="22" viewBox="0 0 24 24" fill="#111" className="ml-1"><polygon points="5,3 19,12 5,21"/></svg>
                                                 </div>
                                             </div>
-                                            <div className="absolute top-3 left-3">
+                                            <div className="absolute top-3 left-3 flex gap-1.5 flex-wrap">
                                                 <span className="bg-black/70 backdrop-blur-sm text-white text-[0.65rem] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full">{displayCat}</span>
+                                                {item.videoUrl && item.btsUrl && (
+                                                    <span className="bg-white/20 backdrop-blur-sm text-white text-[0.65rem] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full">Video + BTS</span>
+                                                )}
                                             </div>
                                         </div>
                                         <div className="p-4">
                                             <h2 className="text-[#111] font-bold text-sm leading-snug mb-3">{item.label}</h2>
-                                            <button
-                                                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#111] text-white text-xs font-bold transition-all hover:bg-black cursor-pointer border-0 font-[inherit]"
-                                                onClick={() => openVideo(videoSrc, item.label, displayCat)}
-                                            >
-                                                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
-                                                {activeCategory === 'BTS' || (!item.videoUrl && item.btsUrl) ? 'Watch BTS' : 'Watch Video'}
-                                            </button>
+                                            <div className="flex flex-wrap gap-2">
+                                                {item.videoUrl && (
+                                                    <button
+                                                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-[#111] text-white text-xs font-bold transition-all hover:bg-black cursor-pointer border-0 font-[inherit]"
+                                                        onClick={() => openVideo(item.videoUrl!, item.label, displayCat)}
+                                                    >
+                                                        <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+                                                        Main Video
+                                                    </button>
+                                                )}
+                                                {item.btsUrl && (
+                                                    <button
+                                                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-[rgba(17,17,17,0.2)] text-[#333] text-xs font-bold transition-all hover:bg-[#111] hover:text-white hover:border-[#111] cursor-pointer bg-transparent font-[inherit]"
+                                                        onClick={() => openVideo(item.btsUrl!, `${item.label} — BTS`, displayCat)}
+                                                    >
+                                                        <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+                                                        Behind The Scenes
+                                                    </button>
+                                                )}
+                                            </div>
                                         </div>
                                     </>
                                 ) : (

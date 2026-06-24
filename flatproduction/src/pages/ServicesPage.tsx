@@ -18,6 +18,7 @@ const ServicesPage: React.FC = () => {
     const [heroData, setHeroData]   = useState(() => contentStore.read().pageHeroes.services);
     const [stats, setStats]         = useState(() => contentStore.read().about.stats ?? []);
     const [chips, setChips]         = useState(() => contentStore.read().about.chips ?? []);
+    const [whatsapp, setWhatsapp]   = useState(() => contentStore.read().contact?.whatsapp ?? '250781691713');
     const [modal, setModal]         = useState<ServiceItem | null>(null);
 
     useEffect(() => {
@@ -26,6 +27,7 @@ const ServicesPage: React.FC = () => {
             if (c.pageHeroes?.services) setHeroData(c.pageHeroes.services);
             if (c.about?.stats)  setStats(c.about.stats);
             if (c.about?.chips)  setChips(c.about.chips);
+            if (c.contact?.whatsapp) setWhatsapp(c.contact.whatsapp);
         });
     }, []);
 
@@ -189,15 +191,21 @@ const ServicesPage: React.FC = () => {
 
                             <div className="flex items-center gap-3 flex-wrap">
                                 <a
-                                    href={`https://wa.me/250781691713?text=Hello%20Flat%20Production%2C%20I%20would%20like%20to%20book%20your%20${encodeURIComponent(modal?.title ?? 'service')}.%20Please%20let%20me%20know%20your%20availability.`}
+                                    href={`https://wa.me/${whatsapp}?text=Hello%20Flat%20Production%2C%20I%20would%20like%20to%20book%20your%20${encodeURIComponent(modal?.title ?? 'service')}.%20Please%20let%20me%20know%20your%20availability.`}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl bg-[#111] text-white font-bold text-sm hover:bg-black transition-all hover:-translate-y-px"
                                 >
                                     Book this service →
                                 </a>
+                                <a
+                                    href={`/portfolio?filter=${encodeURIComponent(modal?.title ?? '')}`}
+                                    className="inline-flex items-center gap-2 px-5 py-3.5 rounded-xl border border-[rgba(17,17,17,0.15)] text-[#111] font-semibold text-sm hover:border-[#111] hover:bg-[#f5f5f5] transition-all"
+                                >
+                                    View Our Work →
+                                </a>
                                 <button
-                                    className="px-5 py-3.5 rounded-xl border border-[rgba(17,17,17,0.15)] text-[#444] font-semibold text-sm hover:border-[#111] hover:text-[#111] transition-all cursor-pointer bg-transparent font-[inherit]"
+                                    className="ml-auto text-[#888] text-sm font-medium hover:text-[#111] transition-colors cursor-pointer bg-transparent border-0 font-[inherit] underline underline-offset-2"
                                     onClick={() => setModal(null)}
                                 >
                                     Close
