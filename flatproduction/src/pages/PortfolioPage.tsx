@@ -10,6 +10,7 @@ type PortfolioCard = {
     title?: string;
     videoUrl?: string;
     btsUrl?: string;
+    serviceId?: string;
 };
 
 /* Static fallback — shown only when store portfolio is completely empty */
@@ -91,6 +92,7 @@ function matchCategory(filter: string, categories: string[]): string {
 
 const PortfolioPage: React.FC = () => {
     const [activeCategory, setActiveCategory] = useState('All');
+    const [serviceIdFilter, setServiceIdFilter] = useState<string | null>(null);
     const [storedPortfolio, setStoredPortfolio] = useState(() => contentStore.read().portfolio);
     const [heroData, setHeroData] = useState(() => contentStore.read().pageHeroes.portfolio);
     const [videoModal, setVideoModal] = useState<VideoModal | null>(null);
@@ -134,6 +136,7 @@ const PortfolioPage: React.FC = () => {
             title:     item.title,
             videoUrl:  item.videoUrl || undefined,
             btsUrl:    item.btsUrl   || undefined,
+            serviceId: item.serviceId || undefined,
         }));
     }, [storedPortfolio]);
 
@@ -145,15 +148,30 @@ const PortfolioPage: React.FC = () => {
         return ['All', ...mainCats, ...(hasVideo ? ['Video'] : []), ...(hasBts ? ['BTS'] : [])];
     }, [allCards]);
 
-    /* Apply ?filter= URL param exactly once, after categories are ready */
+    /* Apply URL filter params exactly once, after categories are ready.
+       Prefers ?service= (serviceId exact match) over ?filter= (category fuzzy match). */
     useEffect(() => {
         if (filterApplied.current || categories.length <= 1) return;
-        const param = new URLSearchParams(window.location.search).get('filter');
-        if (!param) return;
-        const matched = matchCategory(param, categories);
-        setActiveCategory(matched);   // sets 'All' if no match, which is fine
+        const params   = new URLSearchParams(window.location.search);
+        const svcParam = params.get('service');
+        const catParam = params.get('filter');
+
+        if (svcParam) {
+            /* Check if any card in the store is linked to this service */
+            const hasLinkedItems = allCards.some(c => c.serviceId === svcParam);
+            if (hasLinkedItems) {
+                setServiceIdFilter(svcParam);
+                filterApplied.current = true;
+                return;
+            }
+        }
+        /* Fallback: match service title to best category tab */
+        if (catParam) {
+            const matched = matchCategory(catParam, categories);
+            setActiveCategory(matched);
+        }
         filterApplied.current = true;
-    }, [categories]);
+    }, [categories, allCards]);
 
     /* Reset active tab if it no longer exists after store update */
     useEffect(() => {
@@ -162,12 +180,20 @@ const PortfolioPage: React.FC = () => {
         }
     }, [categories, activeCategory]);
 
+    /* When serviceId filter is active, show all items linked to that service
+       (regardless of category tab). Category tab clicks clear the service filter. */
     const filteredItems = useMemo<PortfolioCard[]>(() => {
-        if (activeCategory === 'All')   return allCards;
-        if (activeCategory === 'Video') return allCards.filter(c => !!c.videoUrl);
-        if (activeCategory === 'BTS')   return allCards.filter(c => !!c.btsUrl);
-        return allCards.filter(c => c.category === activeCategory);
-    }, [activeCategory, allCards]);
+        const base = serviceIdFilter
+            ? allCards.filter(c => c.serviceId === serviceIdFilter)
+            : allCards;
+        if (!serviceIdFilter) {
+            if (activeCategory === 'All')   return base;
+            if (activeCategory === 'Video') return base.filter(c => !!c.videoUrl);
+            if (activeCategory === 'BTS')   return base.filter(c => !!c.btsUrl);
+            return base.filter(c => c.category === activeCategory);
+        }
+        return base;
+    }, [activeCategory, allCards, serviceIdFilter]);
 
     /* First two stored images for hero accent panel */
     const accent1 = storedPortfolio[0]?.image || '/live1.jpeg';
@@ -209,12 +235,27 @@ const PortfolioPage: React.FC = () => {
             </section>
 
             <main className="max-w-[1400px] mx-auto px-5 py-12 w-full">
+                {/* Service filter banner — shown when arriving from a "View Our Work" link */}
+                {serviceIdFilter && (
+                    <div className="flex items-center justify-between gap-4 mb-5 px-5 py-3 rounded-xl bg-[#f0f0f0] border border-[rgba(17,17,17,0.1)]">
+                        <span className="text-[#111] text-sm font-semibold">Showing work linked to this service</span>
+                        <button
+                            type="button"
+                            className="text-[#888] text-xs font-bold hover:text-[#111] transition-colors cursor-pointer border-0 bg-transparent font-[inherit]"
+                            onClick={() => { setServiceIdFilter(null); setActiveCategory('All'); }}
+                        >
+                            Clear filter ✕
+                        </button>
+                    </div>
+                )}
+
                 {/* Category filters */}
                 <div className="flex flex-wrap gap-2 mb-8" role="tablist" aria-label="Portfolio categories">
                     {categories.map((cat) => (
                         <button key={cat} type="button"
-                            className={`px-4 py-2 rounded-full border text-sm font-semibold cursor-pointer transition-all ${activeCategory === cat ? 'bg-[#111] text-white border-[#111]' : 'border-[rgba(17,17,17,0.14)] bg-white text-[#111] hover:border-[#111]'}`}
-                            onClick={() => setActiveCategory(cat)} aria-pressed={activeCategory === cat}
+                            className={`px-4 py-2 rounded-full border text-sm font-semibold cursor-pointer transition-all ${!serviceIdFilter && activeCategory === cat ? 'bg-[#111] text-white border-[#111]' : 'border-[rgba(17,17,17,0.14)] bg-white text-[#111] hover:border-[#111]'}`}
+                            onClick={() => { setServiceIdFilter(null); setActiveCategory(cat); }}
+                            aria-pressed={!serviceIdFilter && activeCategory === cat}
                         >{cat}</button>
                     ))}
                 </div>

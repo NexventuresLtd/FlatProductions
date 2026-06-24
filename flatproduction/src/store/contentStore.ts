@@ -162,7 +162,8 @@ const DEFAULT_SITE_CONTENT: SiteContent = {
   },
 };
 
-const KEY = 'flatproduction_site_content_v2';
+const KEY        = 'flatproduction_site_content_v2';
+const BACKUP_KEY = 'flatproduction_site_content_backup_v2';
 
 function cloneContent(c: SiteContent): SiteContent {
   return {
@@ -262,6 +263,22 @@ class ContentStore {
     if (!raw) return cloneContent(DEFAULT_SITE_CONTENT);
     try   { return normalize(JSON.parse(raw) as Partial<SiteContent>); }
     catch { return cloneContent(DEFAULT_SITE_CONTENT); }
+  }
+
+  hasBackup(): boolean {
+    return !!localStorage.getItem(BACKUP_KEY);
+  }
+
+  saveBackup(): void {
+    const current = localStorage.getItem(KEY);
+    if (current) localStorage.setItem(BACKUP_KEY, current);
+  }
+
+  readBackup(): SiteContent | null {
+    const raw = localStorage.getItem(BACKUP_KEY);
+    if (!raw) return null;
+    try   { return normalize(JSON.parse(raw) as Partial<SiteContent>); }
+    catch { return null; }
   }
 
   write(payload: Partial<SiteContent>): SiteContent {

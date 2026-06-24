@@ -199,17 +199,11 @@ const ServicesPage: React.FC = () => {
                                     Book this service →
                                 </a>
                                 <a
-                                    href={`/portfolio?filter=${encodeURIComponent(modal?.title ?? '')}`}
+                                    href={`/portfolio?service=${encodeURIComponent(modal?.id ?? '')}&filter=${encodeURIComponent(modal?.title ?? '')}`}
                                     className="inline-flex items-center gap-2 px-5 py-3.5 rounded-xl border border-[rgba(17,17,17,0.15)] text-[#111] font-semibold text-sm hover:border-[#111] hover:bg-[#f5f5f5] transition-all"
                                 >
                                     View Our Work →
                                 </a>
-                                <button
-                                    className="ml-auto text-[#888] text-sm font-medium hover:text-[#111] transition-colors cursor-pointer bg-transparent border-0 font-[inherit] underline underline-offset-2"
-                                    onClick={() => setModal(null)}
-                                >
-                                    Close
-                                </button>
                             </div>
                         </div>
                     </div>

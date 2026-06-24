@@ -20,7 +20,7 @@ import {
   GALLERY_CATEGORIES,
   toOneSentence,
 } from '../store/contentStore';
-import { isAdminAuthed } from '../App';
+import { isAdminAuthed, broadcastLogout } from '../App';
 
 /* ─── Types ─────────────────────────────────────────────────────── */
 type SectionKey = 'overview'|'hero'|'about'|'services'|'portfolio'|'gallery'|'clients'|'team'|'testimonials'|'pages'|'contact';
@@ -192,6 +192,31 @@ const ModalShell: React.FC<{title:string;onClose:()=>void;children:React.ReactNo
     </div>
   );
 };
+
+/* ─── Reset / Restore Confirm Modal ─────────────────────────────── */
+const ResetModal: React.FC<{hasBackup:boolean;onConfirm:()=>void;onClose:()=>void}> = ({hasBackup,onConfirm,onClose})=>(
+  <ModalShell title="Reset to Defaults" onClose={onClose}>
+    <div className="text-center py-3 animate-pop-in">
+      <div className="w-14 h-14 rounded-full bg-[#fff7ed] border-2 border-[#fed7aa] flex items-center justify-center mx-auto mb-4">
+        <RotateCcw size={24} className="text-[#ea580c]"/>
+      </div>
+      <p className="text-[#111] font-semibold text-base mb-2">Reset all content to factory defaults?</p>
+      <p className="text-[#666] text-sm leading-relaxed">
+        Every text, image, and item you have customised will be replaced with the original defaults.
+        {hasBackup
+          ? ' A backup of your current content already exists and can be restored at any time.'
+          : ' Your current content will be backed up so you can restore it afterwards.'}
+      </p>
+    </div>
+    <div className="flex gap-2 justify-center">
+      <button className={b.ghost} onClick={onClose}>Cancel</button>
+      <button className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#ea580c] hover:bg-[#c2410c] text-white text-sm font-bold transition-colors border-0 cursor-pointer font-[inherit]"
+        onClick={()=>{onConfirm();onClose();}}>
+        <RotateCcw size={13}/>Yes, Reset
+      </button>
+    </div>
+  </ModalShell>
+);
 
 /* ─── Confirm Delete Modal ───────────────────────────────────────── */
 const ConfirmModal: React.FC<{label:string;onConfirm:()=>void;onClose:()=>void}> = ({label,onConfirm,onClose})=>(
@@ -577,7 +602,8 @@ type Modal =
   |{k:'add-tm'}|{k:'edit-tm';i:number}
   |{k:'add-logo'}|{k:'edit-logo';i:number}
   |{k:'add-tmt'}|{k:'edit-tmt';i:number}
-  |{k:'del';label:string;onConfirm:()=>void};
+  |{k:'del';label:string;onConfirm:()=>void}
+  |{k:'reset'};
 
 const NAV: [SectionKey, string, React.ReactNode, (d:SiteContent)=>number|null][] = [
   ['overview',     'Overview',     <LayoutDashboard size={15}/>, ()=>null],
@@ -606,8 +632,9 @@ const AdminDashboard: React.FC = ()=>{
   const [query,setQuery]   = useState('');
   const [pfSvc,setPfSvc]   = useState('');
   const [pfType,setPfType] = useState('');
-  const [views,setViews]   = useState<Record<string,ViewMode>>({services:'grid',portfolio:'list',team:'grid'});
-  const [visits,setVisits] = useState(()=>parseInt(localStorage.getItem('flat_visit_count')||'0',10));
+  const [views,setViews]     = useState<Record<string,ViewMode>>({services:'grid',portfolio:'list',team:'grid'});
+  const [visits,setVisits]   = useState(()=>parseInt(localStorage.getItem('flat_visit_count')||'0',10));
+  const [hasBackup,setHasBackup] = useState(()=>contentStore.hasBackup());
 
   useEffect(()=>{ return contentStore.onUpdate(c=>setDraft(cloneContent(c))); },[]);
   useEffect(()=>{ setQuery(''); setPfSvc(''); setPfType(''); },[active]);
@@ -625,6 +652,18 @@ const AdminDashboard: React.FC = ()=>{
     contentStore.write(s);
     setToast(msg);
     setTimeout(()=>setToast(null),2200);
+  };
+
+  const resetToDefaults = () => {
+    contentStore.saveBackup();
+    setHasBackup(true);
+    persist(cloneContent(DEFAULT_SITE_CONTENT), 'Content reset to defaults');
+  };
+
+  const restorePrevious = () => {
+    const backup = contentStore.readBackup();
+    if (!backup) return;
+    persist(backup, 'Previous version restored');
   };
 
   const imgs = ()=>draft.hero.images??[];
@@ -716,7 +755,7 @@ const AdminDashboard: React.FC = ()=>{
             <Home size={14}/>View Website
           </a>
           <button className="flex items-center gap-2.5 w-full px-3 py-2.5 rounded-xl bg-transparent border border-white/[0.07] text-white/40 cursor-pointer text-sm font-semibold font-[inherit] transition-all duration-200 hover:border-red-500/40 hover:text-red-400"
-            onClick={()=>{sessionStorage.removeItem('flat_admin_tok');window.location.pathname='/login';}}>
+            onClick={()=>{broadcastLogout();window.location.pathname='/login';}}>
             <LogOut size={14}/>Sign out
           </button>
         </div>
@@ -730,7 +769,12 @@ const AdminDashboard: React.FC = ()=>{
             <p className="text-[#ccc] text-xs leading-none mt-0.5">Admin › {active}</p>
           </div>
           <div className="flex items-center gap-2">
-            <button className={b.smGhost} onClick={()=>persist(cloneContent(DEFAULT_SITE_CONTENT),'Content reset')}><RotateCcw size={14}/>Reset Content</button>
+            {hasBackup && (
+              <button className={b.smGhost} onClick={restorePrevious} title="Restore your content from before the last reset">
+                <RotateCcw size={14}/>Restore Previous
+              </button>
+            )}
+            <button className={b.smGhost} onClick={()=>setModal({k:'reset'})}><RotateCcw size={14}/>Reset Content</button>
           </div>
         </header>
 
@@ -1286,6 +1330,7 @@ const AdminDashboard: React.FC = ()=>{
       {modal?.k==='add-tmt'&&    <TestimonialModal onSave={item=>{saveTmt(item);setModal(null);}}                              onClose={()=>setModal(null)}/>}
       {modal?.k==='edit-tmt'&&   <TestimonialModal initial={draft.testimonials[modal.i]} onSave={item=>{saveTmt(item,modal.i);setModal(null);}} onClose={()=>setModal(null)}/>}
       {modal?.k==='del'&&        <ConfirmModal    label={modal.label} onConfirm={modal.onConfirm}                              onClose={()=>setModal(null)}/>}
+      {modal?.k==='reset'&&      <ResetModal      hasBackup={hasBackup} onConfirm={resetToDefaults}                              onClose={()=>setModal(null)}/>}
 
       <Toast msg={toast}/>
     </div>

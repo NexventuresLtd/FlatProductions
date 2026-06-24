@@ -8,10 +8,38 @@ import ContactPage from './pages/ContactPage';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
 
+const AUTH_KEY = 'flat_admin_tok';
+const AUTH_CHANNEL = 'flat_auth_sync';
+
 /* ── Session helpers ─────────────────────────────────────────────── */
 export function isAdminAuthed(): boolean {
-  const tok = sessionStorage.getItem('flat_admin_tok');
-  return !!tok && tok === localStorage.getItem('flat_admin_tok');
+  const tok = sessionStorage.getItem(AUTH_KEY);
+  return !!tok && tok === localStorage.getItem(AUTH_KEY);
+}
+
+/* Copy the shared localStorage token into this tab's sessionStorage.
+   Called on mount so every new tab inherits the current auth state. */
+export function syncAuthToTab(): void {
+  const lsTok = localStorage.getItem(AUTH_KEY);
+  if (lsTok) {
+    sessionStorage.setItem(AUTH_KEY, lsTok);
+  } else {
+    sessionStorage.removeItem(AUTH_KEY);
+  }
+}
+
+/* Broadcast-channel singleton — used for same-browser cross-tab signalling */
+let _authChannel: BroadcastChannel | null = null;
+function getAuthChannel(): BroadcastChannel | null {
+  if (typeof BroadcastChannel === 'undefined') return null;
+  if (!_authChannel) _authChannel = new BroadcastChannel(AUTH_CHANNEL);
+  return _authChannel;
+}
+
+export function broadcastLogout(): void {
+  localStorage.removeItem(AUTH_KEY);
+  sessionStorage.removeItem(AUTH_KEY);
+  getAuthChannel()?.postMessage({ type: 'logout' });
 }
 
 /* ── Visit counter (incremented on every public page load) ───────── */
@@ -59,6 +87,45 @@ const App: React.FC = () => {
   useEffect(() => {
     if (!isAdminRoute) trackVisit();
   }, [isAdminRoute]);
+
+  /* On mount: inherit auth state from any already-logged-in tab */
+  useEffect(() => {
+    syncAuthToTab();
+  }, []);
+
+  /* Cross-tab auth sync: keep all tabs in the same browser consistent */
+  useEffect(() => {
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key !== AUTH_KEY) return;
+      if (!e.newValue) {
+        // Token removed in another tab → log out this tab too
+        sessionStorage.removeItem(AUTH_KEY);
+        if (window.location.pathname === '/admin') {
+          window.location.pathname = '/login';
+        }
+      } else {
+        // Token set/updated in another tab → sync to this tab
+        sessionStorage.setItem(AUTH_KEY, e.newValue);
+      }
+    };
+
+    const channel = getAuthChannel();
+    const handleMessage = (e: MessageEvent) => {
+      if (e.data?.type === 'logout') {
+        sessionStorage.removeItem(AUTH_KEY);
+        if (window.location.pathname === '/admin') {
+          window.location.pathname = '/login';
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorage);
+    channel?.addEventListener('message', handleMessage);
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      channel?.removeEventListener('message', handleMessage);
+    };
+  }, []);
 
   /* bfcache fix: when browser restores page from back/forward cache,
      React state may be stale. Force a reload so localStorage is re-read. */
