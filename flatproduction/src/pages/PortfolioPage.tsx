@@ -90,6 +90,109 @@ function matchCategory(filter: string, categories: string[]): string {
     return 'All';
 }
 
+/* ── Reusable card grid ──────────────────────────────────────────── */
+type GridProps = {
+    items: PortfolioCard[];
+    displayCat: string;
+    openVideo: (url: string, label: string, category: string) => void;
+    openImage: (src: string, label: string, category: string) => void;
+};
+
+const PortfolioGrid: React.FC<GridProps> = ({ items, displayCat, openVideo, openImage }) => (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {items.map((item, idx) => {
+            const hasVideo = !!(item.videoUrl || item.btsUrl);
+            const imgSrc   = item.image ?? '';
+            const cat      = displayCat === 'Video' ? 'Video'
+                           : displayCat === 'BTS'   ? 'BTS'
+                           : item.category;
+            return (
+                <article key={`${item.category}-${item.label}-${idx}`} className="overflow-hidden rounded-2xl bg-[#f8f8f8] border border-[rgba(17,17,17,0.08)] transition-all hover:-translate-y-1 hover:shadow-xl group">
+                    {hasVideo ? (
+                        <>
+                            <div
+                                className="relative aspect-video bg-black cursor-pointer overflow-hidden"
+                                onClick={() => openVideo(item.videoUrl ?? item.btsUrl ?? '', item.label, cat)}
+                                role="button" tabIndex={0}
+                                onKeyDown={e => e.key === 'Enter' && openVideo(item.videoUrl ?? item.btsUrl ?? '', item.label, cat)}
+                                aria-label={`Play ${item.label}`}
+                            >
+                                {imgSrc
+                                    ? <img src={imgSrc} alt={item.label} className="w-full h-full object-cover opacity-80 group-hover:opacity-55 transition-opacity duration-300" />
+                                    : <div className="w-full h-full bg-[#1a1a1a]" />
+                                }
+                                <div className="absolute inset-0 bg-black/15 group-hover:bg-black/40 transition-all duration-300" />
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <div className="w-14 h-14 rounded-full bg-white shadow-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                                        <svg width="22" height="22" viewBox="0 0 24 24" fill="#111" className="ml-1"><polygon points="5,3 19,12 5,21"/></svg>
+                                    </div>
+                                </div>
+                                <div className="absolute top-3 left-3 flex gap-1.5 flex-wrap">
+                                    <span className="bg-black/70 backdrop-blur-sm text-white text-[0.65rem] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full">{cat}</span>
+                                    {item.videoUrl && item.btsUrl && (
+                                        <span className="bg-white/20 backdrop-blur-sm text-white text-[0.65rem] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full">Video + BTS</span>
+                                    )}
+                                </div>
+                            </div>
+                            <div className="p-4">
+                                <h2 className="text-[#111] font-bold text-sm leading-snug mb-3">{item.label}</h2>
+                                <div className="flex flex-wrap gap-2">
+                                    {item.videoUrl && (
+                                        <button
+                                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-[#111] text-white text-xs font-bold transition-all hover:bg-black cursor-pointer border-0 font-[inherit]"
+                                            onClick={() => openVideo(item.videoUrl!, item.label, cat)}
+                                        >
+                                            <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+                                            Main Video
+                                        </button>
+                                    )}
+                                    {item.btsUrl && (
+                                        <button
+                                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-[rgba(17,17,17,0.2)] text-[#333] text-xs font-bold transition-all hover:bg-[#111] hover:text-white hover:border-[#111] cursor-pointer bg-transparent font-[inherit]"
+                                            onClick={() => openVideo(item.btsUrl!, `${item.label} — BTS`, cat)}
+                                        >
+                                            <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+                                            Behind The Scenes
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            <div
+                                className="relative aspect-[4/3] overflow-hidden bg-[#eee] cursor-pointer"
+                                onClick={() => imgSrc && openImage(imgSrc, item.label, cat)}
+                                role="button" tabIndex={0}
+                                onKeyDown={e => e.key === 'Enter' && imgSrc && openImage(imgSrc, item.label, cat)}
+                                aria-label={`View ${item.label}`}
+                            >
+                                {imgSrc && (
+                                    <img src={imgSrc} alt={`${cat}: ${item.label}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                )}
+                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/45 transition-all duration-300 flex items-center justify-center">
+                                    <div className="w-11 h-11 rounded-full bg-white/90 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 shadow-lg">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2.5">
+                                            <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div className="absolute top-3 left-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                    <span className="bg-black/70 backdrop-blur-sm text-white text-[0.65rem] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full">{cat}</span>
+                                </div>
+                            </div>
+                            <div className="p-4">
+                                <span className="text-[#888] text-[0.7rem] font-bold uppercase tracking-widest mb-1 block">{cat}</span>
+                                <h2 className="text-[#111] font-bold text-sm leading-snug">{item.label}</h2>
+                            </div>
+                        </>
+                    )}
+                </article>
+            );
+        })}
+    </div>
+);
+
 const PortfolioPage: React.FC = () => {
     const [activeCategory, setActiveCategory] = useState('All');
     const [serviceIdFilter, setServiceIdFilter] = useState<string | null>(null);
@@ -140,13 +243,33 @@ const PortfolioPage: React.FC = () => {
         }));
     }, [storedPortfolio]);
 
-    /* Dynamic category tabs: content-type tabs first, then alphabetical main cats */
+    /* Dynamic category tabs: All → Video → BTS → alphabetical main cats */
     const categories = useMemo(() => {
         const hasVideo = allCards.some(c => !!c.videoUrl);
         const hasBts   = allCards.some(c => !!c.btsUrl);
         const mainCats = [...new Set(allCards.map(c => c.category))].sort();
-        return ['All', ...mainCats, ...(hasVideo ? ['Video'] : []), ...(hasBts ? ['BTS'] : [])];
+        return ['All', ...(hasVideo ? ['Video'] : []), ...(hasBts ? ['BTS'] : []), ...mainCats];
     }, [allCards]);
+
+    /* Count per tab */
+    const countFor = (cat: string) => {
+        if (cat === 'All')   return allCards.length;
+        if (cat === 'Video') return allCards.filter(c => !!c.videoUrl).length;
+        if (cat === 'BTS')   return allCards.filter(c => !!c.btsUrl).length;
+        return allCards.filter(c => c.category === cat).length;
+    };
+
+    /* Sections map for "All" view — groups items by category */
+    const portfolioSections = useMemo(() => {
+        if (activeCategory !== 'All' || serviceIdFilter) return null;
+        const mainCats = categories.filter(c => c !== 'All' && c !== 'Video' && c !== 'BTS');
+        const map = new Map<string, PortfolioCard[]>();
+        mainCats.forEach(cat => {
+            const items = allCards.filter(c => c.category === cat);
+            if (items.length) map.set(cat, items);
+        });
+        return map.size > 0 ? map : null;
+    }, [activeCategory, allCards, serviceIdFilter, categories]);
 
     /* Apply URL filter params exactly once, after categories are ready.
        Prefers ?service= (serviceId exact match) over ?filter= (category fuzzy match). */
@@ -251,116 +374,74 @@ const PortfolioPage: React.FC = () => {
 
                 {/* Category filters */}
                 <div className="flex flex-wrap gap-2 mb-8" role="tablist" aria-label="Portfolio categories">
-                    {categories.map((cat) => (
-                        <button key={cat} type="button"
-                            className={`px-4 py-2 rounded-full border text-sm font-semibold cursor-pointer transition-all ${!serviceIdFilter && activeCategory === cat ? 'bg-[#111] text-white border-[#111]' : 'border-[rgba(17,17,17,0.14)] bg-white text-[#111] hover:border-[#111]'}`}
-                            onClick={() => { setServiceIdFilter(null); setActiveCategory(cat); }}
-                            aria-pressed={!serviceIdFilter && activeCategory === cat}
-                        >{cat}</button>
-                    ))}
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" aria-live="polite">
-                    {filteredItems.map((item, idx) => {
-                        const hasVideo = !!(item.videoUrl || item.btsUrl);
-                        const videoSrc = item.videoUrl ?? item.btsUrl ?? '';
-                        const imgSrc = item.image ?? '';
-                        const displayCat = activeCategory === 'Video' ? 'Video'
-                            : activeCategory === 'BTS' ? 'BTS'
-                            : item.category;
-
+                    {categories.map((cat) => {
+                        const isActive = !serviceIdFilter && activeCategory === cat;
                         return (
-                            <article key={`${item.category}-${item.label}-${idx}`} className="overflow-hidden rounded-2xl bg-[#f8f8f8] border border-[rgba(17,17,17,0.08)] transition-all hover:-translate-y-1 hover:shadow-xl group">
-                                {hasVideo ? (
-                                    /* ── Video card: thumbnail + per-video play buttons ── */
-                                    <>
-                                        <div
-                                            className="relative aspect-video bg-black cursor-pointer overflow-hidden"
-                                            onClick={() => openVideo(item.videoUrl ?? item.btsUrl ?? '', item.label, displayCat)}
-                                            role="button" tabIndex={0}
-                                            onKeyDown={e => e.key === 'Enter' && openVideo(item.videoUrl ?? item.btsUrl ?? '', item.label, displayCat)}
-                                            aria-label={`Play ${item.label}`}
-                                        >
-                                            {imgSrc
-                                                ? <img src={imgSrc} alt={item.label} className="w-full h-full object-cover opacity-80 group-hover:opacity-55 transition-opacity duration-300" />
-                                                : <div className="w-full h-full bg-[#1a1a1a]" />
-                                            }
-                                            <div className="absolute inset-0 bg-black/15 group-hover:bg-black/40 transition-all duration-300" />
-                                            <div className="absolute inset-0 flex items-center justify-center">
-                                                <div className="w-14 h-14 rounded-full bg-white shadow-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="#111" className="ml-1"><polygon points="5,3 19,12 5,21"/></svg>
-                                                </div>
-                                            </div>
-                                            <div className="absolute top-3 left-3 flex gap-1.5 flex-wrap">
-                                                <span className="bg-black/70 backdrop-blur-sm text-white text-[0.65rem] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full">{displayCat}</span>
-                                                {item.videoUrl && item.btsUrl && (
-                                                    <span className="bg-white/20 backdrop-blur-sm text-white text-[0.65rem] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full">Video + BTS</span>
-                                                )}
-                                            </div>
-                                        </div>
-                                        <div className="p-4">
-                                            <h2 className="text-[#111] font-bold text-sm leading-snug mb-3">{item.label}</h2>
-                                            <div className="flex flex-wrap gap-2">
-                                                {item.videoUrl && (
-                                                    <button
-                                                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-[#111] text-white text-xs font-bold transition-all hover:bg-black cursor-pointer border-0 font-[inherit]"
-                                                        onClick={() => openVideo(item.videoUrl!, item.label, displayCat)}
-                                                    >
-                                                        <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
-                                                        Main Video
-                                                    </button>
-                                                )}
-                                                {item.btsUrl && (
-                                                    <button
-                                                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-[rgba(17,17,17,0.2)] text-[#333] text-xs font-bold transition-all hover:bg-[#111] hover:text-white hover:border-[#111] cursor-pointer bg-transparent font-[inherit]"
-                                                        onClick={() => openVideo(item.btsUrl!, `${item.label} — BTS`, displayCat)}
-                                                    >
-                                                        <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
-                                                        Behind The Scenes
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </>
-                                ) : (
-                                    /* ── Image card: click to view full image ── */
-                                    <>
-                                        <div
-                                            className="relative aspect-[4/3] overflow-hidden bg-[#eee] cursor-pointer"
-                                            onClick={() => imgSrc && openImage(imgSrc, item.label, displayCat)}
-                                            role="button" tabIndex={0}
-                                            onKeyDown={e => e.key === 'Enter' && imgSrc && openImage(imgSrc, item.label, displayCat)}
-                                            aria-label={`View ${item.label}`}
-                                        >
-                                            {imgSrc && (
-                                                <img src={imgSrc} alt={`${displayCat}: ${item.label}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                                            )}
-                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/45 transition-all duration-300 flex items-center justify-center">
-                                                <div className="w-11 h-11 rounded-full bg-white/90 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 shadow-lg">
-                                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2.5">
-                                                        <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
-                                                    </svg>
-                                                </div>
-                                            </div>
-                                            <div className="absolute top-3 left-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                                <span className="bg-black/70 backdrop-blur-sm text-white text-[0.65rem] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full">{displayCat}</span>
-                                            </div>
-                                        </div>
-                                        <div className="p-4">
-                                            <span className="text-[#888] text-[0.7rem] font-bold uppercase tracking-widest mb-1 block">{displayCat}</span>
-                                            <h2 className="text-[#111] font-bold text-sm leading-snug">{item.label}</h2>
-                                        </div>
-                                    </>
-                                )}
-                            </article>
+                            <button key={cat} type="button"
+                                className={`flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-semibold cursor-pointer transition-all ${isActive ? 'bg-[#111] text-white border-[#111]' : 'border-[rgba(17,17,17,0.14)] bg-white text-[#111] hover:border-[#111]'}`}
+                                onClick={() => { setServiceIdFilter(null); setActiveCategory(cat); }}
+                                aria-pressed={isActive}
+                            >
+                                {cat}
+                                <span className={`text-[0.62rem] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center tabular-nums ${isActive ? 'bg-white/20 text-white' : 'bg-[#f0f0f0] text-[#888]'}`}>
+                                    {countFor(cat)}
+                                </span>
+                            </button>
                         );
                     })}
                 </div>
 
-                {filteredItems.length === 0 && (
-                    <div className="text-center py-24 text-[#888]">
-                        <p className="text-lg font-semibold">No items in this category yet.</p>
+                {/* ── Sectioned All view ── */}
+                {portfolioSections ? (
+                    <div className="flex flex-col gap-14 md:gap-20" aria-live="polite">
+                        {[...portfolioSections.entries()].map(([cat, items], sIdx) => (
+                            <section key={cat}>
+                                <div className="flex items-end justify-between gap-4 mb-5">
+                                    <div>
+                                        <p className="text-[#bbb] text-[0.6rem] font-bold uppercase tracking-[0.28em] mb-1">
+                                            {String(sIdx + 1).padStart(2, '0')}
+                                        </p>
+                                        <h2 className="text-[#111] font-bold text-[clamp(1.3rem,2.5vw,1.9rem)] leading-none tracking-tight">
+                                            {cat}
+                                        </h2>
+                                    </div>
+                                    <div className="flex items-center gap-3 mb-0.5 flex-shrink-0">
+                                        <span className="text-[#999] text-sm hidden sm:block">
+                                            {items.length} {items.length === 1 ? 'item' : 'items'}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => { setServiceIdFilter(null); setActiveCategory(cat); }}
+                                            className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold text-[#111] border border-[rgba(17,17,17,0.15)] hover:bg-[#111] hover:text-white hover:border-[#111] transition-all duration-200 cursor-pointer bg-white font-[inherit]"
+                                        >
+                                            View All
+                                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m9 18 6-6-6-6"/></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className="w-full h-px bg-[#ebebeb] mb-6" />
+                                <PortfolioGrid items={items} displayCat={cat} openVideo={openVideo} openImage={openImage} />
+                            </section>
+                        ))}
                     </div>
+                ) : (
+                    /* ── Filtered / single-category flat grid ── */
+                    <>
+                        {filteredItems.length > 0 ? (
+                            <div aria-live="polite">
+                                <PortfolioGrid
+                                    items={filteredItems}
+                                    displayCat={activeCategory}
+                                    openVideo={openVideo}
+                                    openImage={openImage}
+                                />
+                            </div>
+                        ) : (
+                            <div className="text-center py-24 text-[#888]">
+                                <p className="text-lg font-semibold">No items in this category yet.</p>
+                            </div>
+                        )}
+                    </>
                 )}
 
                 <div className="mt-14 py-10 px-8 bg-[#f8f8f8] rounded-2xl border border-[rgba(17,17,17,0.08)] flex flex-col md:flex-row items-start md:items-center justify-between gap-6">

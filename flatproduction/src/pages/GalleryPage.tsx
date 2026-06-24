@@ -71,10 +71,17 @@ const GalleryPage: React.FC = () => {
         });
     }, []);
 
-    const visibleCategories = useMemo(() => {
+    /* All categories present in data — GALLERY_CATEGORIES order first, then any custom ones */
+    const orderedCategories = useMemo(() => {
         const present = new Set(gallery.map(g => g.category));
-        return ['All', ...GALLERY_CATEGORIES.filter(c => present.has(c))];
+        const known = GALLERY_CATEGORIES.filter(c => present.has(c));
+        const extra = [...present]
+            .filter(c => !(GALLERY_CATEGORIES as readonly string[]).includes(c))
+            .sort();
+        return [...known, ...extra];
     }, [gallery]);
+
+    const visibleCategories = useMemo(() => ['All', ...orderedCategories], [orderedCategories]);
 
     const countFor = (cat: string) =>
         cat === 'All' ? gallery.length : gallery.filter(g => g.category === cat).length;
@@ -83,16 +90,16 @@ const GalleryPage: React.FC = () => {
         activeCategory === 'All' ? gallery : gallery.filter(g => g.category === activeCategory),
     [gallery, activeCategory]);
 
-    /* Sections map for "All" view */
+    /* Sections map for "All" view — covers all actual categories, not just predefined ones */
     const sections = useMemo(() => {
         if (activeCategory !== 'All') return null;
         const map = new Map<string, GalleryItem[]>();
-        GALLERY_CATEGORIES.forEach(cat => {
+        orderedCategories.forEach(cat => {
             const items = gallery.filter(g => g.category === cat);
             if (items.length) map.set(cat, items);
         });
         return map;
-    }, [gallery, activeCategory]);
+    }, [gallery, activeCategory, orderedCategories]);
 
     /* Reset if active tab disappears */
     useEffect(() => {
@@ -208,7 +215,7 @@ const GalleryPage: React.FC = () => {
                                         <div className="flex items-center gap-4">
                                             <div>
                                                 <p className="text-[#bbb] text-[0.6rem] font-bold uppercase tracking-[0.28em] mb-1">
-                                                    {String(sIdx + 1).padStart(2, '0')} · Photography
+                                                    {String(sIdx + 1).padStart(2, '0')}
                                                 </p>
                                                 <h2 className="text-[#111] font-bold text-[clamp(1.3rem,2.5vw,1.9rem)] leading-none tracking-tight">
                                                     {cat}

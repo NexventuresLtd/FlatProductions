@@ -11,6 +11,7 @@ A full-featured creative agency website for **Flat Productions Limited** (Kigali
 | Framework | React 19.2.5 + TypeScript |
 | Build tool | Vite 8 |
 | Styling | Tailwind CSS v4.2.2 via `@tailwindcss/vite` |
+| Font | Montserrat (Google Fonts — 400/500/600/700/800/900) |
 | Icons | lucide-react v0.268.0 |
 | Storage | `localStorage` + `BroadcastChannel` + `window.storage` event (no backend) |
 | Routing | Custom pathname-based routing in `App.tsx` |
@@ -116,11 +117,16 @@ All site content is stored in `localStorage` under the key `flatproduction_site_
     image2?: string;
     image3?: string;
     image4?: string;
+    stats?: Array<{ value: string; label: string }>;   // e.g. "8+ Years Active"
+    chips?: string[];    // service capability tags shown on About/homepage
   };
   testimonials: Array<{ id, name, logoSrc, quote }>;
-  services: Array<{ id, title, description, image }>;
+  services: Array<{
+    id, title, description, image?,
+    extendedDescription?,  // long-form text shown in the service detail modal
+  }>;
   portfolio: Array<{
-    id, title, image, description,
+    id, title, image?, description?,
     videoUrl?,    // YouTube link → enables video play on Portfolio page
     btsUrl?,      // YouTube BTS link → appears in BTS filter tab
     category?,    // display category (e.g. 'Photography', 'Live Streaming')
@@ -130,8 +136,20 @@ All site content is stored in `localStorage` under the key `flatproduction_site_
   clientsIntro: string;
   clients: string[];        // category tags shown in Clients section
   clientLogos: string[];    // logo image paths
-  team: Array<{ id, name, role, bio, photo, position }>;
-  gallery: string[];        // image paths for Gallery page
+  team: Array<{ id, name, role, bio?, photo?, position? }>;
+  gallery: Array<{ src: string; category: string }>;  // GalleryItem — image path + category
+  contact: {
+    phone: string;
+    email: string;
+    address: string;
+    hours: string;
+    whatsapp: string;   // number only, no "+", e.g. "250781691713"
+    socials: {
+      instagram: string;
+      youtube: string;
+      linkedin: string;
+    };
+  };
   pageHeroes: {
     about:     { title: string; image: string };
     services:  { title: string; image: string };
@@ -189,14 +207,15 @@ Puzzle-based login: one of three randomly selected challenges (arithmetic, numbe
 |---|---|
 | **Overview** | View stats, website visit counter, quick navigation |
 | **Hero** | Slideshow images + per-slide captions, headline, subtitle |
-| **About** | Heading, history text, 4 photo mosaic images, mission, vision, value |
-| **Services** | Add / edit / delete / reorder services (title, description, image) |
+| **About** | Heading, history text, 4 photo mosaic images, mission, vision, value, stats, chips |
+| **Services** | Add / edit / delete / reorder services (title, description, extended description, image) |
 | **Portfolio** | Add / edit / delete / reorder projects (title, image, category, video URL, BTS URL, link) |
-| **Gallery** | Add / edit / delete / reorder gallery images |
+| **Gallery** | Add / edit / delete / reorder gallery images (with category per image) |
 | **Clients** | Intro text, client category tags, client logo images |
 | **Team** | Add / edit / delete / reorder team members (name, role, bio, photo) |
 | **Testimonials** | Add / edit / delete / reorder client testimonials (logo, name, quote) |
 | **Page Heroes** | Banner image + headline for each of the 5 public pages |
+| **Contact** | Phone, email, address, hours, WhatsApp number, social links |
 
 ### Admin Bar
 
@@ -216,9 +235,9 @@ Every public page reads live from `contentStore` and re-renders when the dashboa
 
 | Component | Data source |
 |---|---|
-| `Hero` | `hero.images`, `hero.notes`, `hero.title`, `hero.subtitle` |
-| `About` | `about.heading`, `about.history \|\| about.body`, `about.image1–3` |
-| `Services` | `services[]` |
+| `Hero` | `hero.images`, `hero.notes`, `hero.title`, `hero.subtitle`, `contact.whatsapp`, `contact.socials` |
+| `About` | `about.heading`, `about.history \|\| about.body`, `about.image1–3`, `about.stats`, `about.chips` |
+| `Services` | `services[]`, `contact.whatsapp` |
 | `Gallery` | `portfolio[]` (preview cards with video/BTS links) |
 | `Clients` | `clientsIntro`, `clients[]`, `clientLogos[]` |
 | `Team` | `team[]` |
@@ -234,7 +253,8 @@ Every public page reads live from `contentStore` and re-renders when the dashboa
 ### Services Page (`/services`)
 
 - Hero: `pageHeroes.services`
-- Service cards: `services[]` with modal detail view
+- Service cards: `services[]` with modal detail view (uses `extendedDescription` when available)
+- Book button links to WhatsApp: `contact.whatsapp`
 
 ### Portfolio Page (`/portfolio`)
 
@@ -249,13 +269,17 @@ Every public page reads live from `contentStore` and re-renders when the dashboa
 ### Gallery Page (`/gallery`)
 
 - Hero: `pageHeroes.gallery`
-- Image grid: `gallery[]` — click to open lightbox with category filter
+- Image grid: `gallery[]` — each item is `{ src, category }` — click to open lightbox with category filter
 
 ### Contact Page (`/contact`)
 
 - Hero: `pageHeroes.contact`
 - All accent colors: red (`#dc2626`)
+- Contact info cards: `contact.phone`, `contact.email`, `contact.address`, `contact.hours`
+- WhatsApp CTA: `contact.whatsapp`
+- Social links: `contact.socials.instagram`, `.youtube`, `.linkedin`
 - Contact form (no backend — extend with email service as needed)
+- Google Maps embed uses `contact.address` as search query
 
 ---
 
@@ -273,9 +297,25 @@ Legacy items with `category: 'video'` or `'image'` fall back to using their titl
 
 ---
 
+## Gallery Category System
+
+Each `gallery[]` item has a `category` field. The available categories are defined in `GALLERY_CATEGORIES` (exported from `contentStore.ts`):
+
+> Event Photography · Sports Photography · Wedding Photography · Portrait Photography · Advertising Photography · Behind The Scenes
+
+The Gallery page renders a filter bar from these categories and shows a count badge for each.
+
+---
+
 ## Color System
 
 The site uses a **red accent** color scheme (`#dc2626` / Tailwind `red-600`). Blue, indigo, and violet have been replaced throughout. Neutral grays (`#64748b`, `#374151`, etc.) are kept as-is since they are UI structural colors, not brand colors.
+
+---
+
+## Typography
+
+All text uses **Montserrat** (Google Fonts). The font is loaded via `@import` in [`src/index.css`](src/index.css) with weights 400, 500, 600, 700, 800, and 900 (including italic variants). It is set as the base `--font-sans` CSS variable and applied globally to `body`.
 
 ---
 
@@ -307,6 +347,9 @@ The dashboard header has a **Reset Content** button that restores all defaults. 
 | [`src/pages/AdminLogin.tsx`](src/pages/AdminLogin.tsx) | Puzzle-gated login, session token generation |
 | [`src/pages/PortfolioPage.tsx`](src/pages/PortfolioPage.tsx) | Fully store-driven portfolio with dynamic category tabs |
 | [`src/pages/AboutPage.tsx`](src/pages/AboutPage.tsx) | About page with history, 4-image mosaic, mission/vision/value, testimonials |
+| [`src/pages/ContactPage.tsx`](src/pages/ContactPage.tsx) | Contact form, WhatsApp CTA, contact info cards, Google Maps embed |
+| [`src/pages/GalleryPage.tsx`](src/pages/GalleryPage.tsx) | Gallery grid with category filter tabs and full-screen lightbox |
+| [`src/index.css`](src/index.css) | Global styles, Montserrat font import, Tailwind theme, animations |
 
 ---
 
