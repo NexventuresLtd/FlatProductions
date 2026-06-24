@@ -4,10 +4,12 @@ import Header from './Header';
 import { contentStore } from '../store/contentStore';
 
 const Hero: React.FC = () => {
-  const initialHero = contentStore.read().hero;
+  const initialContent = contentStore.read();
 
-  const [images, setImages] = useState<string[]>(initialHero?.images || []);
-  const [heroContent, setHeroContent] = useState(initialHero);
+  const [images, setImages]           = useState<string[]>(initialContent.hero?.images || []);
+  const [heroContent, setHeroContent] = useState(initialContent.hero);
+  const [whatsapp, setWhatsapp]       = useState(initialContent.contact?.whatsapp ?? '250781691713');
+  const [socials, setSocials]         = useState(initialContent.contact?.socials ?? { instagram: 'https://instagram.com', youtube: 'https://youtube.com', linkedin: 'https://linkedin.com' });
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
 
@@ -17,6 +19,8 @@ const Hero: React.FC = () => {
       setHeroContent(c.hero);
       setImages(c.hero.images || []);
       setCurrentImageIndex(0);
+      if (c.contact?.whatsapp) setWhatsapp(c.contact.whatsapp);
+      if (c.contact?.socials)  setSocials(c.contact.socials);
     });
   }, []);
 
@@ -107,7 +111,7 @@ const Hero: React.FC = () => {
             <a href="/portfolio" className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white text-black text-sm font-bold tracking-wide hover:bg-white/90 transition-colors">
               View Our Work
             </a>
-            <a href="https://wa.me/250781691713?text=Hello%20Flat%20Production%2C%20I%20would%20like%20to%20book%20a%20project.%20Please%20let%20me%20know%20your%20availability." target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-white/30 text-white text-sm font-bold tracking-wide hover:border-white hover:bg-white/10 transition-all">
+            <a href={`https://wa.me/${whatsapp}?text=Hello%20Flat%20Production%2C%20I%20would%20like%20to%20book%20a%20project.%20Please%20let%20me%20know%20your%20availability.`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-white/30 text-white text-sm font-bold tracking-wide hover:border-white hover:bg-white/10 transition-all">
               Book a Project
             </a>
           </div>
@@ -117,16 +121,16 @@ const Hero: React.FC = () => {
       {/* Right edge — socials */}
       <div className="absolute right-6 top-1/2 -translate-y-1/2 z-[5] max-sm:hidden">
         <div className="flex flex-col gap-4" aria-label="Social links">
-          <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-8 h-8 rounded-full border border-white/20 text-white/60 hover:border-white hover:text-white hover:bg-white/10 transition-all" aria-label="Instagram">
+          <a href={socials.instagram} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-8 h-8 rounded-full border border-white/20 text-white/60 hover:border-white hover:text-white hover:bg-white/10 transition-all" aria-label="Instagram">
             <Instagram size={16} />
           </a>
           <a href="https://x.com" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-8 h-8 rounded-full border border-white/20 text-white/60 hover:border-white hover:text-white hover:bg-white/10 transition-all" aria-label="X">
             <X size={16} />
           </a>
-          <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-8 h-8 rounded-full border border-white/20 text-white/60 hover:border-white hover:text-white hover:bg-white/10 transition-all" aria-label="YouTube">
+          <a href={socials.youtube} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-8 h-8 rounded-full border border-white/20 text-white/60 hover:border-white hover:text-white hover:bg-white/10 transition-all" aria-label="YouTube">
             <Youtube size={16} />
           </a>
-          <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-8 h-8 rounded-full border border-white/20 text-white/60 hover:border-white hover:text-white hover:bg-white/10 transition-all" aria-label="LinkedIn">
+          <a href={socials.linkedin} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-8 h-8 rounded-full border border-white/20 text-white/60 hover:border-white hover:text-white hover:bg-white/10 transition-all" aria-label="LinkedIn">
             <Linkedin size={16} />
           </a>
         </div>

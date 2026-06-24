@@ -3,65 +3,29 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { contentStore } from '../store/contentStore';
 
-/* Extended static data per service: highlights + long description */
-const SERVICE_EXTENDED = [
-    {
-        highlights: ['Event coverage', 'Brand films', 'Highlight reels', 'Interview shoots', 'Product videos'],
-        longDesc: 'From corporate events and brand campaigns to weddings and documentary interviews, we capture every visual moment with precision equipment and a crew that knows how to tell a story. Our edits are polished, emotive, and delivered on time — built to work across every screen and platform.',
-    },
-    {
-        highlights: ['Multi-camera rigs', 'Real-time delivery', 'On-site support', 'Remote access', 'HD broadcast'],
-        longDesc: 'We deploy professional multi-camera live streaming setups for any scale of event — from intimate church services to high-profile conferences and government summits. Low-latency, rock-stable, with a dedicated technical team on-site throughout the event.',
-    },
-    {
-        highlights: ['Landing pages', 'Business sites', 'E-commerce', 'CMS integration', 'Mobile-first'],
-        longDesc: 'We build fast, clean, and modern websites that make your brand look credible and work hard for your business. Every site is mobile-optimized, SEO-ready, and designed to convert visitors into real clients — with ongoing support after launch.',
-    },
-    {
-        highlights: ['Logo systems', 'Campaign graphics', 'Print design', 'Brand guidelines', 'Social media kits'],
-        longDesc: 'Your brand should be instantly recognizable everywhere. We create comprehensive visual identities — logos, typography, color systems, social graphics, and print-ready artwork — that hold together across every touchpoint and leave a lasting impression with your audience.',
-    },
-    {
-        highlights: ['Concerts & galas', 'Corporate launches', 'Celebrations', 'Audience moments', 'Promo content'],
-        longDesc: 'Whether it\'s a concert, gala, product launch, or company celebration, we capture the energy and emotion with high-quality cameras and a genuine eye for the storytelling moments that your guests and stakeholders will remember for years.',
-    },
-    {
-        highlights: ['Research-led', 'Story-driven', 'High-end editing', 'Interview coverage', 'Location shoots'],
-        longDesc: 'Documentaries require patience, deep curiosity, and real craft. We combine careful research, on-location filming, and precise editing to produce documentary pieces that feel honest, human, and compelling enough to watch more than once.',
-    },
-];
-
-const DEFAULT_IMAGES = ['/photo3.jpg', '/live1.jpeg', '/web.jpg', '/graphy33.jpg', '/chance.jpg', '/photo10.jpg'];
-
 type ServiceItem = {
+    id?: string;
     title: string;
     description: string;
     image: string;
-    highlights: string[];
-    longDesc: string;
+    extendedDescription?: string;
 };
 
-function buildServices(stored: { title: string; description: string; image?: string }[]): ServiceItem[] {
-    return stored.map((svc, i) => ({
-        title: svc.title,
-        description: svc.description,
-        image: svc.image || DEFAULT_IMAGES[i] || '/photo1.jpg',
-        highlights: SERVICE_EXTENDED[i]?.highlights ?? [],
-        longDesc: SERVICE_EXTENDED[i]?.longDesc ?? svc.description,
-    }));
-}
-
 const ServicesPage: React.FC = () => {
-    const [services, setServices] = useState<ServiceItem[]>(() =>
-        buildServices(contentStore.read().services)
+    const [services, setServices]   = useState<ServiceItem[]>(() =>
+        contentStore.read().services.map(s => ({ ...s, image: s.image || '/photo1.jpg' }))
     );
-    const [heroData, setHeroData] = useState(() => contentStore.read().pageHeroes.services);
-    const [modal, setModal] = useState<ServiceItem | null>(null);
+    const [heroData, setHeroData]   = useState(() => contentStore.read().pageHeroes.services);
+    const [stats, setStats]         = useState(() => contentStore.read().about.stats ?? []);
+    const [chips, setChips]         = useState(() => contentStore.read().about.chips ?? []);
+    const [modal, setModal]         = useState<ServiceItem | null>(null);
 
     useEffect(() => {
         return contentStore.onUpdate((c: any) => {
-            setServices(buildServices(c.services ?? []));
+            setServices((c.services ?? []).map((s: ServiceItem) => ({ ...s, image: s.image || '/photo1.jpg' })));
             if (c.pageHeroes?.services) setHeroData(c.pageHeroes.services);
+            if (c.about?.stats)  setStats(c.about.stats);
+            if (c.about?.chips)  setChips(c.about.chips);
         });
     }, []);
 
@@ -93,26 +57,32 @@ const ServicesPage: React.FC = () => {
                             <p className="text-white/80 text-[1.05rem] max-w-[760px]">
                                 Visual production, digital design, live coverage, and storytelling — with a focused team and a polished finish.
                             </p>
-                            <div className="mt-7 flex flex-wrap gap-2.5">
-                                {['Photography', 'Live Streaming', 'Web Design', 'Branding', 'Documentary'].map(tag => (
-                                    <span key={tag} className="px-3 py-2 rounded-full border border-white/[0.14] bg-white/[0.06] text-white text-[0.76rem] font-bold tracking-[0.08em] uppercase">{tag}</span>
-                                ))}
-                            </div>
-                            <div className="mt-7 grid grid-cols-3 gap-3.5">
-                                {[['06+','service areas'],['08','years active'],['200+','projects done']].map(([v,l]) => (
-                                    <article key={l} className="py-4 px-[18px] rounded-2xl bg-white/[0.08] border border-white/[0.12] backdrop-blur-sm">
-                                        <strong className="block text-white text-[1.45rem] leading-none mb-1.5 font-bold">{v}</strong>
-                                        <span className="text-white/[0.76] text-[0.78rem] tracking-[0.08em] uppercase">{l}</span>
-                                    </article>
-                                ))}
-                            </div>
+                            {/* Service chips from admin → About → Service Chips */}
+                            {chips.length > 0 && (
+                                <div className="mt-7 flex flex-wrap gap-2.5">
+                                    {chips.map(tag => (
+                                        <span key={tag} className="px-3 py-2 rounded-full border border-white/[0.14] bg-white/[0.06] text-white text-[0.76rem] font-bold tracking-[0.08em] uppercase">{tag}</span>
+                                    ))}
+                                </div>
+                            )}
+                            {/* Stats from admin → About → Stats */}
+                            {stats.length > 0 && (
+                                <div className="mt-7 grid grid-cols-3 gap-3.5">
+                                    {stats.slice(0, 3).map(({ value, label }) => (
+                                        <article key={label} className="py-4 px-[18px] rounded-2xl bg-white/[0.08] border border-white/[0.12] backdrop-blur-sm">
+                                            <strong className="block text-white text-[1.45rem] leading-none mb-1.5 font-bold">{value}</strong>
+                                            <span className="text-white/[0.76] text-[0.78rem] tracking-[0.08em] uppercase">{label}</span>
+                                        </article>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                         <div className="relative overflow-hidden min-h-[520px] rounded-[28px] border border-white/[0.12] bg-[#0a0a0a] shadow-[0_30px_70px_rgba(0,0,0,0.35)]">
-                            <img src="/live2.jpeg" alt="Flat Production creative work" className="w-full h-full object-cover absolute inset-0" />
+                            <img src={heroData.image || '/live2.jpeg'} alt="Flat Production creative work" className="w-full h-full object-cover absolute inset-0" />
                             <div className="absolute inset-x-4 bottom-4 p-[18px] rounded-[20px] bg-[linear-gradient(180deg,rgba(17,17,17,0.3)_0%,rgba(17,17,17,0.92)_100%)] border border-white/[0.12] backdrop-blur-[10px]">
                                 <p className="text-white text-[1.05rem] leading-[1.7] mb-3">Production that feels sharp, modern, and memorable.</p>
                                 <ul className="list-none p-0 m-0 flex flex-wrap gap-2">
-                                    {['Content strategy','Visual direction','Fast delivery'].map(t => (
+                                    {(chips.length > 0 ? chips.slice(0, 3) : ['Content strategy', 'Visual direction', 'Fast delivery']).map(t => (
                                         <li key={t} className="px-2.5 py-[7px] rounded-full bg-white/[0.08] text-white text-[0.72rem] font-bold tracking-[0.08em] uppercase">{t}</li>
                                     ))}
                                 </ul>
@@ -139,7 +109,7 @@ const ServicesPage: React.FC = () => {
                 <section className="max-w-[1280px] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[22px]" aria-label="Services">
                     {services.map((service) => (
                         <article
-                            key={service.title}
+                            key={service.id || service.title}
                             className="overflow-hidden rounded-[20px] bg-white border border-[rgba(17,17,17,0.1)] shadow-[0_18px_40px_rgba(17,17,17,0.08)] transition-all duration-300 hover:-translate-y-2 hover:border-[rgba(17,17,17,0.18)] hover:shadow-[0_22px_44px_rgba(17,17,17,0.12)] group cursor-pointer"
                             onClick={() => setModal(service)}
                             tabIndex={0}
@@ -153,7 +123,6 @@ const ServicesPage: React.FC = () => {
                                 <div className="absolute left-3.5 top-3.5 z-[2] px-2.5 py-[7px] rounded-full bg-white/90 text-[#111] text-[0.72rem] font-extrabold tracking-[0.08em] uppercase">
                                     Flat Production
                                 </div>
-                                {/* Click hint */}
                                 <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-[2]">
                                     <span className="bg-white text-[#111] text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full shadow-lg">
                                         View Details
@@ -163,11 +132,6 @@ const ServicesPage: React.FC = () => {
                             <div className="p-[22px]">
                                 <h3 className="text-[#111] font-bold text-[1.15rem] mb-2.5">{service.title}</h3>
                                 <p className="text-[#444] leading-[1.7] mb-[18px] text-sm line-clamp-2">{service.description}</p>
-                                <div className="flex flex-wrap gap-2 mb-4">
-                                    {service.highlights.slice(0, 3).map(h => (
-                                        <span key={h} className="px-[11px] py-[7px] rounded-full border border-[rgba(17,17,17,0.12)] bg-[#f8f8f8] text-[#111] text-[0.76rem] font-bold tracking-[0.04em] uppercase">{h}</span>
-                                    ))}
-                                </div>
                                 <span className="inline-flex items-center gap-1.5 text-[#111] text-sm font-bold group-hover:gap-3 transition-all">
                                     Learn more <span aria-hidden>→</span>
                                 </span>
@@ -184,7 +148,7 @@ const ServicesPage: React.FC = () => {
                             Let's turn your next idea into something people remember.
                         </h2>
                     </div>
-                    <a href="https://wa.me/250781691713?text=Hello%20Flat%20Production%2C%20I%20would%20like%20to%20book%20a%20project.%20Please%20let%20me%20know%20your%20availability." target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full border border-[rgba(17,17,17,0.08)] bg-[#e5e7eb] text-[#111] text-sm font-semibold cursor-pointer transition-all hover:bg-[#d9dde3] hover:-translate-y-0.5 hover:shadow-md flex-shrink-0">
+                    <a href="/contact" className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full border border-[rgba(17,17,17,0.08)] bg-[#e5e7eb] text-[#111] text-sm font-semibold cursor-pointer transition-all hover:bg-[#d9dde3] hover:-translate-y-0.5 hover:shadow-md flex-shrink-0">
                         Book a project
                     </a>
                 </section>
@@ -203,7 +167,6 @@ const ServicesPage: React.FC = () => {
                         className="bg-white rounded-2xl w-full max-w-[660px] max-h-[92vh] overflow-y-auto shadow-2xl"
                         onClick={e => e.stopPropagation()}
                     >
-                        {/* Image header */}
                         <div className="relative h-[260px] md:h-[300px] overflow-hidden rounded-t-2xl flex-shrink-0">
                             <img src={modal.image} alt={modal.title} className="w-full h-full object-cover" />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
@@ -219,24 +182,11 @@ const ServicesPage: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Body */}
                         <div className="p-7 md:p-8">
-                            <p className="text-[#333] text-base leading-[1.8] mb-6">{modal.longDesc}</p>
+                            <p className="text-[#333] text-base leading-[1.8] mb-6">
+                                {modal.extendedDescription || modal.description}
+                            </p>
 
-                            {/* Highlights grid */}
-                            <div className="mb-7">
-                                <p className="text-[#111] text-[0.75rem] font-bold uppercase tracking-[0.12em] mb-3">What's included</p>
-                                <div className="flex flex-wrap gap-2">
-                                    {modal.highlights.map(h => (
-                                        <span key={h} className="flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-[rgba(17,17,17,0.12)] bg-[#f8f8f8] text-[#111] text-[0.78rem] font-semibold">
-                                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
-                                            {h}
-                                        </span>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* CTA */}
                             <div className="flex items-center gap-3 flex-wrap">
                                 <a
                                     href={`https://wa.me/250781691713?text=Hello%20Flat%20Production%2C%20I%20would%20like%20to%20book%20your%20${encodeURIComponent(modal?.title ?? 'service')}.%20Please%20let%20me%20know%20your%20availability.`}

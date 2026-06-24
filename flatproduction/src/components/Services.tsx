@@ -1,39 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { contentStore } from '../store/contentStore';
 
-const SERVICE_HIGHLIGHTS: Record<number, string[]> = {
-    0: ['Event coverage', 'Brand films', 'Highlight reels'],
-    1: ['Multi-camera setup', 'Real-time delivery', 'On-site support'],
-    2: ['Landing pages', 'Business sites', 'Mobile-first'],
-    3: ['Logo systems', 'Campaign graphics', 'Print design'],
-    4: ['Event recap', 'Audience moments', 'Promo content'],
-    5: ['Research-led', 'Story driven', 'High-end editing'],
-};
 
-const SERVICE_LONG_DESC: Record<number, string> = {
-    0: 'From corporate events to weddings and product launches, we capture every visual moment with precision equipment and a storytelling eye. Our edits are polished, emotive, and built to work across every screen.',
-    1: 'We deploy professional multi-camera streaming rigs for any scale of event — from intimate church services to large-scale conferences. Low-latency, stable, with dedicated technical support on-site.',
-    2: 'We build fast, clean, and modern websites that make your brand look credible online. Every site is mobile-optimized, SEO-ready, and designed to convert visitors into real clients.',
-    3: 'Your brand should be recognizable everywhere. We create logos, typography systems, social graphics, and print-ready artwork that hold together across every touchpoint.',
-    4: 'Whether it\'s a concert, gala, or product launch, we capture the energy and emotion with high-quality cameras and a genuine eye for the moments your guests will remember.',
-    5: 'Documentaries require patience, curiosity, and craft. We combine deep research, on-location filming, and precise editing to produce pieces that feel honest and compelling.',
-};
-
-const DEFAULT_IMAGES = ['/photo3.jpg', '/live1.jpeg', '/web.jpg', '/graphy33.jpg', '/chance.jpg', '/photo10.jpg'];
-
-type Service = { id?: string; title: string; description: string; image?: string };
-type ModalService = Service & { highlights: string[]; longDesc: string; resolvedImage: string; index: number };
+type Service = { id?: string; title: string; description: string; image?: string; extendedDescription?: string };
+type ModalService = Service & { resolvedImage: string; index: number };
 
 const Services: React.FC = () => {
-    const [services, setServices] = useState<Service[]>(() => {
-        const s = contentStore.read().services;
-        return s.length ? s : [];
-    });
+    const initial = contentStore.read();
+    const [services, setServices] = useState<Service[]>(() => initial.services.length ? initial.services : []);
+    const [whatsapp, setWhatsapp] = useState(initial.contact?.whatsapp ?? '250781691713');
     const [modal, setModal] = useState<ModalService | null>(null);
 
     useEffect(() => {
         return contentStore.onUpdate((c: any) => {
             if (c.services && c.services.length) setServices(c.services);
+            if (c.contact?.whatsapp) setWhatsapp(c.contact.whatsapp);
         });
     }, []);
 
@@ -52,9 +33,7 @@ const Services: React.FC = () => {
     const openModal = (svc: Service, index: number) => {
         setModal({
             ...svc,
-            highlights: SERVICE_HIGHLIGHTS[index] ?? [],
-            longDesc: SERVICE_LONG_DESC[index] ?? svc.description,
-            resolvedImage: svc.image || DEFAULT_IMAGES[index] || '/photo1.jpg',
+            resolvedImage: svc.image || '/photo1.jpg',
             index,
         });
     };
@@ -117,24 +96,10 @@ const Services: React.FC = () => {
                         </div>
 
                         <div className="p-7">
-                            <p className="text-[#333] text-[0.95rem] leading-[1.8] mb-6">{modal.longDesc}</p>
-
-                            {modal.highlights.length > 0 && (
-                                <div className="mb-7">
-                                    <p className="text-[#111] text-[0.72rem] font-bold uppercase tracking-[0.12em] mb-3">Includes</p>
-                                    <div className="flex flex-wrap gap-2">
-                                        {modal.highlights.map(h => (
-                                            <span key={h} className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-[#f1f5f9] border border-[#e2e8f0] text-[#374151] text-[0.78rem] font-semibold">
-                                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
-                                                {h}
-                                            </span>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
+                            <p className="text-[#333] text-[0.95rem] leading-[1.8] mb-6">{modal.extendedDescription || modal.description}</p>
 
                             <div className="flex gap-3 flex-wrap">
-                                <a href={`https://wa.me/250781691713?text=Hello%20Flat%20Production%2C%20I%20would%20like%20to%20book%20your%20${encodeURIComponent(modal?.title ?? 'service')}.%20Please%20let%20me%20know%20your%20availability.`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#111] text-white font-bold text-sm hover:bg-black transition-all">
+                                <a href={`https://wa.me/${whatsapp}?text=Hello%20Flat%20Production%2C%20I%20would%20like%20to%20book%20your%20${encodeURIComponent(modal?.title ?? 'service')}.%20Please%20let%20me%20know%20your%20availability.`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#111] text-white font-bold text-sm hover:bg-black transition-all">
                                     Book this service →
                                 </a>
                                 <button

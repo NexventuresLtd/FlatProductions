@@ -1,5 +1,14 @@
 type Testimonial = { id: string; name: string; logoSrc: string; quote: string };
 type PageHero    = { title: string; image: string };
+type StatItem    = { value: string; label: string };
+type ContactInfo = {
+  phone: string;
+  email: string;
+  address: string;
+  hours: string;
+  whatsapp: string;
+  socials: { instagram: string; youtube: string; linkedin: string };
+};
 
 type SiteContent = {
   hero: { title: string; subtitle: string; images?: string[]; notes?: string[] };
@@ -14,15 +23,18 @@ type SiteContent = {
     image2?: string;
     image3?: string;
     image4?: string;
+    stats?: StatItem[];
+    chips?: string[];
   };
   testimonials: Testimonial[];
-  services: Array<{ id: string; title: string; description: string; image?: string }>;
+  services: Array<{ id: string; title: string; description: string; image?: string; extendedDescription?: string }>;
   portfolio: Array<{ id: string; title: string; image?: string; videoUrl?: string; btsUrl?: string; description?: string; link?: string; serviceId?: string; category?: string }>;
   clientsIntro: string;
   clients: string[];
   clientLogos: string[];
   team: Array<{ id: string; name: string; role: string; bio?: string; photo?: string; position?: string }>;
   gallery: string[];
+  contact: ContactInfo;
   pageHeroes: {
     about:     PageHero;
     services:  PageHero;
@@ -54,6 +66,12 @@ const DEFAULT_SITE_CONTENT: SiteContent = {
     image2:  '/photo6.jpg',
     image3:  '/live1.jpeg',
     image4:  '/photo10.jpg',
+    stats: [
+      { value: '8+',   label: 'Years Active' },
+      { value: '200+', label: 'Projects Delivered' },
+      { value: '50+',  label: 'Clients Served' },
+    ],
+    chips: ['Photography', 'Video Production', 'Live Streaming', 'Branding', 'Web Design', 'Documentary'],
   },
   testimonials: [
     { id: 'tm-1', name: 'MTN Rwanda',         logoSrc: '/mtn.png',      quote: 'Flat Production delivered event visuals and digital storytelling that elevated our customer engagement campaigns.' },
@@ -62,12 +80,12 @@ const DEFAULT_SITE_CONTENT: SiteContent = {
     { id: 'tm-4', name: 'NBG',                 logoSrc: '/nbg.jpg',      quote: 'We trusted Flat Production for documentary storytelling and campaign content, and the outcome was impactful and authentic.' },
   ],
   services: [
-    { id: 'svc-1', title: 'PHOTOGRAPHY & VIDEO PRODUCTION', description: 'Delivering outstanding excellence in video production and photography: capturing moments, crafting stories, creating memories.', image: '/photo1.jpg' },
-    { id: 'svc-2', title: 'LIVE STREAMING & FEED',          description: 'Lets you interact with your audience in real time with a video feed, chat, reactions, and more.',                               image: '/live1.jpeg' },
-    { id: 'svc-3', title: 'WEBSITE DESIGN',                 description: 'You are best in your work; let us help you show world your excellent achievements digitally.',                                   image: '/web.jpg' },
-    { id: 'svc-4', title: 'DESIGN - PRINTING & BRANDING',   description: "It's hard to build and easy to destroy by not branding your excellent work; we are here to express your great work through stunning branding.", image: '/graphy33.jpg' },
-    { id: 'svc-5', title: 'EVENT & ENTERTAINMENT',          description: 'Here to help differentiate your event through outstanding creativity.',                                                          image: '/photo5.jpg' },
-    { id: 'svc-6', title: 'DOCUMENTARY',                    description: 'A better way of storytelling through interviewing, research, reality filming, narration, and production excellence through experience.', image: '/photo12.jpg' },
+    { id: 'svc-1', title: 'PHOTOGRAPHY & VIDEO PRODUCTION', description: 'Delivering outstanding excellence in video production and photography: capturing moments, crafting stories, creating memories.', image: '/photo1.jpg', extendedDescription: 'From corporate events to weddings and product launches, we capture every visual moment with precision equipment and a storytelling eye. Our edits are polished, emotive, and built to work across every screen.' },
+    { id: 'svc-2', title: 'LIVE STREAMING & FEED',          description: 'Lets you interact with your audience in real time with a video feed, chat, reactions, and more.',                               image: '/live1.jpeg', extendedDescription: 'We deploy professional multi-camera streaming rigs for any scale of event — from intimate church services to large-scale conferences. Low-latency, stable, with dedicated technical support on-site.' },
+    { id: 'svc-3', title: 'WEBSITE DESIGN',                 description: 'You are best in your work; let us help you show world your excellent achievements digitally.',                                   image: '/web.jpg', extendedDescription: 'We build fast, clean, and modern websites that make your brand look credible online. Every site is mobile-optimized, SEO-ready, and designed to convert visitors into real clients.' },
+    { id: 'svc-4', title: 'DESIGN - PRINTING & BRANDING',   description: "It's hard to build and easy to destroy by not branding your excellent work; we are here to express your great work through stunning branding.", image: '/graphy33.jpg', extendedDescription: 'Your brand should be recognizable everywhere. We create logos, typography systems, social graphics, and print-ready artwork that hold together across every touchpoint.' },
+    { id: 'svc-5', title: 'EVENT & ENTERTAINMENT',          description: 'Here to help differentiate your event through outstanding creativity.',                                                          image: '/photo5.jpg', extendedDescription: "Whether it's a concert, gala, or product launch, we capture the energy and emotion with high-quality cameras and a genuine eye for the moments your guests will remember." },
+    { id: 'svc-6', title: 'DOCUMENTARY',                    description: 'A better way of storytelling through interviewing, research, reality filming, narration, and production excellence through experience.', image: '/photo12.jpg', extendedDescription: 'Documentaries require patience, curiosity, and craft. We combine deep research, on-location filming, and precise editing to produce pieces that feel honest and compelling.' },
   ],
   portfolio: [
     { id: 'pf-1', title: 'Photography',     image: '/photo1.jpg',          link: '#', category: 'Photography',     description: 'We capture stunning visuals that tell your unique story with precision and artistic flair.' },
@@ -94,6 +112,18 @@ const DEFAULT_SITE_CONTENT: SiteContent = {
     '/2I1A0386.JPG.jpeg', '/2I1A0403.JPG.jpeg', '/2I1A0407.JPG.jpeg',
     '/2I1A0410.JPG.jpeg', '/MARR0034.JPG', '/MARR0039.JPG', '/MARR0058.JPG',
   ],
+  contact: {
+    phone:    '+250 781 691 713',
+    email:    'info@flatproduction.rw',
+    address:  'TCB house, KN 4 Avenue, Kigali, Rwanda',
+    hours:    'Mon – Sat, 8:00 AM – 6:00 PM',
+    whatsapp: '250781691713',
+    socials: {
+      instagram: 'https://instagram.com',
+      youtube:   'https://youtube.com',
+      linkedin:  'https://linkedin.com',
+    },
+  },
   pageHeroes: {
     about:     { title: 'Real Moments.\nBold Stories.\nTimeless Impact.', image: '/photo12.jpg' },
     services:  { title: 'Creative services built to help your brand stand out.',              image: '/live2.jpeg' },
@@ -117,6 +147,7 @@ function cloneContent(c: SiteContent): SiteContent {
     clientLogos:  [...c.clientLogos],
     team:         c.team.map(m => ({ ...m })),
     gallery:      [...c.gallery],
+    contact:      { ...c.contact, socials: { ...c.contact.socials } },
     pageHeroes: {
       about:     { ...c.pageHeroes.about },
       services:  { ...c.pageHeroes.services },
@@ -152,7 +183,10 @@ function normalize(parsed: Partial<SiteContent>): SiteContent {
     },
     about: { ...DEFAULT_SITE_CONTENT.about, ...parsed.about },
     testimonials: parsed.testimonials ?? [...DEFAULT_SITE_CONTENT.testimonials],
-    services:  parsed.services ?? [...DEFAULT_SITE_CONTENT.services],
+    services: (parsed.services ?? [...DEFAULT_SITE_CONTENT.services]).map((svc, i) => ({
+      extendedDescription: DEFAULT_SITE_CONTENT.services[i]?.extendedDescription,
+      ...svc,
+    })),
     portfolio: (parsed.portfolio ?? [...DEFAULT_SITE_CONTENT.portfolio]).map(item => ({
       ...item,
       description: toOneSentence(item.description),
@@ -162,6 +196,11 @@ function normalize(parsed: Partial<SiteContent>): SiteContent {
     clientLogos:  finalLogos,
     team:         parsed.team         ?? [...DEFAULT_SITE_CONTENT.team],
     gallery:      parsed.gallery      ?? [...DEFAULT_SITE_CONTENT.gallery],
+    contact: {
+      ...DEFAULT_SITE_CONTENT.contact,
+      ...parsed.contact,
+      socials: { ...DEFAULT_SITE_CONTENT.contact.socials, ...(parsed.contact?.socials ?? {}) },
+    },
     pageHeroes: {
       about:     { ...dph.about,     ...(pph.about     ?? {}) },
       services:  { ...dph.services,  ...(pph.services  ?? {}) },
@@ -245,4 +284,4 @@ class ContentStore {
 
 export const contentStore = new ContentStore();
 export { DEFAULT_SITE_CONTENT };
-export type { SiteContent, Testimonial, PageHero };
+export type { SiteContent, Testimonial, PageHero, StatItem, ContactInfo };

@@ -5,13 +5,19 @@ import { contentStore } from '../store/contentStore';
 
 const ContactPage: React.FC = () => {
     const [formStatus, setFormStatus] = useState<'idle' | 'submitting' | 'success'>('idle');
-    const [heroData, setHeroData] = useState(() => contentStore.read().pageHeroes.contact);
+    const [showToast, setShowToast] = useState(false);
+
+    const [heroData, setHeroData]     = useState(() => contentStore.read().pageHeroes.contact);
+    const [contactInfo, setContactInfo] = useState(() => contentStore.read().contact);
 
     useEffect(() => {
-        return contentStore.onUpdate(c => { if (c.pageHeroes?.contact) setHeroData(c.pageHeroes.contact); });
+        return contentStore.onUpdate(c => {
+            if (c.pageHeroes?.contact) setHeroData(c.pageHeroes.contact);
+            if (c.contact) setContactInfo(c.contact);
+        });
     }, []);
-    const [showToast, setShowToast] = useState(false);
-    const whatsappLink = 'https://wa.me/250781691713?text=Hello%20Flat%20Production%2C%20I%20would%20like%20to%20book%20your%20services.';
+
+    const whatsappLink = `https://wa.me/${contactInfo.whatsapp}?text=Hello%20Flat%20Production%2C%20I%20would%20like%20to%20book%20your%20services.`;
 
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -32,10 +38,8 @@ const ContactPage: React.FC = () => {
                 <div className="absolute top-0 left-0 right-0 z-[20]">
                     <Header />
                 </div>
-                {/* Background */}
                 <div className="absolute inset-0 bg-cover bg-center opacity-25" style={{ backgroundImage: `url('${heroData.image || '/live2.jpeg'}')` }} aria-hidden="true" />
                 <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/60 to-[#0a0a0a]" aria-hidden="true" />
-
                 <div className="relative z-[5] max-w-[1200px] mx-auto px-5 w-full">
                     <p className="text-[#dc2626] text-xs font-bold uppercase tracking-[0.25em] mb-5">Get In Touch</p>
                     <h1 className="text-white font-bold text-[clamp(2.4rem,6vw,4.5rem)] leading-[1.05] tracking-[-0.02em] mb-5">
@@ -50,8 +54,6 @@ const ContactPage: React.FC = () => {
             {/* Main content */}
             <div className="bg-[#f4f6f9] flex-1">
                 <div className="max-w-[1200px] mx-auto px-5 py-16 w-full">
-
-                    {/* Grid */}
                     <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8 items-start">
 
                         {/* ── Left: Contact Form ── */}
@@ -147,19 +149,19 @@ const ContactPage: React.FC = () => {
                                     {[
                                         {
                                             icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>,
-                                            label: 'Studio Address', value: 'TCB house, KN 4 Avenue, Kigali, Rwanda',
+                                            label: 'Studio Address', value: contactInfo.address,
                                         },
                                         {
                                             icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>,
-                                            label: 'Phone', value: '+250 781 691 713',
+                                            label: 'Phone', value: contactInfo.phone,
                                         },
                                         {
                                             icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>,
-                                            label: 'Email', value: 'info@flatproduction.rw',
+                                            label: 'Email', value: contactInfo.email,
                                         },
                                         {
                                             icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
-                                            label: 'Working Hours', value: 'Mon – Sat, 8:00 AM – 6:00 PM',
+                                            label: 'Working Hours', value: contactInfo.hours,
                                         },
                                     ].map(({ icon, label, value }) => (
                                         <li key={label} className="flex items-start gap-3">
@@ -178,9 +180,9 @@ const ContactPage: React.FC = () => {
                                 <h3 className="font-bold text-red-700 mb-3">Follow Our Work</h3>
                                 <div className="flex gap-3">
                                     {[
-                                        { label: 'Instagram', href: 'https://instagram.com', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg> },
-                                        { label: 'YouTube', href: 'https://youtube.com', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg> },
-                                        { label: 'LinkedIn', href: 'https://linkedin.com', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg> },
+                                        { label: 'Instagram', href: contactInfo.socials.instagram, icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg> },
+                                        { label: 'YouTube',   href: contactInfo.socials.youtube,   icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg> },
+                                        { label: 'LinkedIn',  href: contactInfo.socials.linkedin,  icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg> },
                                     ].map(({ label, href, icon }) => (
                                         <a key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={label}
                                             className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-[#dc2626] border border-[#fca5a5] hover:bg-[#dc2626] hover:text-white hover:border-[#dc2626] transition-all"
@@ -197,7 +199,7 @@ const ContactPage: React.FC = () => {
                     <div className="mt-12 rounded-2xl overflow-hidden border border-[#e2e8f0] h-[420px] shadow-[0_4px_24px_rgba(0,0,0,0.06)]">
                         <iframe
                             title="Flat Production location"
-                            src="https://maps.google.com/maps?q=KN%204%20Avenue%2C%20Kigali%2C%20Rwanda&z=15&output=embed"
+                            src={`https://maps.google.com/maps?q=${encodeURIComponent(contactInfo.address)}&z=15&output=embed`}
                             loading="lazy"
                             referrerPolicy="no-referrer-when-downgrade"
                             className="w-full h-full border-0"

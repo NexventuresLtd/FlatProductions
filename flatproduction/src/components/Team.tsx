@@ -1,58 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { contentStore } from '../store/contentStore';
+import { contentStore, DEFAULT_SITE_CONTENT } from '../store/contentStore';
 
 type TeamMember = ReturnType<typeof contentStore.read>['team'][number];
 
 const Team: React.FC = () => {
-    const defaultTeam: TeamMember[] = [
-        {
-            id: 'team-1',
-            photo: '/kadaff.jpg',
-            name: 'KADAffI PRO',
-            role: 'Ceo & Founder',
-            position: '50% 18%',
-            bio: 'Leads the creative direction and keeps every project focused, sharp, and client-centered.',
-        },
-        {
-            id: 'team-2',
-            photo: '/ike.jpg',
-            name: 'Kelly',
-            role: 'Graphics Designer',
-            position: '50% 20%',
-            bio: 'Shapes visual identities, layouts, and brand assets with a clean, modern style.',
-        },
-        {
-            id: 'team-3',
-            photo: '/chance.jpg',
-            name: 'Chancelline niyotugendana',
-            role: 'Secretary & photographer',
-            position: '50% 22%',
-            bio: 'Keeps the studio organized while capturing moments with a calm eye for detail.',
-        },
-        {
-            id: 'team-4',
-            photo: '/chelsea.jpg',
-            name: 'anura',
-            role: 'Intern',
-            position: '50% 18%',
-            bio: 'Supports the team across shoots, edits, and day-to-day production work.',
-        },
-        {
-            id: 'team-5',
-            photo: '/onekelly.jpg',
-            name: 'ishimwe samuel kelly',
-            role: 'GRAPHICS DESIGNER',
-            position: '50% 20%',
-            bio: 'Brings bold concepts to life through graphics, branding, and polished design details.',
-        },
-    ];
-
-    const [team, setTeam] = useState<TeamMember[]>(() => (contentStore.read().team.length ? contentStore.read().team : defaultTeam));
+    const [team, setTeam] = useState<TeamMember[]>(() => {
+        const t = contentStore.read().team;
+        return t.length ? t : DEFAULT_SITE_CONTENT.team;
+    });
     const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
 
     useEffect(() => {
-        const onUpdate = (c: any) => setTeam((c.team && c.team.length) ? c.team : defaultTeam);
-        return contentStore.onUpdate(onUpdate);
+        return contentStore.onUpdate((c: any) => setTeam((c.team && c.team.length) ? c.team : DEFAULT_SITE_CONTENT.team));
     }, []);
 
     useEffect(() => {

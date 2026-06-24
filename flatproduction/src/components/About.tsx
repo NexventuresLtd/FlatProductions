@@ -1,11 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { contentStore } from '../store/contentStore';
-
-const stats = [
-    { value: '8+', label: 'Years Active' },
-    { value: '200+', label: 'Projects Delivered' },
-    { value: '50+', label: 'Clients Served' },
-];
+import { contentStore, DEFAULT_SITE_CONTENT } from '../store/contentStore';
 
 const About: React.FC = () => {
     const [about, setAbout] = useState(() => contentStore.read().about);
@@ -13,6 +7,9 @@ const About: React.FC = () => {
     useEffect(() => {
         return contentStore.onUpdate((c: any) => { if (c.about) setAbout(c.about); });
     }, []);
+
+    const stats = about.stats?.length ? about.stats : DEFAULT_SITE_CONTENT.about.stats!;
+    const chips = about.chips?.length ? about.chips : DEFAULT_SITE_CONTENT.about.chips!;
 
     return (
         <section className="bg-[#0a0a0a] overflow-hidden">
@@ -72,7 +69,7 @@ const About: React.FC = () => {
 
                     {/* Services chips */}
                     <div className="flex flex-wrap gap-2 mb-10">
-                        {['Photography', 'Video Production', 'Live Streaming', 'Branding', 'Web Design', 'Documentary'].map(tag => (
+                        {chips.map(tag => (
                             <span key={tag} className="border border-white/[0.12] bg-white/[0.05] text-white/70 text-[0.7rem] font-semibold uppercase tracking-[0.08em] px-3 py-1.5 rounded-full">
                                 {tag}
                             </span>

@@ -8,19 +8,20 @@ import {
   List, LayoutGrid, ArrowUpRight,
   Link2, PlayCircle,
   Filter, Save, Zap,
-  Home, Eye, MessageSquare, Globe,
+  Home, Eye, MessageSquare, Globe, Phone,
 } from 'lucide-react';
 import {
   contentStore,
   type SiteContent,
   type Testimonial,
+  type StatItem,
   DEFAULT_SITE_CONTENT,
   toOneSentence,
 } from '../store/contentStore';
 import { isAdminAuthed } from '../App';
 
 /* ─── Types ─────────────────────────────────────────────────────── */
-type SectionKey = 'overview'|'hero'|'about'|'services'|'portfolio'|'gallery'|'clients'|'team'|'testimonials'|'pages';
+type SectionKey = 'overview'|'hero'|'about'|'services'|'portfolio'|'gallery'|'clients'|'team'|'testimonials'|'pages'|'contact';
 type ServiceItem   = SiteContent['services'][number];
 type PortfolioItem = SiteContent['portfolio'][number];
 type TeamItem      = SiteContent['team'][number];
@@ -40,6 +41,7 @@ function cloneContent(c: SiteContent): SiteContent {
     clientLogos:  [...c.clientLogos],
     team:         c.team.map(m=>({...m})),
     gallery:      [...c.gallery],
+    contact:      { ...c.contact, socials: { ...c.contact.socials } },
     pageHeroes: {
       about:     { ...c.pageHeroes.about },
       services:  { ...c.pageHeroes.services },
@@ -201,14 +203,16 @@ const ServiceModal: React.FC<{initial?:ServiceItem;onSave:(item:ServiceItem)=>vo
   ({initial,onSave,onClose})=>{
   const [t,setT]=useState(initial?.title??'');
   const [d,setD]=useState(initial?.description??'');
+  const [ext,setExt]=useState(initial?.extendedDescription??'');
   const [img,setImg]=useState(initial?.image??'');
   return(
-    <ModalShell title={initial?'Edit Service':'Add Service'} onClose={onClose}>
+    <ModalShell title={initial?'Edit Service':'Add Service'} wide onClose={onClose}>
       <ImageField value={img} onChange={setImg}/>
       <Field label="Title"><input value={t} onChange={e=>setT(e.target.value)} placeholder="Service name"/></Field>
-      <Field label="Description"><textarea rows={3} value={d} onChange={e=>setD(e.target.value)} placeholder="Brief description…"/></Field>
+      <Field label="Card Description (short — shown on service card)"><textarea rows={2} value={d} onChange={e=>setD(e.target.value)} placeholder="Brief one-line description shown on the card…"/></Field>
+      <Field label="Popup Description (shown when visitor clicks Learn More)"><textarea rows={4} value={ext} onChange={e=>setExt(e.target.value)} placeholder="Detailed description shown in the popup modal…"/></Field>
       <div className="flex gap-2 pt-2">
-        <button className={b.primary} onClick={()=>{if(t.trim())onSave({id:initial?.id??uid(),title:t,description:d,image:img});}}><Save size={13}/>{initial?'Save Changes':'Add Service'}</button>
+        <button className={b.primary} onClick={()=>{if(t.trim())onSave({id:initial?.id??uid(),title:t,description:d,image:img,extendedDescription:ext});}}><Save size={13}/>{initial?'Save Changes':'Add Service'}</button>
         <button className={b.ghost} onClick={onClose}>Cancel</button>
       </div>
     </ModalShell>
@@ -567,6 +571,7 @@ const NAV: [SectionKey, string, React.ReactNode, (d:SiteContent)=>number|null][]
   ['team',         'Team',         <Users size={15}/>,           d=>d.team.length],
   ['testimonials', 'Testimonials', <MessageSquare size={15}/>,   d=>d.testimonials.length],
   ['pages',        'Page Heroes',  <Globe size={15}/>,           ()=>null],
+  ['contact',      'Contact',      <Phone size={15}/>,           ()=>null],
 ];
 
 /* ─── MAIN ───────────────────────────────────────────────────────── */
@@ -771,6 +776,93 @@ const AdminDashboard: React.FC = ()=>{
                     {(['image1','image2','image3','image4'] as const).map((key,i)=>(
                       <ImageField key={key} label={`Image ${i+1}`} value={draft.about[key]??''} onChange={v=>persist({...draft,about:{...draft.about,[key]:v}})}/>
                     ))}
+                  </div>
+                </div>
+
+                {/* Stats */}
+                <div className="bg-white border border-[#ebebeb] rounded-2xl p-5 shadow-sm animate-fade-in-up" style={{animationDelay:'60ms'}}>
+                  <div className="flex items-center justify-between mb-4">
+                    <p className="text-xs font-bold text-[#aaa] uppercase tracking-[0.1em] flex items-center gap-1.5"><Zap size={11}/>Stats (shown on homepage)</p>
+                    <button className={b.sm} onClick={() => {
+                      const stats = [...(draft.about.stats ?? DEFAULT_SITE_CONTENT.about.stats!), { value: '0+', label: 'New Stat' }];
+                      persist({ ...draft, about: { ...draft.about, stats } }, 'Stat added');
+                    }}><Plus size={12}/>Add Stat</button>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    {(draft.about.stats ?? DEFAULT_SITE_CONTENT.about.stats!).map((stat, i) => (
+                      <div key={i} className="flex items-center gap-3 bg-[#f9f9f9] border border-[#ebebeb] rounded-xl px-4 py-2.5 group">
+                        <span className="text-[0.65rem] font-bold text-[#ddd] w-5 flex-shrink-0 tabular-nums">{i + 1}</span>
+                        <input
+                          value={stat.value}
+                          onChange={e => {
+                            const next: StatItem[] = (draft.about.stats ?? DEFAULT_SITE_CONTENT.about.stats!).map((s, j) => j === i ? { ...s, value: e.target.value } : s);
+                            persist({ ...draft, about: { ...draft.about, stats: next } });
+                          }}
+                          placeholder="e.g. 8+"
+                          className="w-20 bg-white border border-[#ddd] rounded-lg px-2.5 py-1.5 text-sm font-bold text-[#111] outline-none font-[inherit] focus:border-[#111] transition-all"
+                        />
+                        <input
+                          value={stat.label}
+                          onChange={e => {
+                            const next: StatItem[] = (draft.about.stats ?? DEFAULT_SITE_CONTENT.about.stats!).map((s, j) => j === i ? { ...s, label: e.target.value } : s);
+                            persist({ ...draft, about: { ...draft.about, stats: next } });
+                          }}
+                          placeholder="e.g. Years Active"
+                          className="flex-1 bg-white border border-[#ddd] rounded-lg px-2.5 py-1.5 text-sm text-[#111] outline-none font-[inherit] focus:border-[#111] transition-all"
+                        />
+                        <button className={`${b.iconDng} opacity-0 group-hover:opacity-100 transition-opacity`}
+                          onClick={() => setModal({ k: 'del', label: stat.label || `Stat ${i + 1}`, onConfirm: () => {
+                            const stats = (draft.about.stats ?? DEFAULT_SITE_CONTENT.about.stats!).filter((_, j) => j !== i);
+                            persist({ ...draft, about: { ...draft.about, stats } }, 'Stat deleted');
+                          }})}>
+                          <Trash2 size={12}/>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Service Chips */}
+                <div className="bg-white border border-[#ebebeb] rounded-2xl p-5 shadow-sm animate-fade-in-up" style={{animationDelay:'70ms'}}>
+                  <div className="flex items-center justify-between mb-4">
+                    <p className="text-xs font-bold text-[#aaa] uppercase tracking-[0.1em] flex items-center gap-1.5"><Layers size={11}/>Service Chips (shown on homepage)</p>
+                    <button className={b.sm} onClick={() => {
+                      const chips = [...(draft.about.chips ?? DEFAULT_SITE_CONTENT.about.chips!), 'New Tag'];
+                      persist({ ...draft, about: { ...draft.about, chips } });
+                    }}><Plus size={12}/>Add Chip</button>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    {(draft.about.chips ?? DEFAULT_SITE_CONTENT.about.chips!).map((chip, i) => {
+                      const chips = draft.about.chips ?? DEFAULT_SITE_CONTENT.about.chips!;
+                      return (
+                        <div key={i} className="flex items-center gap-3 bg-[#f9f9f9] border border-[#ebebeb] rounded-xl px-4 py-2.5 group">
+                          <span className="text-[0.65rem] font-bold text-[#ddd] w-5 flex-shrink-0 tabular-nums">{String(i + 1).padStart(2, '0')}</span>
+                          <input
+                            value={chip}
+                            onChange={e => {
+                              const next = chips.map((c, j) => j === i ? e.target.value : c);
+                              persist({ ...draft, about: { ...draft.about, chips: next } });
+                            }}
+                            className="flex-1 bg-transparent text-sm text-[#111] outline-none font-[inherit] border-0 font-medium"
+                          />
+                          <button className={`${b.iconDng} opacity-0 group-hover:opacity-100 transition-opacity`}
+                            onClick={() => setModal({ k: 'del', label: chip, onConfirm: () => persist({ ...draft, about: { ...draft.about, chips: chips.filter((_, j) => j !== i) } }, 'Chip deleted') })}>
+                            <Trash2 size={12}/>
+                          </button>
+                        </div>
+                      );
+                    })}
+                    {!(draft.about.chips ?? DEFAULT_SITE_CONTENT.about.chips!).length && (
+                      <p className="text-[#ccc] text-sm py-4 text-center">No chips — add one</p>
+                    )}
+                  </div>
+                  <div className="mt-4 pt-4 border-t border-[#f0f0f0]">
+                    <p className="text-xs text-[#bbb] mb-2">Preview:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {(draft.about.chips ?? DEFAULT_SITE_CONTENT.about.chips!).map(tag => (
+                        <span key={tag} className="border border-[#e5e5e5] bg-[#f5f5f5] text-[#666] text-[0.7rem] font-semibold uppercase tracking-[0.08em] px-3 py-1.5 rounded-full">{tag}</span>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
@@ -1109,6 +1201,46 @@ const AdminDashboard: React.FC = ()=>{
                       onSave={(t,img)=>savePageHero(page,t,img)}/>
                   );
                 })}
+              </div>
+            )}
+
+            {/* ── CONTACT ──────────────────────────────────────── */}
+            {active==='contact'&&(
+              <div className="flex flex-col gap-5">
+                <SectionHeader title="Contact Info"/>
+                <p className="text-[#888] text-sm -mt-2">These values appear on the Contact page, booking links, and social icons.</p>
+
+                {/* Contact details */}
+                <div className="bg-white border border-[#ebebeb] rounded-2xl p-5 shadow-sm animate-scale-in">
+                  <p className="text-xs font-bold text-[#aaa] uppercase tracking-[0.1em] mb-4 flex items-center gap-1.5"><Phone size={11}/>Contact Details</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <Field label="Phone"><input value={draft.contact.phone} onChange={e=>persist({...draft,contact:{...draft.contact,phone:e.target.value}})}/></Field>
+                    <Field label="Email"><input type="email" value={draft.contact.email} onChange={e=>persist({...draft,contact:{...draft.contact,email:e.target.value}})}/></Field>
+                    <Field label="WhatsApp Number (digits only, e.g. 250781691713)"><input value={draft.contact.whatsapp} onChange={e=>persist({...draft,contact:{...draft.contact,whatsapp:e.target.value}})}/></Field>
+                    <Field label="Working Hours"><input value={draft.contact.hours} onChange={e=>persist({...draft,contact:{...draft.contact,hours:e.target.value}})}/></Field>
+                  </div>
+                  <div className="mt-4">
+                    <Field label="Studio Address"><textarea rows={2} value={draft.contact.address} onChange={e=>persist({...draft,contact:{...draft.contact,address:e.target.value}})}/></Field>
+                  </div>
+                </div>
+
+                {/* Social links */}
+                <div className="bg-white border border-[#ebebeb] rounded-2xl p-5 shadow-sm animate-fade-in-up" style={{animationDelay:'40ms'}}>
+                  <p className="text-xs font-bold text-[#aaa] uppercase tracking-[0.1em] mb-4 flex items-center gap-1.5"><Globe size={11}/>Social Links</p>
+                  <div className="flex flex-col gap-3">
+                    <Field label="Instagram URL"><input value={draft.contact.socials.instagram} onChange={e=>persist({...draft,contact:{...draft.contact,socials:{...draft.contact.socials,instagram:e.target.value}}})}/></Field>
+                    <Field label="YouTube URL"><input value={draft.contact.socials.youtube} onChange={e=>persist({...draft,contact:{...draft.contact,socials:{...draft.contact.socials,youtube:e.target.value}}})}/></Field>
+                    <Field label="LinkedIn URL"><input value={draft.contact.socials.linkedin} onChange={e=>persist({...draft,contact:{...draft.contact,socials:{...draft.contact.socials,linkedin:e.target.value}}})}/></Field>
+                  </div>
+                </div>
+
+                {/* Preview */}
+                <div className="bg-[#f9f9f9] border border-[#ebebeb] rounded-2xl p-5 animate-fade-in-up" style={{animationDelay:'80ms'}}>
+                  <p className="text-xs font-bold text-[#aaa] uppercase tracking-[0.1em] mb-3 flex items-center gap-1.5"><Eye size={11}/>WhatsApp Booking Link Preview</p>
+                  <p className="text-xs text-[#888] font-mono break-all">
+                    {`https://wa.me/${draft.contact.whatsapp}?text=Hello%20Flat%20Production%2C%20I%20would%20like%20to%20book%20a%20project.`}
+                  </p>
+                </div>
               </div>
             )}
 
