@@ -1,3 +1,5 @@
+import { apiGet, apiPost, apiPut, ApiError } from '../lib/apiClient';
+
 type Testimonial = { id: string; name: string; logoSrc: string; quote: string };
 type PageHero    = { title: string; image: string };
 type StatItem    = { value: string; label: string };
@@ -162,9 +164,6 @@ const DEFAULT_SITE_CONTENT: SiteContent = {
   },
 };
 
-const KEY        = 'flatproduction_site_content_v2';
-const BACKUP_KEY = 'flatproduction_site_content_backup_v2';
-
 function cloneContent(c: SiteContent): SiteContent {
   return {
     hero:         { ...c.hero, images: [...(c.hero.images ?? [])], notes: [...(c.hero.notes ?? [])] },
@@ -250,89 +249,161 @@ function normalize(parsed: Partial<SiteContent>): SiteContent {
   };
 }
 
+/* ── ContentStore ────────────────────────────────────────────────────
+ * Backed by the FastAPI backend (GET/PUT /api/content) instead of
+ * localStorage. read()/hasBackup()/readBackup() stay synchronous by
+ * serving an in-memory cache that's populated eagerly on load and kept
+ * current by write()/saveBackup() (optimistic) and refresh() (network).
+ * Cross-tab live update still goes through BroadcastChannel + a
+ * CustomEvent, matching the previous localStorage-based behavior. */
+
+const CHANNEL_NAME = 'flatproduction_content';
+const EVENT_NAME    = 'flatproduction_update';
+const WRITE_DEBOUNCE_MS = 600;
+
 class ContentStore {
   private channel?: BroadcastChannel;
+  private cache: SiteContent = cloneContent(DEFAULT_SITE_CONTENT);
+  private backupCache: SiteContent | null = null;
+  private backupCacheKnown = false;
+  private pendingWrite: Partial<SiteContent> | null = null;
+  private writeTimer: number | null = null;
 
   constructor() {
-    try { this.channel = new BroadcastChannel('flatproduction_content'); }
+    try { this.channel = new BroadcastChannel(CHANNEL_NAME); }
     catch { this.channel = undefined; }
+
+    this.channel?.addEventListener('message', (ev: MessageEvent) => {
+      if (ev.data?.type === 'update') {
+        this.cache = ev.data.payload as SiteContent;
+      }
+    });
+
+    void this.refresh();
+    void this.refreshBackupStatus();
+
+    // Don't lose a pending debounced edit if the admin switches tabs/closes the page.
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') this.flushWrite();
+      });
+    }
   }
 
   read(): SiteContent {
-    const raw = localStorage.getItem(KEY);
-    if (!raw) return cloneContent(DEFAULT_SITE_CONTENT);
-    try   { return normalize(JSON.parse(raw) as Partial<SiteContent>); }
-    catch { return cloneContent(DEFAULT_SITE_CONTENT); }
+    return this.cache;
   }
 
-  hasBackup(): boolean {
-    return !!localStorage.getItem(BACKUP_KEY);
-  }
-
-  saveBackup(): void {
-    const current = localStorage.getItem(KEY);
-    if (current) localStorage.setItem(BACKUP_KEY, current);
-  }
-
-  readBackup(): SiteContent | null {
-    const raw = localStorage.getItem(BACKUP_KEY);
-    if (!raw) return null;
-    try   { return normalize(JSON.parse(raw) as Partial<SiteContent>); }
-    catch { return null; }
+  /** Force a network refresh; resolves with the freshly-fetched content. */
+  async refresh(): Promise<SiteContent> {
+    try {
+      const data = await apiGet<Partial<SiteContent>>('/api/content');
+      this.cache = normalize(data);
+      this.broadcast(this.cache);
+    } catch {
+      /* keep last-known cache on failure (graceful degradation offline) */
+    }
+    return this.cache;
   }
 
   write(payload: Partial<SiteContent>): SiteContent {
-    const merged = normalize({ ...this.read(), ...payload });
-    try {
-      localStorage.setItem(KEY, JSON.stringify(merged));
-    } catch {
-      console.warn('[contentStore] localStorage write failed (quota exceeded?)');
-      return this.read();
-    }
-    this.channel?.postMessage({ type: 'update', payload: merged });
-    /* Also dispatch a CustomEvent so same-tab listeners (e.g. bfcache-restored
-       pages or components that missed the BroadcastChannel) pick up the change. */
-    window.dispatchEvent(new CustomEvent('flatproduction_update', { detail: merged }));
+    const merged = normalize({ ...this.cache, ...payload });
+    this.cache = merged;
+    this.broadcast(merged);
+
+    // Local echo is instant (above); the network sync is debounced so rapid
+    // edits (typing in a text field, dragging a reorder) coalesce into one
+    // PUT instead of firing a full round trip + DB write per keystroke.
+    this.pendingWrite = this.pendingWrite ? { ...this.pendingWrite, ...payload } : payload;
+    if (this.writeTimer !== null) clearTimeout(this.writeTimer);
+    this.writeTimer = window.setTimeout(() => this.flushWrite(), WRITE_DEBOUNCE_MS);
+
     return merged;
   }
 
-  clear() {
-    localStorage.removeItem(KEY);
-    this.channel?.postMessage({ type: 'clear' });
-    window.dispatchEvent(new CustomEvent('flatproduction_update', { detail: cloneContent(DEFAULT_SITE_CONTENT) }));
+  /** Send whatever writes are pending right now, without waiting for the debounce. */
+  private flushWrite(): void {
+    if (this.writeTimer !== null) { clearTimeout(this.writeTimer); this.writeTimer = null; }
+    const payload = this.pendingWrite;
+    if (!payload) return;
+    this.pendingWrite = null;
+
+    apiPut<Partial<SiteContent>>('/api/content', payload)
+      .then(fresh => {
+        this.cache = normalize(fresh);
+        this.broadcast(this.cache);
+      })
+      .catch(err => {
+        console.warn('[contentStore] write failed', err instanceof ApiError ? err.message : err);
+      });
+  }
+
+  hasBackup(): boolean {
+    return this.backupCacheKnown ? this.backupCache !== null : false;
+  }
+
+  saveBackup(): void {
+    this.backupCache = cloneContent(this.cache);
+    this.backupCacheKnown = true;
+    apiPost('/api/content/backup').catch(err => {
+      console.warn('[contentStore] saveBackup failed', err instanceof ApiError ? err.message : err);
+    });
+  }
+
+  readBackup(): SiteContent | null {
+    return this.backupCache;
+  }
+
+  private async refreshBackupStatus(): Promise<void> {
+    try {
+      const { exists } = await apiGet<{ exists: boolean }>('/api/content/backup/exists');
+      this.backupCacheKnown = true;
+      if (exists && !this.backupCache) {
+        const snapshot = await apiGet<Partial<SiteContent>>('/api/content/backup');
+        this.backupCache = normalize(snapshot);
+      } else if (!exists) {
+        this.backupCache = null;
+      }
+    } catch {
+      /* not authenticated on public pages, or offline — leave cache as-is */
+    }
+  }
+
+  clear(): void {
+    // Drop any debounced edit still pending — a reset should win outright,
+    // not get silently overwritten a moment later by a stale queued write.
+    if (this.writeTimer !== null) { clearTimeout(this.writeTimer); this.writeTimer = null; }
+    this.pendingWrite = null;
+
+    const defaults = cloneContent(DEFAULT_SITE_CONTENT);
+    this.cache = defaults;
+    this.broadcast(defaults);
+    apiPost('/api/content/reset').catch(err => {
+      console.warn('[contentStore] clear/reset failed', err instanceof ApiError ? err.message : err);
+    });
+  }
+
+  private broadcast(content: SiteContent): void {
+    this.channel?.postMessage({ type: 'update', payload: content });
+    window.dispatchEvent(new CustomEvent(EVENT_NAME, { detail: content }));
   }
 
   /** Subscribe to content changes from any tab.
    *  Returns an unsubscribe function — use it as the useEffect cleanup. */
   onUpdate(cb: (content: SiteContent) => void): () => void {
-    /* BroadcastChannel: fires when ANOTHER tab calls write() */
     const msgHandler = (ev: MessageEvent) => {
       if (ev.data?.type === 'update') cb(ev.data.payload as SiteContent);
-      if (ev.data?.type === 'clear')  cb(cloneContent(DEFAULT_SITE_CONTENT));
     };
-    /* window.storage: native cross-tab localStorage change event (reliable fallback) */
-    const storageHandler = (e: StorageEvent) => {
-      if (e.key !== KEY) return;
-      if (e.newValue) {
-        try { cb(normalize(JSON.parse(e.newValue) as Partial<SiteContent>)); } catch {}
-      } else {
-        cb(cloneContent(DEFAULT_SITE_CONTENT));
-      }
-    };
-    /* CustomEvent: fires in the SAME tab when write() is called directly
-       (covers bfcache-restored pages and any non-admin same-tab consumers) */
     const customHandler = (e: Event) => {
       cb((e as CustomEvent<SiteContent>).detail);
     };
 
     this.channel?.addEventListener('message', msgHandler);
-    window.addEventListener('storage', storageHandler);
-    window.addEventListener('flatproduction_update', customHandler);
+    window.addEventListener(EVENT_NAME, customHandler);
 
     return () => {
       this.channel?.removeEventListener('message', msgHandler);
-      window.removeEventListener('storage', storageHandler);
-      window.removeEventListener('flatproduction_update', customHandler);
+      window.removeEventListener(EVENT_NAME, customHandler);
     };
   }
 }

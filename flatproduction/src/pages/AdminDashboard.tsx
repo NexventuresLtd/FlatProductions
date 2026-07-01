@@ -9,6 +9,7 @@ import {
   Link2, PlayCircle,
   Filter, Save, Zap,
   Home, Eye, MessageSquare, Globe, Phone,
+  UserPlus, ShieldOff,
 } from 'lucide-react';
 import {
   contentStore,
@@ -21,9 +22,10 @@ import {
   toOneSentence,
 } from '../store/contentStore';
 import { isAdminAuthed, broadcastLogout } from '../App';
+import { apiGet, apiPost, apiDelete, apiUploadFile, ApiError } from '../lib/apiClient';
 
 /* ─── Types ─────────────────────────────────────────────────────── */
-type SectionKey = 'overview'|'hero'|'about'|'services'|'portfolio'|'gallery'|'clients'|'team'|'testimonials'|'pages'|'contact';
+type SectionKey = 'overview'|'hero'|'about'|'services'|'portfolio'|'gallery'|'clients'|'team'|'testimonials'|'pages'|'contact'|'team-access';
 type ServiceItem   = SiteContent['services'][number];
 type PortfolioItem = SiteContent['portfolio'][number];
 type TeamItem      = SiteContent['team'][number];
@@ -106,14 +108,22 @@ const b = {
 const ImageField: React.FC<{value:string;onChange:(v:string)=>void;label?:string}> =
   ({value,onChange,label='Image'})=>{
   const [tab,setTab]=useState<'url'|'upload'>('url');
+  const [uploading,setUploading]=useState(false);
+  const [uploadErr,setUploadErr]=useState('');
   const ref=useRef<HTMLInputElement>(null);
   const isB64=value?.startsWith('data:');
 
-  const handleFile=(file:File)=>{
-    if(file.size>4*1024*1024){alert('Max 4 MB.');return;}
-    const r=new FileReader();
-    r.onload=e=>{if(e.target?.result)onChange(e.target.result as string);};
-    r.readAsDataURL(file);
+  const handleFile=async(file:File)=>{
+    if(file.size>4*1024*1024){setUploadErr('Max 4 MB.');return;}
+    setUploading(true);setUploadErr('');
+    try{
+      const {url}=await apiUploadFile<{url:string}>('/api/uploads/image',file);
+      onChange(url);
+    }catch(err){
+      setUploadErr(err instanceof ApiError?err.message:'Upload failed. Please try again.');
+    }finally{
+      setUploading(false);
+    }
   };
 
   return (
@@ -139,15 +149,18 @@ const ImageField: React.FC<{value:string;onChange:(v:string)=>void;label?:string
       )}
       {tab==='upload'&&(
         <>
-          <input ref={ref} type="file" accept="image/*" className="hidden" onChange={e=>{if(e.target.files?.[0])handleFile(e.target.files[0]);e.target.value='';}}/>
-          <div onDrop={e=>{e.preventDefault();if(e.dataTransfer.files[0])handleFile(e.dataTransfer.files[0]);}}
-               onDragOver={e=>e.preventDefault()} onClick={()=>ref.current?.click()}
-               className="border-2 border-dashed border-[#ddd] rounded-xl py-6 text-center cursor-pointer hover:border-[#111] hover:bg-[#fafafa] transition-all duration-200 group">
-            <Upload size={18} className="mx-auto text-[#ccc] group-hover:text-[#111] transition-colors mb-1.5"/>
-            <p className="text-[0.75rem] text-[#bbb] group-hover:text-[#888] transition-colors">
-              {isB64?'Uploaded — click to replace':'Click or drag & drop (max 4 MB)'}
+          <input ref={ref} type="file" accept="image/*" className="hidden" disabled={uploading} onChange={e=>{if(e.target.files?.[0])handleFile(e.target.files[0]);e.target.value='';}}/>
+          <div onDrop={e=>{e.preventDefault();if(!uploading&&e.dataTransfer.files[0])handleFile(e.dataTransfer.files[0]);}}
+               onDragOver={e=>e.preventDefault()} onClick={()=>!uploading&&ref.current?.click()}
+               className={`border-2 border-dashed border-[#ddd] rounded-xl py-6 text-center transition-all duration-200 group ${uploading?'cursor-wait opacity-70':'cursor-pointer hover:border-[#111] hover:bg-[#fafafa]'}`}>
+            {uploading
+              ? <span className="w-5 h-5 mx-auto border-2 border-[#ccc] border-t-[#111] rounded-full animate-spin inline-block"/>
+              : <Upload size={18} className="mx-auto text-[#ccc] group-hover:text-[#111] transition-colors mb-1.5"/>}
+            <p className="text-[0.75rem] text-[#bbb] group-hover:text-[#888] transition-colors mt-1.5">
+              {uploading?'Uploading…':(value&&!isB64)?'Uploaded — click to replace':'Click or drag & drop (max 4 MB)'}
             </p>
           </div>
+          {uploadErr&&<p className="text-[0.72rem] text-[#dc2626] font-semibold">{uploadErr}</p>}
         </>
       )}
     </div>
@@ -605,6 +618,130 @@ type Modal =
   |{k:'del';label:string;onConfirm:()=>void}
   |{k:'reset'};
 
+/* ─── Team Access ────────────────────────────────────────────────── */
+type AdminTeamMember = {
+  id:string; email:string; full_name?:string|null; is_active:boolean;
+  created_at:string; last_login_at?:string|null;
+};
+
+const InviteAdminModal: React.FC<{onSave:(email:string,fullName:string,tempPassword:string)=>void;onClose:()=>void}> =
+  ({onSave,onClose})=>{
+  const [email,setEmail]=useState('');
+  const [fullName,setFullName]=useState('');
+  const [tempPassword,setTempPassword]=useState(()=>Math.random().toString(36).slice(2,10)+'A1!');
+  return (
+    <ModalShell title="Invite Admin" onClose={onClose}>
+      <Field label="Email"><input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="name@example.com"/></Field>
+      <Field label="Full Name (optional)"><input value={fullName} onChange={e=>setFullName(e.target.value)} placeholder="Full name"/></Field>
+      <Field label="Temporary Password"><input value={tempPassword} onChange={e=>setTempPassword(e.target.value)} placeholder="Temp password"/></Field>
+      <p className="text-[#888] text-xs -mt-1">This is emailed to the invitee — they should change it after logging in.</p>
+      <div className="flex gap-2 pt-2">
+        <button className={b.primary} onClick={()=>{if(email.trim()&&tempPassword.trim())onSave(email.trim(),fullName.trim(),tempPassword.trim());}}><UserPlus size={13}/>Send Invite</button>
+        <button className={b.ghost} onClick={onClose}>Cancel</button>
+      </div>
+    </ModalShell>
+  );
+};
+
+const DeactivateAdminModal: React.FC<{label:string;onConfirm:()=>void;onClose:()=>void}> = ({label,onConfirm,onClose})=>(
+  <ModalShell title="Deactivate Admin" onClose={onClose}>
+    <div className="text-center py-3 animate-pop-in">
+      <div className="w-16 h-16 rounded-2xl bg-[#fef2f2] flex items-center justify-center mx-auto mb-4 border-2 border-[#fecaca]">
+        <ShieldOff size={24} className="text-[#dc2626]"/>
+      </div>
+      <p className="text-[#111] font-bold text-base mb-1.5">Deactivate "{label}"?</p>
+      <p className="text-[#888] text-sm">They will no longer be able to sign in to the dashboard.</p>
+    </div>
+    <div className="flex gap-2 justify-center">
+      <button className={b.ghost} onClick={onClose}>Cancel</button>
+      <button className={b.danger} onClick={()=>{onConfirm();onClose();}}><ShieldOff size={13}/>Yes, Deactivate</button>
+    </div>
+  </ModalShell>
+);
+
+const TeamAccessPanel: React.FC<{onToast:(msg:string)=>void}> = ({onToast})=>{
+  const [admins,setAdmins]   = useState<AdminTeamMember[]>([]);
+  const [loading,setLoading] = useState(true);
+  const [err,setErr]         = useState('');
+  const [inviteOpen,setInviteOpen] = useState(false);
+  const [deactivateTarget,setDeactivateTarget] = useState<AdminTeamMember|null>(null);
+  const currentEmail = sessionStorage.getItem('flat_admin_email')??'';
+
+  const load = ()=>{
+    setLoading(true); setErr('');
+    apiGet<AdminTeamMember[]>('/api/auth/team')
+      .then(setAdmins)
+      .catch(e=>setErr(e instanceof ApiError?e.message:'Failed to load team'))
+      .finally(()=>setLoading(false));
+  };
+
+  useEffect(()=>{ load(); },[]);
+
+  const invite = async (email:string,fullName:string,tempPassword:string)=>{
+    try{
+      await apiPost('/api/auth/invite',{email,full_name:fullName||undefined,temp_password:tempPassword});
+      onToast('Admin invited — an email with their temporary password was sent');
+      setInviteOpen(false);
+      load();
+    }catch(e){
+      alert(e instanceof ApiError?e.message:'Failed to invite admin');
+    }
+  };
+
+  const deactivate = async (admin:AdminTeamMember)=>{
+    try{
+      await apiDelete(`/api/auth/team/${admin.id}`);
+      onToast('Admin deactivated');
+      load();
+    }catch(e){
+      alert(e instanceof ApiError?e.message:'Failed to deactivate admin');
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-5">
+      <SectionHeader title="Team Access" count={admins.length} onAdd={()=>setInviteOpen(true)} addLabel="Invite Admin"/>
+      <p className="text-[#888] text-sm -mt-2">Admins you invite can sign in with their own email, password, and emailed verification code, and manage all site content.</p>
+
+      {loading && <p className="text-[#aaa] text-sm">Loading…</p>}
+      {err && <p className="text-[#dc2626] text-sm font-semibold">{err}</p>}
+
+      {!loading && !err && (
+        admins.length===0
+          ? <Empty label="admins" onAdd={()=>setInviteOpen(true)} icon={<UserPlus size={32}/>}/>
+          : (
+            <div className="bg-white border border-[#ebebeb] rounded-2xl overflow-hidden shadow-sm">
+              {admins.map(a=>(
+                <div key={a.id} className="flex items-center gap-3 px-5 py-4 border-b border-[#f0f0f0] last:border-b-0">
+                  <div className="w-9 h-9 rounded-full bg-[#f5f6f8] flex items-center justify-center text-[#888] font-bold text-sm flex-shrink-0">
+                    {(a.full_name||a.email)[0]?.toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[#111] font-semibold text-sm truncate">
+                      {a.full_name||a.email}{a.email===currentEmail&&<span className="text-[#aaa] font-normal"> (you)</span>}
+                    </p>
+                    <p className="text-[#888] text-xs truncate">{a.email}</p>
+                  </div>
+                  <span className={`text-[0.68rem] font-bold px-2.5 py-1 rounded-full flex-shrink-0 ${a.is_active?'bg-[#f0fdf4] text-[#15803d]':'bg-[#f5f5f5] text-[#999]'}`}>
+                    {a.is_active?'Active':'Deactivated'}
+                  </span>
+                  {a.is_active && a.email!==currentEmail && (
+                    <button className={b.iconDng} title="Deactivate" onClick={()=>setDeactivateTarget(a)}><ShieldOff size={14}/></button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )
+      )}
+
+      {inviteOpen && <InviteAdminModal onSave={invite} onClose={()=>setInviteOpen(false)}/>}
+      {deactivateTarget && (
+        <DeactivateAdminModal label={deactivateTarget.full_name||deactivateTarget.email} onConfirm={()=>deactivate(deactivateTarget)} onClose={()=>setDeactivateTarget(null)}/>
+      )}
+    </div>
+  );
+};
+
 const NAV: [SectionKey, string, React.ReactNode, (d:SiteContent)=>number|null][] = [
   ['overview',     'Overview',     <LayoutDashboard size={15}/>, ()=>null],
   ['hero',         'Hero',         <Film size={15}/>,            d=>d.hero.images?.length??0],
@@ -617,6 +754,7 @@ const NAV: [SectionKey, string, React.ReactNode, (d:SiteContent)=>number|null][]
   ['testimonials', 'Testimonials', <MessageSquare size={15}/>,   d=>d.testimonials.length],
   ['pages',        'Page Heroes',  <Globe size={15}/>,           ()=>null],
   ['contact',      'Contact',      <Phone size={15}/>,           ()=>null],
+  ['team-access',  'Team Access',  <UserPlus size={15}/>,        ()=>null],
 ];
 
 /* ─── MAIN ───────────────────────────────────────────────────────── */
@@ -639,7 +777,13 @@ const AdminDashboard: React.FC = ()=>{
   useEffect(()=>{ return contentStore.onUpdate(c=>setDraft(cloneContent(c))); },[]);
   useEffect(()=>{ setQuery(''); setPfSvc(''); setPfType(''); },[active]);
   useEffect(()=>{
-    const iv=setInterval(()=>setVisits(parseInt(localStorage.getItem('flat_visit_count')||'0',10)),5000);
+    const fetchAnalytics=()=>{
+      apiGet<{visits:number}>('/api/admin/analytics/overview')
+        .then(d=>setVisits(d.visits))
+        .catch(()=>setVisits(parseInt(localStorage.getItem('flat_visit_count')||'0',10)));
+    };
+    fetchAnalytics();
+    const iv=setInterval(fetchAnalytics,10000);
     return()=>clearInterval(iv);
   },[]);
 
@@ -1309,6 +1453,8 @@ const AdminDashboard: React.FC = ()=>{
                 </div>
               </div>
             )}
+
+            {active==='team-access'&&<TeamAccessPanel onToast={msg=>{setToast(msg);setTimeout(()=>setToast(null),2200);}}/>}
 
           </div>
         </div>

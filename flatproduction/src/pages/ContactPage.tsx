@@ -2,10 +2,12 @@ import React, { useEffect, useState } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { contentStore } from '../store/contentStore';
+import { apiPost, ApiError } from '../lib/apiClient';
 
 const ContactPage: React.FC = () => {
-    const [formStatus, setFormStatus] = useState<'idle' | 'submitting' | 'success'>('idle');
+    const [formStatus, setFormStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
     const [showToast, setShowToast] = useState(false);
+    const [errorMsg, setErrorMsg] = useState('');
 
     const [heroData, setHeroData]     = useState(() => contentStore.read().pageHeroes.contact);
     const [contactInfo, setContactInfo] = useState(() => contentStore.read().contact);
@@ -19,16 +21,31 @@ const ContactPage: React.FC = () => {
 
     const whatsappLink = `https://wa.me/${contactInfo.whatsapp}?text=Hello%20Flat%20Production%2C%20I%20would%20like%20to%20book%20your%20services.`;
 
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setFormStatus('submitting');
-        setTimeout(() => {
+        setErrorMsg('');
+
+        const form = e.target as HTMLFormElement;
+        const data = new FormData(form);
+
+        try {
+            await apiPost('/api/contact', {
+                fullName: data.get('fullName'),
+                email: data.get('email'),
+                phone: data.get('phone') || undefined,
+                service: data.get('service') || undefined,
+                message: data.get('message'),
+            });
             setFormStatus('success');
             setShowToast(true);
             setTimeout(() => setShowToast(false), 4500);
             setTimeout(() => setFormStatus('idle'), 4500);
-            (e.target as HTMLFormElement).reset();
-        }, 1500);
+            form.reset();
+        } catch (err) {
+            setFormStatus('error');
+            setErrorMsg(err instanceof ApiError ? err.message : 'Something went wrong. Please try again.');
+        }
     };
 
     return (
@@ -121,6 +138,12 @@ const ContactPage: React.FC = () => {
                                         <>Send Message <span aria-hidden>→</span></>
                                     )}
                                 </button>
+
+                                {formStatus === 'error' && (
+                                    <div className="rounded-xl py-3 px-4 bg-[#fef2f2] border border-[#fca5a5] text-[#dc2626] text-sm font-semibold">
+                                        {errorMsg || 'Something went wrong. Please try again.'}
+                                    </div>
+                                )}
                             </form>
                         </div>
 

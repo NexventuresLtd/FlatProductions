@@ -7,14 +7,43 @@ import ServicesPage from './pages/ServicesPage';
 import ContactPage from './pages/ContactPage';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
+import { apiPost, AUTH_TOKEN_KEY } from './lib/apiClient';
 
-const AUTH_KEY = 'flat_admin_tok';
+const AUTH_KEY = AUTH_TOKEN_KEY;
 const AUTH_CHANNEL = 'flat_auth_sync';
+
+/* Decodes a JWT's payload without verifying the signature — good enough for
+   a client-side "is this token still fresh" check; the server re-verifies
+   the signature on every request regardless. */
+function decodeJwtExp(token: string): number | null {
+  try {
+    const payload = token.split('.')[1];
+    const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
+    const parsed = JSON.parse(json) as { exp?: number };
+    return typeof parsed.exp === 'number' ? parsed.exp : null;
+  } catch {
+    return null;
+  }
+}
 
 /* ── Session helpers ─────────────────────────────────────────────── */
 export function isAdminAuthed(): boolean {
-  const tok = sessionStorage.getItem(AUTH_KEY);
-  return !!tok && tok === localStorage.getItem(AUTH_KEY);
+  // Self-heal: a brand-new tab has no sessionStorage entry yet (that only
+  // gets copied in by the syncAuthToTab() useEffect, which runs *after*
+  // this synchronous check on first render) — so fall back to inheriting
+  // straight from localStorage here rather than bouncing to /login first.
+  let tok = sessionStorage.getItem(AUTH_KEY);
+  if (!tok) {
+    const lsTok = localStorage.getItem(AUTH_KEY);
+    if (lsTok) {
+      sessionStorage.setItem(AUTH_KEY, lsTok);
+      tok = lsTok;
+    }
+  }
+  if (!tok || tok !== localStorage.getItem(AUTH_KEY)) return false;
+  const exp = decodeJwtExp(tok);
+  if (exp !== null && Date.now() >= exp * 1000) return false;
+  return true;
 }
 
 /* Copy the shared localStorage token into this tab's sessionStorage.
@@ -46,6 +75,7 @@ export function broadcastLogout(): void {
 function trackVisit() {
   const n = parseInt(localStorage.getItem('flat_visit_count') || '0', 10) + 1;
   localStorage.setItem('flat_visit_count', String(n));
+  apiPost('/api/visits').catch(() => { /* best-effort; local fallback above already recorded */ });
 }
 
 /* ── Floating admin bar shown on public pages when logged in ─────── */
@@ -142,7 +172,13 @@ const App: React.FC = () => {
   if (currentPath === '/portfolio') return <><PortfolioPage /><AdminBar /></>;
   if (currentPath === '/services')  return <><ServicesPage /><AdminBar /></>;
   if (currentPath === '/contact')   return <><ContactPage /><AdminBar /></>;
-  if (currentPath === '/login')     return <AdminLogin />;
+  if (currentPath === '/login') {
+    if (isAdminAuthed()) {
+      window.location.pathname = '/admin';
+      return null;
+    }
+    return <AdminLogin />;
+  }
 
   if (currentPath === '/admin') {
     if (!isAdminAuthed()) {

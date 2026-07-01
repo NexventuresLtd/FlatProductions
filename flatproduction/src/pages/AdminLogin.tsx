@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { apiPost, ApiError, AUTH_TOKEN_KEY } from '../lib/apiClient';
 
-const ADMIN_EMAIL    = 'admin@flatproduction.rw';
-const ADMIN_PASSWORD = 'admin123';
+const OTP_RESEND_COOLDOWN_SECONDS = 30;
+
+type LoginPendingResponse = { pending_token: string; message: string; email_masked: string };
+type TokenResponse = { access_token: string; token_type: string; admin: { id: string; email: string; full_name?: string } };
 
 /* ─── Puzzle generators ─────────────────────────────────────────── */
 type MathPuzzle = { kind: 'math'; question: string; answer: number };
@@ -71,7 +74,7 @@ const PUZZLE_META = [
 
 /* ─── Component ─────────────────────────────────────────────────── */
 const AdminLogin: React.FC = () => {
-  const [step, setStep] = useState<'verify' | 'login'>('verify');
+  const [step, setStep] = useState<'verify' | 'login' | 'otp'>('verify');
 
   /* puzzles generated once */
   const [puzzles] = useState(makePuzzles);
@@ -86,6 +89,22 @@ const AdminLogin: React.FC = () => {
   const [password, setPassword] = useState('');
   const [loginErr, setLoginErr] = useState('');
   const [loading,  setLoading]  = useState(false);
+
+  /* OTP fields */
+  const [pendingToken, setPendingToken] = useState('');
+  const [emailMasked,  setEmailMasked]  = useState('');
+  const [otpCode,      setOtpCode]      = useState('');
+  const [otpErr,       setOtpErr]       = useState('');
+  const [verifying,    setVerifying]    = useState(false);
+  const [resending,    setResending]    = useState(false);
+  const [resendMsg,    setResendMsg]    = useState('');
+  const [cooldown,     setCooldown]     = useState(0);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const t = setInterval(() => setCooldown(c => Math.max(0, c - 1)), 1000);
+    return () => clearInterval(t);
+  }, [cooldown > 0]);
 
   /* ── answer checking ── */
   const checkCorrect = (idx: number | null, ans: string): boolean => {
@@ -104,23 +123,64 @@ const AdminLogin: React.FC = () => {
     setDirty(false);
   };
 
-  /* ── login submit ── */
-  const submit = (e: React.FormEvent) => {
+  /* ── login submit (step 1: email + password) ── */
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true); setLoginErr('');
-    setTimeout(() => {
-      const safe = email.trim().toLowerCase();
-      if (safe === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-        const tok = Math.random().toString(36).slice(2) + Date.now().toString(36);
-        sessionStorage.setItem('flat_admin_tok', tok);
-        sessionStorage.setItem('flat_admin_email', safe);
-        localStorage.setItem('flat_admin_tok', tok);
-        window.location.pathname = '/admin';
-        return;
-      }
-      setLoginErr('Invalid email or password. Please try again.');
+    try {
+      const res = await apiPost<LoginPendingResponse>('/api/auth/login', {
+        email: email.trim().toLowerCase(),
+        password,
+      });
+      setPendingToken(res.pending_token);
+      setEmailMasked(res.email_masked);
+      setOtpCode(''); setOtpErr(''); setResendMsg('');
+      setCooldown(OTP_RESEND_COOLDOWN_SECONDS);
+      setStep('otp');
+    } catch (err) {
+      setLoginErr(err instanceof ApiError ? err.message : 'Something went wrong. Please try again.');
+    } finally {
       setLoading(false);
-    }, 800);
+    }
+  };
+
+  /* ── OTP submit (step 2: 6-digit code) ── */
+  const submitOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setVerifying(true); setOtpErr('');
+    try {
+      const res = await apiPost<TokenResponse>('/api/auth/verify-otp', {
+        pending_token: pendingToken,
+        code: otpCode.trim(),
+      });
+      sessionStorage.setItem(AUTH_TOKEN_KEY, res.access_token);
+      sessionStorage.setItem('flat_admin_email', res.admin.email);
+      localStorage.setItem(AUTH_TOKEN_KEY, res.access_token);
+      window.location.pathname = '/admin';
+    } catch (err) {
+      setOtpErr(err instanceof ApiError ? err.message : 'Something went wrong. Please try again.');
+      setVerifying(false);
+    }
+  };
+
+  /* ── resend OTP: re-runs step 1 login with the same credentials ── */
+  const resendOtp = async () => {
+    if (cooldown > 0) return;
+    setResending(true); setResendMsg(''); setOtpErr('');
+    try {
+      const res = await apiPost<LoginPendingResponse>('/api/auth/login', {
+        email: email.trim().toLowerCase(),
+        password,
+      });
+      setPendingToken(res.pending_token);
+      setEmailMasked(res.email_masked);
+      setResendMsg('A new code has been sent.');
+      setCooldown(OTP_RESEND_COOLDOWN_SECONDS);
+    } catch (err) {
+      setOtpErr(err instanceof ApiError ? err.message : 'Failed to resend code.');
+    } finally {
+      setResending(false);
+    }
   };
 
   /* ── input classes ── */
@@ -426,6 +486,83 @@ const AdminLogin: React.FC = () => {
                   {loading
                     ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Signing in…</>
                     : 'Sign in to Dashboard →'}
+                </button>
+              </form>
+            </div>
+          )}
+
+          {/* ═══════════════════════════════════
+              STEP 3 — Email OTP verification
+          ═══════════════════════════════════ */}
+          {step === 'otp' && (
+            <div>
+              <button
+                onClick={() => { setStep('login'); setOtpErr(''); }}
+                className="flex items-center gap-1.5 text-[#888] text-xs font-semibold hover:text-[#111] transition-colors mb-8 border-0 bg-transparent cursor-pointer font-[inherit]"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                  <polyline points="15 18 9 12 15 6"/>
+                </svg>
+                Back to login
+              </button>
+
+              <div className="inline-flex items-center gap-2 bg-[#f5f6f8] border border-[#e0e3e8] rounded-full px-4 py-2 mb-5">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2.3">
+                  <rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+                </svg>
+                <span className="text-[#111] text-xs font-bold uppercase tracking-[0.12em]">Email Verification</span>
+              </div>
+
+              <h1 className="text-[#111] font-bold text-4xl tracking-tight mb-2">Check your email</h1>
+              <p className="text-[#555] text-base mb-8">
+                We sent a 6-digit code to <strong className="text-[#111]">{emailMasked}</strong>. Enter it below to continue.
+              </p>
+
+              <form onSubmit={submitOtp} className="flex flex-col gap-5">
+                <div>
+                  <label htmlFor="adm-otp" className="block text-[#222] text-xs font-bold uppercase tracking-[0.12em] mb-2.5">Verification code</label>
+                  <input
+                    id="adm-otp" type="text" inputMode="numeric" maxLength={6} value={otpCode}
+                    onChange={e => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                    placeholder="123456"
+                    required autoComplete="one-time-code" disabled={verifying}
+                    className="w-full bg-white border-2 border-[#e0e3e8] text-[#111] rounded-xl px-4 py-4 text-2xl font-mono tracking-[0.3em] text-center outline-none transition-all placeholder:text-[#ddd] focus:border-[#111] focus:shadow-[0_0_0_3px_rgba(17,17,17,0.08)] disabled:opacity-50"
+                  />
+                </div>
+
+                {otpErr && (
+                  <div className="rounded-xl py-4 px-5 bg-[#fef2f2] border-2 border-[#fca5a5] text-[#dc2626] text-sm font-semibold flex items-center gap-2.5">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                      <circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>
+                    </svg>
+                    {otpErr}
+                  </div>
+                )}
+
+                {resendMsg && !otpErr && (
+                  <div className="rounded-xl py-3 px-4 bg-[#f0fdf4] border border-[#86efac] text-[#15803d] text-sm font-semibold">
+                    {resendMsg}
+                  </div>
+                )}
+
+                <button
+                  type="submit" disabled={verifying || otpCode.trim().length < 6}
+                  className="mt-1 flex items-center justify-center gap-2.5 bg-[#111] hover:bg-[#222] text-white font-bold py-4 rounded-xl text-base transition-all border-0 cursor-pointer font-[inherit] shadow-[0_4px_14px_rgba(17,17,17,0.18)] hover:shadow-[0_6px_20px_rgba(17,17,17,0.24)] hover:-translate-y-px disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none"
+                >
+                  {verifying
+                    ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Verifying…</>
+                    : 'Verify & Sign In →'}
+                </button>
+
+                <button
+                  type="button" onClick={resendOtp} disabled={resending || cooldown > 0}
+                  className="text-[#888] text-xs font-semibold hover:text-[#111] transition-colors border-0 bg-transparent cursor-pointer font-[inherit] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {resending
+                    ? 'Resending…'
+                    : cooldown > 0
+                      ? `Didn't get a code? Resend in ${cooldown}s`
+                      : "Didn't get a code? Resend"}
                 </button>
               </form>
             </div>
