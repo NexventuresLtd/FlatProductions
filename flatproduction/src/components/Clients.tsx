@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { contentStore } from '../store/contentStore';
+import { resolveMediaUrl } from '../lib/apiClient';
 
 const CORRECT_LOGOS = ['/mtn.png', '/engen.png', '/inyange.jpg', '/nbg.jpg'];
 
@@ -71,7 +72,7 @@ const Clients: React.FC = () => {
                     <div className="flex gap-5 pr-5 flex-shrink-0 animate-marquee">
                         {logoWall.map((logo, index) => (
                             <figure key={`${logo}-${index}`} className="flex items-center justify-center w-[140px] aspect-[4/3] bg-white/8 rounded-xl border border-white/10 p-3 flex-shrink-0 m-0">
-                                <img src={logo} alt={`Client logo ${index + 1}`} loading="lazy" className="max-h-full w-auto object-contain" />
+                                <img src={resolveMediaUrl(logo)} alt={`Client logo ${index + 1}`} loading="lazy" className="max-h-full w-auto object-contain" />
                             </figure>
                         ))}
                     </div>
@@ -80,7 +81,7 @@ const Clients: React.FC = () => {
                     <div className="flex gap-5 pr-5 flex-shrink-0 animate-marquee" aria-hidden="true">
                         {logoWall.map((logo, index) => (
                             <figure key={`dup-${logo}-${index}`} className="flex items-center justify-center w-[140px] aspect-[4/3] bg-white/8 rounded-xl border border-white/10 p-3 flex-shrink-0 m-0">
-                                <img src={logo} alt="" loading="lazy" className="max-h-full w-auto object-contain" />
+                                <img src={resolveMediaUrl(logo)} alt="" loading="lazy" className="max-h-full w-auto object-contain" />
                             </figure>
                         ))}
                     </div>

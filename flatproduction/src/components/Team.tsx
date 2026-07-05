@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { contentStore, DEFAULT_SITE_CONTENT } from '../store/contentStore';
+import { resolveMediaUrl } from '../lib/apiClient';
 
 type TeamMember = ReturnType<typeof contentStore.read>['team'][number];
 
@@ -54,7 +55,7 @@ const Team: React.FC = () => {
                         >
                             <img
                                 className="w-full h-[260px] object-cover rounded-xl transition-all duration-300 hover:scale-105"
-                                src={member.photo}
+                                src={resolveMediaUrl(member.photo)}
                                 alt={member.name}
                                 style={{ objectPosition: member.position ?? '50% 20%' }}
                             />
@@ -90,7 +91,7 @@ const Team: React.FC = () => {
                         </button>
                         <img
                             className="w-full h-[260px] object-cover rounded-xl mb-4"
-                            src={selectedMember.photo}
+                            src={resolveMediaUrl(selectedMember.photo)}
                             alt={selectedMember.name}
                             style={{ objectPosition: selectedMember.position ?? '50% 20%' }}
                         />

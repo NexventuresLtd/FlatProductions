@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { contentStore } from '../store/contentStore';
+import { resolveMediaUrl } from '../lib/apiClient';
 
 type ServiceItem = {
     id?: string;
@@ -13,7 +14,7 @@ type ServiceItem = {
 
 const ServicesPage: React.FC = () => {
     const [services, setServices]   = useState<ServiceItem[]>(() =>
-        contentStore.read().services.map(s => ({ ...s, image: s.image || '/photo1.jpg' }))
+        contentStore.read().services.map(s => ({ ...s, image: resolveMediaUrl(s.image) || '/photo1.jpg' }))
     );
     const [heroData, setHeroData]   = useState(() => contentStore.read().pageHeroes.services);
     const [stats, setStats]         = useState(() => contentStore.read().about.stats ?? []);
@@ -23,7 +24,7 @@ const ServicesPage: React.FC = () => {
 
     useEffect(() => {
         return contentStore.onUpdate((c: any) => {
-            setServices((c.services ?? []).map((s: ServiceItem) => ({ ...s, image: s.image || '/photo1.jpg' })));
+            setServices((c.services ?? []).map((s: ServiceItem) => ({ ...s, image: resolveMediaUrl(s.image) || '/photo1.jpg' })));
             if (c.pageHeroes?.services) setHeroData(c.pageHeroes.services);
             if (c.about?.stats)  setStats(c.about.stats);
             if (c.about?.chips)  setChips(c.about.chips);
@@ -47,7 +48,7 @@ const ServicesPage: React.FC = () => {
         <div className="bg-[#0b0d10] text-white min-h-screen">
             {/* ── Hero ── */}
             <section className="relative min-h-[78vh] flex items-center justify-center overflow-hidden border-b border-white/[0.08]"
-                style={{ background: `linear-gradient(160deg,rgba(5,7,10,0.72) 0%,rgba(5,7,10,0.92) 100%),url('${heroData.image || '/live2.jpeg'}') center 18%/cover no-repeat` }}>
+                style={{ background: `linear-gradient(160deg,rgba(5,7,10,0.72) 0%,rgba(5,7,10,0.92) 100%),url('${resolveMediaUrl(heroData.image) || '/live2.jpeg'}') center 18%/cover no-repeat` }}>
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(229,231,235,0.18)_0%,transparent_42%)] pointer-events-none" />
                 <div className="absolute inset-x-0 top-0 z-[3]"><Header /></div>
                 <div className="relative z-[2] max-w-[1280px] w-full mx-auto px-5 pt-[140px] pb-[80px]">
@@ -80,7 +81,7 @@ const ServicesPage: React.FC = () => {
                             )}
                         </div>
                         <div className="relative overflow-hidden min-h-[520px] rounded-[28px] border border-white/[0.12] bg-[#0a0a0a] shadow-[0_30px_70px_rgba(0,0,0,0.35)]">
-                            <img src={heroData.image || '/live2.jpeg'} alt="Flat Production creative work" className="w-full h-full object-cover absolute inset-0" />
+                            <img src={resolveMediaUrl(heroData.image) || '/live2.jpeg'} alt="Flat Production creative work" className="w-full h-full object-cover absolute inset-0" />
                             <div className="absolute inset-x-4 bottom-4 p-[18px] rounded-[20px] bg-[linear-gradient(180deg,rgba(17,17,17,0.3)_0%,rgba(17,17,17,0.92)_100%)] border border-white/[0.12] backdrop-blur-[10px]">
                                 <p className="text-white text-[1.05rem] leading-[1.7] mb-3">Production that feels sharp, modern, and memorable.</p>
                                 <ul className="list-none p-0 m-0 flex flex-wrap gap-2">

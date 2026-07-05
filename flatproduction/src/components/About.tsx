@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { contentStore, DEFAULT_SITE_CONTENT } from '../store/contentStore';
+import { resolveMediaUrl } from '../lib/apiClient';
 
 const About: React.FC = () => {
     const [about, setAbout] = useState(() => contentStore.read().about);
@@ -19,17 +20,17 @@ const About: React.FC = () => {
                 <div className="relative grid grid-cols-2 min-h-[420px] lg:min-h-0">
                     {/* Tall left image */}
                     <div className="relative overflow-hidden row-span-2">
-                        <img src={about.image1 || '/photo3.jpg'} alt="Flat Production event coverage" className="absolute inset-0 w-full h-full object-cover" />
+                        <img src={resolveMediaUrl(about.image1) || '/photo3.jpg'} alt="Flat Production event coverage" className="absolute inset-0 w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-black/25" />
                     </div>
                     {/* Top-right image */}
                     <div className="relative overflow-hidden">
-                        <img src={about.image2 || '/photo6.jpg'} alt="Live production" className="absolute inset-0 w-full h-full object-cover" />
+                        <img src={resolveMediaUrl(about.image2) || '/photo6.jpg'} alt="Live production" className="absolute inset-0 w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-black/25" />
                     </div>
                     {/* Bottom-right image */}
                     <div className="relative overflow-hidden">
-                        <img src={about.image3 || '/live1.jpeg'} alt="On-site crew" className="absolute inset-0 w-full h-full object-cover" />
+                        <img src={resolveMediaUrl(about.image3) || '/live1.jpeg'} alt="On-site crew" className="absolute inset-0 w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-black/25" />
                     </div>
                     {/* Location pill */}

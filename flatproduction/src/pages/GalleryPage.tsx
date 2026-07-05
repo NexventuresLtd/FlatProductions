@@ -2,11 +2,15 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { contentStore, GALLERY_CATEGORIES, DEFAULT_SITE_CONTENT, type GalleryItem } from '../store/contentStore';
+import { resolveMediaUrl } from '../lib/apiClient';
 
 /* ─── Google Drive / direct URL resolver ─────────────────────────
-   Converts any Google Drive share link into a directly embeddable URL.
+   Converts any Google Drive share link into a directly embeddable URL,
+   and prefixes backend-uploaded ("/uploads/...") paths with the API
+   origin so they resolve correctly outside of Vite's dev proxy.
    Passes through all other URLs unchanged.                           */
-function resolveImageUrl(url: string): string {
+function resolveImageUrl(rawUrl: string): string {
+    const url = resolveMediaUrl(rawUrl);
     if (!url) return url;
     if (!url.includes('drive.google.com') && !url.includes('docs.google.com')) return url;
 

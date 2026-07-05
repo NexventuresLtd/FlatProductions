@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { contentStore, toOneSentence } from '../store/contentStore';
+import { resolveMediaUrl } from '../lib/apiClient';
 
 type GalleryPortfolioItem = {
     src: string;
@@ -84,7 +85,7 @@ const Gallery: React.FC = () => {
     const [items, setItems] = useState<GalleryPortfolioItem[]>(() => {
         const p = contentStore.read().portfolio;
         return p && p.length ? p.map((it: any): GalleryPortfolioItem => ({
-            src: it.image,
+            src: resolveMediaUrl(it.image),
             alt: it.title,
             title: it.title,
             videoUrl: it.videoUrl,
@@ -98,7 +99,7 @@ const Gallery: React.FC = () => {
         const onUpdate = (c: any) => {
             const p = c.portfolio;
                 setItems(p && p.length ? p.map((it: any): GalleryPortfolioItem => ({
-                    src: it.image,
+                    src: resolveMediaUrl(it.image),
                     alt: it.title,
                     title: it.title,
                     videoUrl: it.videoUrl,

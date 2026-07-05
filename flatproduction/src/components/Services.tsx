@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { contentStore } from '../store/contentStore';
+import { resolveMediaUrl } from '../lib/apiClient';
 
 
 type Service = { id?: string; title: string; description: string; image?: string; extendedDescription?: string };
@@ -33,7 +34,7 @@ const Services: React.FC = () => {
     const openModal = (svc: Service, index: number) => {
         setModal({
             ...svc,
-            resolvedImage: svc.image || '/photo1.jpg',
+            resolvedImage: resolveMediaUrl(svc.image) || '/photo1.jpg',
             index,
         });
     };

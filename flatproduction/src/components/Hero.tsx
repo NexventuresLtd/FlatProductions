@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Instagram, Youtube, Linkedin, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import Header from './Header';
 import { contentStore } from '../store/contentStore';
+import { resolveMediaUrl } from '../lib/apiClient';
 
 const Hero: React.FC = () => {
   const initialContent = contentStore.read();
@@ -74,7 +75,7 @@ const Hero: React.FC = () => {
           <div
             key={index}
             className={`hero-image ${index === currentImageIndex ? 'active' : ''}`}
-            style={{ backgroundImage: `url(${image})` }}
+            style={{ backgroundImage: `url(${resolveMediaUrl(image)})` }}
             aria-hidden="true"
           />
         ))}

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { contentStore, type SiteContent } from '../store/contentStore';
+import { resolveMediaUrl } from '../lib/apiClient';
 
 const StarIcon = () => (
   <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className="w-4 h-4 fill-[#f5a623]">
@@ -26,7 +27,7 @@ const AboutPage: React.FC = () => {
       {/* Hero */}
       <section
         className="relative min-h-[80vh] flex items-center justify-center bg-cover bg-center overflow-hidden"
-        style={{ backgroundImage: `url('${hero.image || '/photo12.jpg'}')` }}
+        style={{ backgroundImage: `url('${resolveMediaUrl(hero.image) || '/photo12.jpg'}')` }}
       >
         <div className="absolute inset-0 bg-black/60 z-[1]" />
         <div className="absolute top-0 left-0 right-0 z-[10]">
@@ -45,7 +46,12 @@ const AboutPage: React.FC = () => {
         {/* History + image mosaic */}
         <section className="grid grid-cols-1 md:grid-cols-2 gap-10 mb-16 items-center">
           <div className="grid grid-cols-2 gap-3" aria-label="Flat Production work showcase">
-            {[about.image1 || '/photo3.jpg', about.image2 || '/photo6.jpg', about.image3 || '/live1.jpeg', about.image4 || '/photo10.jpg'].map((src, i) => (
+            {[
+              resolveMediaUrl(about.image1) || '/photo3.jpg',
+              resolveMediaUrl(about.image2) || '/photo6.jpg',
+              resolveMediaUrl(about.image3) || '/live1.jpeg',
+              resolveMediaUrl(about.image4) || '/photo10.jpg',
+            ].map((src, i) => (
               <img key={i} src={src} alt="" className="w-full h-[200px] md:h-[240px] object-cover rounded-xl" />
             ))}
           </div>
@@ -87,7 +93,7 @@ const AboutPage: React.FC = () => {
                   </div>
                   <p className="text-[#444] text-sm leading-relaxed mb-5 italic">"{t.quote}"</p>
                   <div className="flex items-center gap-3 mt-4">
-                    <img className="w-10 h-10 object-contain rounded-lg" src={t.logoSrc} alt={`${t.name} logo`} />
+                    <img className="w-10 h-10 object-contain rounded-lg" src={resolveMediaUrl(t.logoSrc)} alt={`${t.name} logo`} />
                     <h4 className="text-[#111] font-bold text-sm">{t.name}</h4>
                   </div>
                 </article>

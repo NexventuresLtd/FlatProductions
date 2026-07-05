@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { contentStore } from '../store/contentStore';
-import { apiPost, ApiError } from '../lib/apiClient';
+import { apiPost, ApiError, resolveMediaUrl } from '../lib/apiClient';
 
 const ContactPage: React.FC = () => {
     const [formStatus, setFormStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
@@ -55,7 +55,7 @@ const ContactPage: React.FC = () => {
                 <div className="absolute top-0 left-0 right-0 z-[20]">
                     <Header />
                 </div>
-                <div className="absolute inset-0 bg-cover bg-center opacity-25" style={{ backgroundImage: `url('${heroData.image || '/live2.jpeg'}')` }} aria-hidden="true" />
+                <div className="absolute inset-0 bg-cover bg-center opacity-25" style={{ backgroundImage: `url('${resolveMediaUrl(heroData.image) || '/live2.jpeg'}')` }} aria-hidden="true" />
                 <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/60 to-[#0a0a0a]" aria-hidden="true" />
                 <div className="relative z-[5] max-w-[1200px] mx-auto px-5 w-full">
                     <p className="text-[#dc2626] text-xs font-bold uppercase tracking-[0.25em] mb-5">Get In Touch</p>

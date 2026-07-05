@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { contentStore } from '../store/contentStore';
+import { resolveMediaUrl } from '../lib/apiClient';
 
 type PortfolioCard = {
     category: string;
@@ -234,7 +235,7 @@ const PortfolioPage: React.FC = () => {
         if (!storedPortfolio.length) return STATIC_FALLBACK;
         return storedPortfolio.map(item => ({
             category:  getItemCategory(item),
-            image:     item.image,
+            image:     resolveMediaUrl(item.image),
             label:     item.title,
             title:     item.title,
             videoUrl:  item.videoUrl || undefined,
@@ -319,8 +320,8 @@ const PortfolioPage: React.FC = () => {
     }, [activeCategory, allCards, serviceIdFilter]);
 
     /* First two stored images for hero accent panel */
-    const accent1 = storedPortfolio[0]?.image || '/live1.jpeg';
-    const accent2 = storedPortfolio[1]?.image || '/photo3.jpg';
+    const accent1 = resolveMediaUrl(storedPortfolio[0]?.image) || '/live1.jpeg';
+    const accent2 = resolveMediaUrl(storedPortfolio[1]?.image) || '/photo3.jpg';
 
     return (
         <div className="flex flex-col min-h-screen bg-white">
@@ -330,7 +331,7 @@ const PortfolioPage: React.FC = () => {
 
             {/* Hero with background image */}
             <section className="relative min-h-[58vh] flex items-end pb-14 bg-black overflow-hidden">
-                <div className="absolute inset-0 bg-cover bg-[center_30%] opacity-45" style={{ backgroundImage: `url('${heroData.image || '/photo14.jpg'}')` }} aria-hidden="true" />
+                <div className="absolute inset-0 bg-cover bg-[center_30%] opacity-45" style={{ backgroundImage: `url('${resolveMediaUrl(heroData.image) || '/photo14.jpg'}')` }} aria-hidden="true" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-transparent" aria-hidden="true" />
                 {/* Side accent images */}
                 <div className="absolute right-0 top-0 bottom-0 w-[38%] hidden lg:block overflow-hidden">

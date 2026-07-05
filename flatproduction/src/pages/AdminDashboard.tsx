@@ -22,7 +22,7 @@ import {
   toOneSentence,
 } from '../store/contentStore';
 import { isAdminAuthed, broadcastLogout } from '../App';
-import { apiGet, apiPost, apiDelete, apiUploadFile, ApiError } from '../lib/apiClient';
+import { apiGet, apiPost, apiDelete, apiUploadFile, ApiError, resolveMediaUrl } from '../lib/apiClient';
 
 /* ─── Types ─────────────────────────────────────────────────────── */
 type SectionKey = 'overview'|'hero'|'about'|'services'|'portfolio'|'gallery'|'clients'|'team'|'testimonials'|'pages'|'contact'|'team-access';
@@ -33,7 +33,8 @@ type ViewMode = 'grid'|'list';
 
 const uid = () => `id-${Math.random().toString(36).slice(2,9)}`;
 
-function resolveImageUrl(url: string): string {
+function resolveImageUrl(rawUrl: string): string {
+  const url = resolveMediaUrl(rawUrl);
   if (!url) return url;
   if (!url.includes('drive.google.com') && !url.includes('docs.google.com')) return url;
   const fileMatch = url.match(/\/d\/([a-zA-Z0-9_-]{10,})/);
@@ -742,6 +743,8 @@ const TeamAccessPanel: React.FC<{onToast:(msg:string)=>void}> = ({onToast})=>{
   );
 };
 
+const ACTIVE_SECTION_KEY = 'flat_admin_active_section';
+
 const NAV: [SectionKey, string, React.ReactNode, (d:SiteContent)=>number|null][] = [
   ['overview',     'Overview',     <LayoutDashboard size={15}/>, ()=>null],
   ['hero',         'Hero',         <Film size={15}/>,            d=>d.hero.images?.length??0],
@@ -763,7 +766,11 @@ const AdminDashboard: React.FC = ()=>{
     if(!isAdminAuthed()){window.location.pathname='/login';}
   },[]);
 
-  const [active,setActive] = useState<SectionKey>('overview');
+  const [active,setActive] = useState<SectionKey>(()=>{
+    const saved = sessionStorage.getItem(ACTIVE_SECTION_KEY) as SectionKey|null;
+    return saved && NAV.some(([key])=>key===saved) ? saved : 'overview';
+  });
+  useEffect(()=>{ sessionStorage.setItem(ACTIVE_SECTION_KEY, active); },[active]);
   const [draft,setDraft]   = useState<SiteContent>(()=>cloneContent(contentStore.read()));
   const [modal,setModal]   = useState<Modal>(null);
   const [toast,setToast]   = useState<string|null>(null);

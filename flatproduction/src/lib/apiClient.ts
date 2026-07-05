@@ -7,6 +7,21 @@ export const AUTH_TOKEN_KEY = 'flat_admin_tok';
 
 const API_BASE = (import.meta as any).env?.VITE_API_URL ?? '';
 
+/* Images uploaded via the admin dashboard are stored as backend-relative
+ * paths ("/uploads/xyz.png"). In dev, Vite's proxy makes those resolve
+ * correctly with no prefix needed. In production, if the frontend isn't
+ * served from the same origin as the backend, a bare "/uploads/..." <img>
+ * src would request from the *frontend's* origin instead and 404 — so once
+ * VITE_API_URL is set, prefix it explicitly. Seed/default image paths like
+ * "/photo1.jpg" (bundled in the frontend's own public/ folder) are left
+ * untouched since they never come from the backend. */
+export function resolveMediaUrl(path: string | null | undefined): string {
+  if (!path) return '';
+  if (!API_BASE) return path;
+  if (path.startsWith('/uploads/')) return `${API_BASE}${path}`;
+  return path;
+}
+
 export class ApiError extends Error {
   status: number;
   constructor(status: number, message: string) {
