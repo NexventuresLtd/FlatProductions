@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import HomePage from './pages/HomePage';
 import AboutPage from './pages/AboutPage';
 import GalleryPage from './pages/GalleryPage';
@@ -8,6 +8,7 @@ import ContactPage from './pages/ContactPage';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
 import { apiPost, AUTH_TOKEN_KEY } from './lib/apiClient';
+import { contentStore } from './store/contentStore';
 
 const AUTH_KEY = AUTH_TOKEN_KEY;
 const AUTH_CHANNEL = 'flat_auth_sync';
@@ -110,9 +111,86 @@ const AdminBar: React.FC = () => {
   );
 };
 
+/* ── Backend-unreachable banner ────────────────────────────────────
+   Without this, a dead/misconfigured backend fails silently: contentStore
+   falls back to its hardcoded defaults and the site still *looks* fully
+   populated, even though nothing is actually coming from the database. */
+const BackendStatusBanner: React.FC = () => {
+  const [reachable, setReachable] = useState(() => contentStore.isBackendReachable());
+
+  useEffect(() => contentStore.onBackendStatusChange(setReachable), []);
+
+  if (reachable) return null;
+  return (
+    <div
+      style={{
+        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 10000,
+        background: '#dc2626', color: '#fff', fontSize: 13, fontWeight: 700,
+        textAlign: 'center', padding: '8px 16px', fontFamily: 'inherit',
+      }}
+    >
+      ⚠ Can't reach the backend — this page is showing cached/default content, not live data.
+    </div>
+  );
+};
+
+/* ── Full-page boot gate ───────────────────────────────────────────
+   Nothing that depends on site content may render until the backend has
+   confirmed real data at least once. No hardcoded/local fallback content
+   is ever shown as if it were live — either the real thing, or a clear
+   loading/error state. */
+const BootPending: React.FC = () => (
+  <div style={{
+    minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+    background: '#0a0a0a', color: '#fff', fontFamily: 'inherit',
+  }}>
+    <div style={{ textAlign: 'center' }}>
+      <div style={{
+        width: 32, height: 32, margin: '0 auto 16px', borderRadius: '50%',
+        border: '3px solid rgba(255,255,255,0.2)', borderTopColor: '#fff',
+        animation: 'spin 0.8s linear infinite',
+      }} />
+      <style>{'@keyframes spin { to { transform: rotate(360deg); } }'}</style>
+      <p style={{ opacity: 0.6, fontSize: 14 }}>Loading…</p>
+    </div>
+  </div>
+);
+
+const BootFailed: React.FC = () => {
+  const [retrying, setRetrying] = useState(false);
+  return (
+    <div style={{
+      minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      background: '#0a0a0a', color: '#fff', fontFamily: 'inherit', padding: 24,
+    }}>
+      <div style={{ textAlign: 'center', maxWidth: 420 }}>
+        <p style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>Can't reach the server</p>
+        <p style={{ opacity: 0.6, fontSize: 14, marginBottom: 24, lineHeight: 1.5 }}>
+          This site needs the backend API to load its content, and it isn't responding right now.
+          Nothing is being shown from a local fallback — check that the backend is running and reachable.
+        </p>
+        <button
+          onClick={() => { setRetrying(true); void contentStore.refresh().finally(() => setRetrying(false)); }}
+          disabled={retrying}
+          style={{
+            background: '#fff', color: '#111', border: 0, borderRadius: 100,
+            padding: '10px 24px', fontSize: 14, fontWeight: 700, cursor: retrying ? 'wait' : 'pointer',
+            opacity: retrying ? 0.6 : 1, fontFamily: 'inherit',
+          }}
+        >
+          {retrying ? 'Retrying…' : 'Retry'}
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const App: React.FC = () => {
   const currentPath = window.location.pathname.replace(/\/+$/, '') || '/';
   const isAdminRoute = currentPath === '/admin' || currentPath === '/login';
+  const [bootStatus, setBootStatus] = useState(() => contentStore.getBootStatus());
+
+  useEffect(() => contentStore.onBootStatusChange(setBootStatus), []);
 
   useEffect(() => {
     if (!isAdminRoute) trackVisit();
@@ -167,28 +245,34 @@ const App: React.FC = () => {
     return () => window.removeEventListener('pageshow', handlePageShow);
   }, []);
 
-  if (currentPath === '/about')     return <><AboutPage /><AdminBar /></>;
-  if (currentPath === '/gallery')   return <><GalleryPage /><AdminBar /></>;
-  if (currentPath === '/portfolio') return <><PortfolioPage /><AdminBar /></>;
-  if (currentPath === '/services')  return <><ServicesPage /><AdminBar /></>;
-  if (currentPath === '/contact')   return <><ContactPage /><AdminBar /></>;
+  /* /login doesn't read site content, so it isn't gated on the backend
+     being reachable — everything else that depends on contentStore is. */
   if (currentPath === '/login') {
     if (isAdminAuthed()) {
       window.location.pathname = '/admin';
       return null;
     }
-    return <AdminLogin />;
+    return <><AdminLogin /><BackendStatusBanner /></>;
   }
+
+  if (bootStatus === 'pending') return <BootPending />;
+  if (bootStatus === 'failed')  return <BootFailed />;
+
+  if (currentPath === '/about')     return <><AboutPage /><AdminBar /><BackendStatusBanner /></>;
+  if (currentPath === '/gallery')   return <><GalleryPage /><AdminBar /><BackendStatusBanner /></>;
+  if (currentPath === '/portfolio') return <><PortfolioPage /><AdminBar /><BackendStatusBanner /></>;
+  if (currentPath === '/services')  return <><ServicesPage /><AdminBar /><BackendStatusBanner /></>;
+  if (currentPath === '/contact')   return <><ContactPage /><AdminBar /><BackendStatusBanner /></>;
 
   if (currentPath === '/admin') {
     if (!isAdminAuthed()) {
       window.location.pathname = '/login';
       return null;
     }
-    return <AdminDashboard />;
+    return <><AdminDashboard /><BackendStatusBanner /></>;
   }
 
-  return <><HomePage />{!isAdminRoute && <AdminBar />}</>;
+  return <><HomePage />{!isAdminRoute && <AdminBar />}<BackendStatusBanner /></>;
 };
 
 export default App;

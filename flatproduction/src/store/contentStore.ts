@@ -259,15 +259,29 @@ function normalize(parsed: Partial<SiteContent>): SiteContent {
 
 const CHANNEL_NAME = 'flatproduction_content';
 const EVENT_NAME    = 'flatproduction_update';
+const BACKEND_STATUS_EVENT = 'flatproduction_backend_status';
+const BOOT_STATUS_EVENT = 'flatproduction_boot_status';
 const WRITE_DEBOUNCE_MS = 600;
+
+export type BootStatus = 'pending' | 'ready' | 'failed';
 
 class ContentStore {
   private channel?: BroadcastChannel;
+  // NOTE: this starts as the hardcoded defaults, but that value must never be
+  // handed to a page before the backend confirms it — see bootStatus below.
   private cache: SiteContent = cloneContent(DEFAULT_SITE_CONTENT);
   private backupCache: SiteContent | null = null;
   private backupCacheKnown = false;
   private pendingWrite: Partial<SiteContent> | null = null;
   private writeTimer: number | null = null;
+  private backendReachable = true;
+  /** 'pending' until the very first /api/content call settles; then 'ready'
+   *  (real backend data confirmed at least once) or 'failed' (backend was
+   *  unreachable on first load — the app must not silently render the
+   *  hardcoded defaults as if they were real). Never reverts to 'failed'
+   *  after reaching 'ready': later blips are handled by backendReachable
+   *  instead, since by then the cache holds real backend data worth keeping. */
+  private bootStatus: BootStatus = 'pending';
 
   constructor() {
     try { this.channel = new BroadcastChannel(CHANNEL_NAME); }
@@ -290,8 +304,19 @@ class ContentStore {
     }
   }
 
+  /** Only meaningful once getBootStatus() === 'ready' — see class-level note. */
   read(): SiteContent {
     return this.cache;
+  }
+
+  getBootStatus(): BootStatus {
+    return this.bootStatus;
+  }
+
+  onBootStatusChange(cb: (status: BootStatus) => void): () => void {
+    const handler = (e: Event) => cb((e as CustomEvent<BootStatus>).detail);
+    window.addEventListener(BOOT_STATUS_EVENT, handler);
+    return () => window.removeEventListener(BOOT_STATUS_EVENT, handler);
   }
 
   /** Force a network refresh; resolves with the freshly-fetched content. */
@@ -299,11 +324,41 @@ class ContentStore {
     try {
       const data = await apiGet<Partial<SiteContent>>('/api/content');
       this.cache = normalize(data);
+      this.setBackendReachable(true);
+      this.setBootStatus('ready');
       this.broadcast(this.cache);
-    } catch {
-      /* keep last-known cache on failure (graceful degradation offline) */
+    } catch (err) {
+      console.error('[contentStore] could not reach the backend', err);
+      this.setBackendReachable(false);
+      // Only the *first* failed attempt fails boot — once we've loaded real
+      // data at least once, a later blip just flips backendReachable above
+      // and the last-known-good (real) data keeps showing with a warning.
+      if (this.bootStatus === 'pending') this.setBootStatus('failed');
     }
     return this.cache;
+  }
+
+  private setBootStatus(value: BootStatus): void {
+    if (this.bootStatus === value) return;
+    this.bootStatus = value;
+    window.dispatchEvent(new CustomEvent(BOOT_STATUS_EVENT, { detail: value }));
+  }
+
+  isBackendReachable(): boolean {
+    return this.backendReachable;
+  }
+
+  private setBackendReachable(value: boolean): void {
+    if (this.backendReachable === value) return;
+    this.backendReachable = value;
+    window.dispatchEvent(new CustomEvent(BACKEND_STATUS_EVENT, { detail: value }));
+  }
+
+  /** Subscribe to backend-reachability changes (for a "can't reach server" banner). */
+  onBackendStatusChange(cb: (reachable: boolean) => void): () => void {
+    const handler = (e: Event) => cb((e as CustomEvent<boolean>).detail);
+    window.addEventListener(BACKEND_STATUS_EVENT, handler);
+    return () => window.removeEventListener(BACKEND_STATUS_EVENT, handler);
   }
 
   write(payload: Partial<SiteContent>): SiteContent {
