@@ -473,7 +473,7 @@ const Overview: React.FC<{draft:SiteContent;go:(s:SectionKey)=>void;visits:numbe
                 {draft.portfolio.slice(-4).reverse().map(p=>(
                   <div key={p.id} className="flex items-center gap-3">
                     <div className="w-11 h-11 rounded-xl overflow-hidden bg-[#f5f5f5] flex-shrink-0">
-                      {p.image&&<img src={p.image} alt="" className="w-full h-full object-cover"/>}
+                      {p.image&&<img src={resolveImageUrl(p.image)} alt="" className="w-full h-full object-cover"/>}
                     </div>
                     <div className="min-w-0">
                       <p className="text-sm text-[#111] font-semibold truncate">{p.title}</p>
@@ -492,7 +492,7 @@ const Overview: React.FC<{draft:SiteContent;go:(s:SectionKey)=>void;visits:numbe
                 {draft.team.slice(0,6).map(m=>(
                   <div key={m.id} className="flex flex-col items-center gap-1">
                     <div className="w-10 h-10 rounded-xl overflow-hidden bg-[#f5f5f5]">
-                      {m.photo&&<img src={m.photo} alt="" className="w-full h-full object-cover" style={{objectPosition:m.position??'50% 20%'}}/>}
+                      {m.photo&&<img src={resolveImageUrl(m.photo)} alt="" className="w-full h-full object-cover" style={{objectPosition:m.position??'50% 20%'}}/>}
                     </div>
                     <p className="text-[0.62rem] text-[#888] font-medium truncate max-w-[44px] text-center leading-tight">{m.name.split(' ')[0]}</p>
                   </div>
@@ -581,7 +581,7 @@ const PageHeroCard: React.FC<{page:string;title:string;image:string;delay:number
         </Field>
       </div>
       {img&&<div className="mt-4 rounded-xl overflow-hidden" style={{aspectRatio:'16/5',maxHeight:120}}>
-        <img src={img} alt="" className="w-full h-full object-cover opacity-80"/>
+        <img src={resolveImageUrl(img)} alt="" className="w-full h-full object-cover opacity-80"/>
       </div>}
     </div>
   );
@@ -951,7 +951,7 @@ const AdminDashboard: React.FC = ()=>{
                   {imgs().map((img,i)=>(
                     <div key={`${img}-${i}`} className="bg-white border border-[#ebebeb] rounded-2xl flex items-center gap-4 p-3 shadow-sm hover:border-[#ccc] hover:shadow-md transition-all duration-200 animate-fade-in-up group" style={{animationDelay:`${i*40}ms`}}>
                       <div className="w-24 h-16 rounded-xl overflow-hidden bg-[#f5f5f5] flex-shrink-0">
-                        {img&&<img src={img} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"/>}
+                        {img&&<img src={resolveImageUrl(img)} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"/>}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-[#111] font-bold text-sm">Slide {i+1}</p>
@@ -1108,7 +1108,7 @@ const AdminDashboard: React.FC = ()=>{
                       return(
                         <div key={svc.id} className="bg-white border border-[#ebebeb] rounded-2xl overflow-hidden shadow-sm hover:border-[#ccc] hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group animate-fade-in-up" style={{animationDelay:`${i*50}ms`}}>
                           <div className="aspect-[4/3] bg-[#f5f5f5] overflow-hidden">
-                            {svc.image?<img src={svc.image} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"/>:<div className="w-full h-full flex items-center justify-center"><Briefcase size={32} className="text-[#ddd]"/></div>}
+                            {svc.image?<img src={resolveImageUrl(svc.image)} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"/>:<div className="w-full h-full flex items-center justify-center"><Briefcase size={32} className="text-[#ddd]"/></div>}
                           </div>
                           <div className="p-4">
                             <p className="text-[#111] font-bold text-sm mb-1.5 leading-tight">{svc.title}</p>
@@ -1132,7 +1132,7 @@ const AdminDashboard: React.FC = ()=>{
                       return(
                         <div key={svc.id} className="bg-white border border-[#ebebeb] rounded-2xl flex items-center gap-4 p-3.5 shadow-sm hover:border-[#ccc] hover:shadow-md transition-all duration-200 group animate-fade-in-up" style={{animationDelay:`${i*35}ms`}}>
                           <div className="w-14 h-14 rounded-xl overflow-hidden bg-[#f5f5f5] flex-shrink-0">
-                            {svc.image?<img src={svc.image} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"/>:<Briefcase size={20} className="text-[#ddd] m-auto mt-4"/>}
+                            {svc.image?<img src={resolveImageUrl(svc.image)} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"/>:<Briefcase size={20} className="text-[#ddd] m-auto mt-4"/>}
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-[#111] font-bold text-sm">{svc.title}</p>
@@ -1182,7 +1182,7 @@ const AdminDashboard: React.FC = ()=>{
                       return(
                         <div key={pf.id} className="bg-white border border-[#ebebeb] rounded-2xl overflow-hidden shadow-sm hover:border-[#ccc] hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group animate-fade-in-up" style={{animationDelay:`${i*50}ms`}}>
                           <div className="aspect-video bg-[#f5f5f5] overflow-hidden relative">
-                            {pf.image?<img src={pf.image} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"/>:<div className="w-full h-full flex items-center justify-center"><Layers size={28} className="text-[#ddd]"/></div>}
+                            {pf.image?<img src={resolveImageUrl(pf.image)} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"/>:<div className="w-full h-full flex items-center justify-center"><Layers size={28} className="text-[#ddd]"/></div>}
                             {pf.videoUrl&&<div className="absolute top-2 right-2 flex items-center gap-1 bg-black/70 text-white text-[0.6rem] font-bold px-2 py-1 rounded-full backdrop-blur-sm"><PlayCircle size={10}/>Video</div>}
                             {linkedSvc&&<div className="absolute bottom-2 left-2 flex items-center gap-1 bg-white/90 text-[#111] text-[0.6rem] font-bold px-2 py-1 rounded-full backdrop-blur-sm"><Link2 size={9}/>{linkedSvc.title.split(' ')[0]}</div>}
                           </div>
@@ -1209,7 +1209,7 @@ const AdminDashboard: React.FC = ()=>{
                       return(
                         <div key={pf.id} className="bg-white border border-[#ebebeb] rounded-2xl flex items-center gap-4 p-3.5 shadow-sm hover:border-[#ccc] hover:shadow-md transition-all duration-200 group animate-fade-in-up" style={{animationDelay:`${i*35}ms`}}>
                           <div className="w-24 h-16 rounded-xl overflow-hidden bg-[#f5f5f5] flex-shrink-0 relative">
-                            {pf.image&&<img src={pf.image} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"/>}
+                            {pf.image&&<img src={resolveImageUrl(pf.image)} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"/>}
                             {pf.videoUrl&&<div className="absolute inset-0 flex items-center justify-center"><PlayCircle size={20} className="text-white drop-shadow-lg"/></div>}
                           </div>
                           <div className="flex-1 min-w-0">
@@ -1249,7 +1249,7 @@ const AdminDashboard: React.FC = ()=>{
                     return(
                       <div key={`${g.src}-${i}`} className="bg-white border border-[#ebebeb] rounded-2xl overflow-hidden group hover:border-[#ccc] hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 animate-fade-in-up" style={{animationDelay:`${i*25}ms`}}>
                         <div className="relative aspect-square bg-[#f5f5f5]">
-                          <img src={g.src} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-600"/>
+                          <img src={resolveImageUrl(g.src)} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-600"/>
                           <div className="absolute inset-0 bg-black/65 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-1.5">
                             <button className={b.iconLt} onClick={()=>moveGal(i,-1)} disabled={i===0}><ChevronUp size={13}/></button>
                             <button className={b.iconLt} onClick={()=>moveGal(i,1)} disabled={i===draft.gallery.length-1}><ChevronDown size={13}/></button>
@@ -1302,7 +1302,7 @@ const AdminDashboard: React.FC = ()=>{
                     {draft.clientLogos.map((logo,i)=>(
                       <div key={`${logo}-${i}`} className="bg-white border border-[#ebebeb] rounded-2xl overflow-hidden group hover:border-[#ccc] hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 animate-fade-in-up" style={{animationDelay:`${i*35}ms`}}>
                         <div className="relative aspect-square bg-[#f9f9f9] flex items-center justify-center p-4">
-                          {logo&&<img src={logo} alt="" className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500"/>}
+                          {logo&&<img src={resolveImageUrl(logo)} alt="" className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500"/>}
                           <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-1.5">
                             <button className={b.iconLt} onClick={()=>moveLogo(i,-1)} disabled={i===0}><ChevronUp size={13}/></button>
                             <button className={b.iconLt} onClick={()=>moveLogo(i,1)} disabled={i===draft.clientLogos.length-1}><ChevronDown size={13}/></button>
@@ -1335,7 +1335,7 @@ const AdminDashboard: React.FC = ()=>{
                       return(
                         <div key={m.id} className="bg-white border border-[#ebebeb] rounded-2xl p-5 shadow-sm text-center hover:border-[#ccc] hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group animate-fade-in-up" style={{animationDelay:`${i*60}ms`}}>
                           <div className="w-20 h-20 rounded-2xl overflow-hidden bg-[#f5f5f5] mx-auto mb-3 ring-2 ring-transparent group-hover:ring-[#111] transition-all duration-300">
-                            {m.photo&&<img src={m.photo} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" style={{objectPosition:m.position??'50% 20%'}}/>}
+                            {m.photo&&<img src={resolveImageUrl(m.photo)} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" style={{objectPosition:m.position??'50% 20%'}}/>}
                           </div>
                           <p className="text-[#111] font-bold text-sm mb-0.5">{m.name||'—'}</p>
                           <p className="text-[#888] text-sm mb-1">{m.role||'—'}</p>
@@ -1358,7 +1358,7 @@ const AdminDashboard: React.FC = ()=>{
                       return(
                         <div key={m.id} className="bg-white border border-[#ebebeb] rounded-2xl flex items-center gap-4 p-3.5 shadow-sm hover:border-[#ccc] hover:shadow-md transition-all duration-200 group animate-fade-in-up" style={{animationDelay:`${i*35}ms`}}>
                           <div className="w-12 h-12 rounded-xl overflow-hidden bg-[#f5f5f5] flex-shrink-0">
-                            {m.photo&&<img src={m.photo} alt="" className="w-full h-full object-cover" style={{objectPosition:m.position??'50% 20%'}}/>}
+                            {m.photo&&<img src={resolveImageUrl(m.photo)} alt="" className="w-full h-full object-cover" style={{objectPosition:m.position??'50% 20%'}}/>}
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-[#111] font-bold text-sm">{m.name||'—'}</p>
@@ -1388,7 +1388,7 @@ const AdminDashboard: React.FC = ()=>{
                   {draft.testimonials.map((t,i)=>(
                     <div key={t.id} className="bg-white border border-[#ebebeb] rounded-2xl flex items-start gap-4 p-4 shadow-sm hover:border-[#ccc] transition-all group animate-fade-in-up" style={{animationDelay:`${i*40}ms`}}>
                       <div className="w-12 h-12 rounded-xl overflow-hidden bg-[#f5f5f5] flex-shrink-0 border border-[#ebebeb]">
-                        {t.logoSrc&&<img src={t.logoSrc} alt="" className="w-full h-full object-contain p-1"/>}
+                        {t.logoSrc&&<img src={resolveImageUrl(t.logoSrc)} alt="" className="w-full h-full object-contain p-1"/>}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-[#111] font-bold text-sm">{t.name}</p>
