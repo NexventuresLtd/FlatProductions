@@ -9,7 +9,7 @@ import {
   Link2, PlayCircle,
   Filter, Save, Zap,
   Home, Eye, MessageSquare, Globe, Phone,
-  UserPlus, ShieldOff,
+  UserPlus, ShieldOff, Menu,
 } from 'lucide-react';
 import {
   contentStore,
@@ -23,6 +23,7 @@ import {
 } from '../store/contentStore';
 import { isAdminAuthed, broadcastLogout } from '../App';
 import { apiGet, apiPost, apiDelete, apiUploadFile, ApiError, resolveMediaUrl } from '../lib/apiClient';
+import { compressImage } from '../lib/imageCompress';
 
 /* ─── Types ─────────────────────────────────────────────────────── */
 type SectionKey = 'overview'|'hero'|'about'|'services'|'portfolio'|'gallery'|'clients'|'team'|'testimonials'|'pages'|'contact'|'team-access';
@@ -118,7 +119,8 @@ const ImageField: React.FC<{value:string;onChange:(v:string)=>void;label?:string
     if(file.size>4*1024*1024){setUploadErr('Max 4 MB.');return;}
     setUploading(true);setUploadErr('');
     try{
-      const {url}=await apiUploadFile<{url:string}>('/api/uploads/image',file);
+      const compressed=await compressImage(file);
+      const {url}=await apiUploadFile<{url:string}>('/api/uploads/image',compressed);
       onChange(url);
     }catch(err){
       setUploadErr(err instanceof ApiError?err.message:'Upload failed. Please try again.');
@@ -427,19 +429,19 @@ const Overview: React.FC<{draft:SiteContent;go:(s:SectionKey)=>void;visits:numbe
       </div>
 
       {/* Stat tiles — 6 across two rows */}
-      <div className="grid grid-cols-3 gap-4 mb-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-4">
         <StatCard target={draft.hero.images?.length??0} label="Hero Slides"    icon={<Film size={18}/>}      onClick={()=>go('hero')}         delay={0}/>
         <StatCard target={draft.services.length}         label="Services"       icon={<Briefcase size={18}/>} onClick={()=>go('services')}     delay={60}/>
         <StatCard target={draft.portfolio.length}        label="Projects"       icon={<Layers size={18}/>}    onClick={()=>go('portfolio')}    delay={120}/>
       </div>
-      <div className="grid grid-cols-3 gap-4 mb-7">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-7">
         <StatCard target={draft.gallery.length}          label="Gallery Images" icon={<ImageIcon size={18}/>} onClick={()=>go('gallery')}      delay={180}/>
         <StatCard target={draft.team.length}             label="Team Members"   icon={<Users size={18}/>}     onClick={()=>go('team')}         delay={240}/>
         <StatCard target={draft.testimonials.length}     label="Testimonials"   icon={<MessageSquare size={18}/>} onClick={()=>go('testimonials')} delay={300}/>
       </div>
 
       {/* Quick actions + recent */}
-      <div className="grid grid-cols-[1fr_300px] gap-5 animate-fade-in-up" style={{animationDelay:'340ms'}}>
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-5 animate-fade-in-up" style={{animationDelay:'340ms'}}>
         <div className="bg-white border border-[#ebebeb] rounded-2xl p-6 shadow-sm">
           <p className="text-[#111] font-bold text-base mb-4 flex items-center gap-2"><Zap size={16}/>Quick Actions</p>
           <div className="grid grid-cols-2 gap-2">
@@ -771,6 +773,8 @@ const AdminDashboard: React.FC = ()=>{
     return saved && NAV.some(([key])=>key===saved) ? saved : 'overview';
   });
   useEffect(()=>{ sessionStorage.setItem(ACTIVE_SECTION_KEY, active); },[active]);
+  const [sidebarOpen,setSidebarOpen] = useState(false);
+  useEffect(()=>{ setSidebarOpen(false); },[active]);
   const [draft,setDraft]   = useState<SiteContent>(()=>cloneContent(contentStore.read()));
   const [modal,setModal]   = useState<Modal>(null);
   const [toast,setToast]   = useState<string|null>(null);
@@ -873,8 +877,13 @@ const AdminDashboard: React.FC = ()=>{
   return(
     <div className="flex h-screen overflow-hidden bg-white">
 
+      {/* ── Mobile backdrop — closes the sidebar drawer on tap ──────── */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 z-30 bg-black/50 lg:hidden" onClick={()=>setSidebarOpen(false)} aria-hidden="true"/>
+      )}
+
       {/* ── SIDEBAR ──────────────────────────────────────────────── */}
-      <aside className="w-56 flex-shrink-0 bg-[#0a0a0a] flex flex-col h-screen">
+      <aside className={`w-56 flex-shrink-0 bg-[#0a0a0a] flex flex-col h-screen fixed inset-y-0 left-0 z-40 transition-transform duration-200 lg:static lg:translate-x-0 ${sidebarOpen?'translate-x-0':'-translate-x-full'}`}>
         <div className="px-4 py-5 border-b border-white/[0.06] flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl overflow-hidden flex-shrink-0 ring-1 ring-white/10">
             <img src="/flat production.jpg.jpeg" alt="" className="w-full h-full object-cover"/>
@@ -883,6 +892,9 @@ const AdminDashboard: React.FC = ()=>{
             <p className="text-white font-bold text-sm leading-tight">Flat Admin</p>
             <p className="text-white/30 text-xs mt-0.5">Content Manager</p>
           </div>
+          <button className="ml-auto text-white/40 hover:text-white cursor-pointer bg-transparent border-0 p-1 lg:hidden" onClick={()=>setSidebarOpen(false)} aria-label="Close menu">
+            <X size={18}/>
+          </button>
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3 py-4">
@@ -913,19 +925,24 @@ const AdminDashboard: React.FC = ()=>{
       </aside>
 
       {/* ── MAIN ─────────────────────────────────────────────────── */}
-      <main className="flex-1 flex flex-col h-screen overflow-hidden bg-[#f7f7f7]">
-        <header className="bg-white border-b border-[#ebebeb] px-6 h-[62px] flex items-center justify-between flex-shrink-0 shadow-sm">
-          <div>
-            <h2 className="text-[#111] font-bold text-lg">{NAV.find(n=>n[0]===active)?.[1]}</h2>
-            <p className="text-[#ccc] text-xs leading-none mt-0.5">Admin › {active}</p>
+      <main className="flex-1 flex flex-col h-screen overflow-hidden bg-[#f7f7f7] min-w-0">
+        <header className="bg-white border-b border-[#ebebeb] px-4 sm:px-6 h-[62px] flex items-center justify-between flex-shrink-0 shadow-sm gap-2">
+          <div className="flex items-center gap-3 min-w-0">
+            <button className="text-[#111] cursor-pointer bg-transparent border-0 p-1 -ml-1 lg:hidden flex-shrink-0" onClick={()=>setSidebarOpen(true)} aria-label="Open menu">
+              <Menu size={22}/>
+            </button>
+            <div className="min-w-0">
+              <h2 className="text-[#111] font-bold text-lg truncate">{NAV.find(n=>n[0]===active)?.[1]}</h2>
+              <p className="text-[#ccc] text-xs leading-none mt-0.5 hidden sm:block">Admin › {active}</p>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             {hasBackup && (
               <button className={b.smGhost} onClick={restorePrevious} title="Restore your content from before the last reset">
-                <RotateCcw size={14}/>Restore Previous
+                <RotateCcw size={14}/><span className="hidden sm:inline">Restore Previous</span>
               </button>
             )}
-            <button className={b.smGhost} onClick={()=>setModal({k:'reset'})}><RotateCcw size={14}/>Reset Content</button>
+            <button className={b.smGhost} onClick={()=>setModal({k:'reset'})}><RotateCcw size={14}/><span className="hidden sm:inline">Reset Content</span></button>
           </div>
         </header>
 

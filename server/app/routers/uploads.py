@@ -1,3 +1,4 @@
+import asyncio
 import uuid
 from pathlib import Path
 
@@ -34,6 +35,8 @@ async def upload_image(file: UploadFile, current_admin: Admin = Depends(get_curr
     upload_dir.mkdir(parents=True, exist_ok=True)
 
     filename = f"{uuid.uuid4()}{ext}"
-    (upload_dir / filename).write_bytes(contents)
+    # Off the event loop — a blocking disk write here would stall every other
+    # concurrent request (auth, content reads, etc.) until it finishes.
+    await asyncio.to_thread((upload_dir / filename).write_bytes, contents)
 
     return {"url": f"{settings.upload_base_url}/{filename}"}

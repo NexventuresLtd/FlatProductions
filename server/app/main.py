@@ -1,7 +1,8 @@
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.core.config import settings
@@ -19,6 +20,23 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Compresses JSON responses (the aggregate GET /api/content payload in
+# particular is large — all seeded copy for every section in one call).
+app.add_middleware(GZipMiddleware, minimum_size=500)
+
+
+@app.middleware("http")
+async def cache_uploaded_files(request: Request, call_next):
+    """Uploaded files are named by UUID and never change in place, so once
+    served they're safe to cache indefinitely — this alone meaningfully
+    speeds up repeat page loads across the site (the same images show up
+    on the home page, portfolio, gallery, etc.)."""
+    response = await call_next(request)
+    if request.url.path.startswith(settings.upload_base_url):
+        response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+    return response
+
 
 app.mount(settings.upload_base_url, StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 
