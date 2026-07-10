@@ -11,13 +11,26 @@ from app.models.admin import Admin
 from app.schemas.auth import (
     AdminOut,
     AdminTeamOut,
+    ChangePasswordRequest,
+    ForgotPasswordRequest,
+    ForgotPasswordResponse,
     InviteAdminRequest,
     LoginPendingResponse,
     LoginRequest,
     OtpVerifyRequest,
+    ResetPasswordRequest,
     TokenResponse,
+    UpdateProfileRequest,
 )
-from app.services.auth_service import issue_access_token, login_step1, verify_otp_step2
+from app.services.auth_service import (
+    change_password,
+    forgot_password,
+    issue_access_token,
+    login_step1,
+    reset_password,
+    update_profile,
+    verify_otp_step2,
+)
 from app.services.email_service import send_admin_invite_email
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -38,6 +51,34 @@ async def verify_otp(payload: OtpVerifyRequest, db: AsyncSession = Depends(get_d
 @router.get("/me", response_model=AdminOut)
 async def me(current_admin: Admin = Depends(get_current_admin)):
     return current_admin
+
+
+@router.patch("/me", response_model=AdminOut)
+async def update_me(
+    payload: UpdateProfileRequest,
+    current_admin: Admin = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    return await update_profile(db, current_admin, payload.full_name, payload.avatar_url)
+
+
+@router.post("/change-password", status_code=status.HTTP_204_NO_CONTENT)
+async def change_my_password(
+    payload: ChangePasswordRequest,
+    current_admin: Admin = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    await change_password(db, current_admin, payload.current_password, payload.new_password)
+
+
+@router.post("/forgot-password", response_model=ForgotPasswordResponse)
+async def forgot_my_password(payload: ForgotPasswordRequest, db: AsyncSession = Depends(get_db)):
+    return await forgot_password(db, payload.email)
+
+
+@router.post("/reset-password", status_code=status.HTTP_204_NO_CONTENT)
+async def reset_my_password(payload: ResetPasswordRequest, db: AsyncSession = Depends(get_db)):
+    await reset_password(db, payload.email, payload.code, payload.new_password)
 
 
 @router.post("/invite", response_model=AdminTeamOut)

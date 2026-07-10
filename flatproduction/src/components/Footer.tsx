@@ -1,4 +1,5 @@
 import React from 'react';
+import PoweredByNexventures from './PoweredByNexventures';
 
 const logoSrc = '/flat%20production.jpg.jpeg';
 
@@ -51,8 +52,10 @@ const Footer: React.FC = () => {
                     </div>
                 </div>
             </div>
-            <div className="max-w-7xl mx-auto px-6 pt-6 text-center">
-                <p className="text-gray-500 text-sm">&copy; {new Date().getFullYear()} Flat Production. All rights reserved.</p>
+            <div className="max-w-7xl mx-auto px-6 pt-6 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-center">
+                <p className="text-gray-500 text-sm m-0">&copy; {new Date().getFullYear()} Flat Production. All rights reserved.</p>
+                <span className="hidden sm:inline text-gray-700">&middot;</span>
+                <PoweredByNexventures className="text-gray-500 text-sm" />
             </div>
         </footer>
     );

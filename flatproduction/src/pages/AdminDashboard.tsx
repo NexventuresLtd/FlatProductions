@@ -9,7 +9,7 @@ import {
   Link2, PlayCircle,
   Filter, Save, Zap,
   Home, Eye, MessageSquare, Globe, Phone,
-  UserPlus, ShieldOff, Menu,
+  UserPlus, ShieldOff, Menu, UserCircle, Lock, Camera,
 } from 'lucide-react';
 import {
   contentStore,
@@ -22,11 +22,12 @@ import {
   toOneSentence,
 } from '../store/contentStore';
 import { isAdminAuthed, broadcastLogout } from '../App';
-import { apiGet, apiPost, apiDelete, apiUploadFile, ApiError, resolveMediaUrl } from '../lib/apiClient';
+import PoweredByNexventures from '../components/PoweredByNexventures';
+import { apiGet, apiPost, apiPatch, apiDelete, apiUploadFile, ApiError, resolveMediaUrl } from '../lib/apiClient';
 import { compressImage } from '../lib/imageCompress';
 
 /* ─── Types ─────────────────────────────────────────────────────── */
-type SectionKey = 'overview'|'hero'|'about'|'services'|'portfolio'|'gallery'|'clients'|'team'|'testimonials'|'pages'|'contact'|'team-access';
+type SectionKey = 'overview'|'hero'|'about'|'services'|'portfolio'|'gallery'|'clients'|'team'|'testimonials'|'pages'|'contact'|'team-access'|'profile';
 type ServiceItem   = SiteContent['services'][number];
 type PortfolioItem = SiteContent['portfolio'][number];
 type TeamItem      = SiteContent['team'][number];
@@ -745,6 +746,133 @@ const TeamAccessPanel: React.FC<{onToast:(msg:string)=>void}> = ({onToast})=>{
   );
 };
 
+/* ─── Profile ────────────────────────────────────────────────────── */
+type MeProfile = { id:string; email:string; full_name?:string|null; avatar_url?:string|null };
+
+const ProfilePanel: React.FC<{onToast:(msg:string)=>void}> = ({onToast})=>{
+  const [me,setMe]           = useState<MeProfile|null>(null);
+  const [loading,setLoading] = useState(true);
+  const [fullName,setFullName] = useState('');
+  const [avatarUrl,setAvatarUrl] = useState('');
+  const [avatarUploading,setAvatarUploading] = useState(false);
+  const [avatarErr,setAvatarErr] = useState('');
+  const [savingProfile,setSavingProfile] = useState(false);
+
+  const [currentPassword,setCurrentPassword] = useState('');
+  const [newPassword,setNewPassword] = useState('');
+  const [confirmPassword,setConfirmPassword] = useState('');
+  const [pwErr,setPwErr] = useState('');
+  const [pwMsg,setPwMsg] = useState('');
+  const [changingPw,setChangingPw] = useState(false);
+
+  useEffect(()=>{
+    apiGet<MeProfile>('/api/auth/me')
+      .then(m=>{ setMe(m); setFullName(m.full_name??''); setAvatarUrl(m.avatar_url??''); })
+      .catch(()=>{})
+      .finally(()=>setLoading(false));
+  },[]);
+
+  const avatarFileRef = useRef<HTMLInputElement>(null);
+
+  const handleAvatarFile = async (file:File) => {
+    if (file.size > 4*1024*1024) { setAvatarErr('Max 4 MB.'); return; }
+    setAvatarUploading(true); setAvatarErr('');
+    try {
+      const compressed = await compressImage(file);
+      const {url} = await apiUploadFile<{url:string}>('/api/uploads/image', compressed);
+      setAvatarUrl(url);
+    } catch(err) {
+      setAvatarErr(err instanceof ApiError ? err.message : 'Upload failed. Please try again.');
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
+
+  const saveProfile = async () => {
+    setSavingProfile(true);
+    try {
+      const updated = await apiPatch<MeProfile>('/api/auth/me', { full_name: fullName, avatar_url: avatarUrl });
+      setMe(updated);
+      onToast('Profile updated');
+    } catch(err) {
+      alert(err instanceof ApiError ? err.message : 'Failed to update profile');
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const submitChangePassword = async (e:React.FormEvent) => {
+    e.preventDefault();
+    setPwErr(''); setPwMsg('');
+    if (newPassword.length < 8) { setPwErr('New password must be at least 8 characters.'); return; }
+    if (newPassword !== confirmPassword) { setPwErr('New passwords do not match.'); return; }
+    setChangingPw(true);
+    try {
+      await apiPost('/api/auth/change-password', { current_password: currentPassword, new_password: newPassword });
+      setPwMsg('Password changed successfully.');
+      setCurrentPassword(''); setNewPassword(''); setConfirmPassword('');
+    } catch(err) {
+      setPwErr(err instanceof ApiError ? err.message : 'Failed to change password.');
+    } finally {
+      setChangingPw(false);
+    }
+  };
+
+  if (loading) return <p className="text-[#aaa] text-sm">Loading…</p>;
+
+  return (
+    <div className="flex flex-col gap-5 max-w-[560px]">
+      <SectionHeader title="Profile"/>
+
+      {/* Avatar + name */}
+      <div className="bg-white border border-[#ebebeb] rounded-2xl p-5 shadow-sm">
+        <p className="text-xs font-bold text-[#aaa] uppercase tracking-[0.1em] mb-4 flex items-center gap-1.5"><UserCircle size={11}/>Profile Info</p>
+        <div className="flex items-center gap-4 mb-5">
+          <div className="relative w-16 h-16 rounded-full overflow-hidden bg-[#f5f6f8] border border-[#e5e5e5] flex items-center justify-center flex-shrink-0">
+            {avatarUploading
+              ? <span className="w-5 h-5 border-2 border-[#ccc] border-t-[#111] rounded-full animate-spin"/>
+              : avatarUrl
+                ? <img src={resolveImageUrl(avatarUrl)} alt="" className="w-full h-full object-cover"/>
+                : <span className="text-[#bbb] font-bold text-xl">{(fullName||me?.email||'?')[0]?.toUpperCase()}</span>}
+          </div>
+          <div>
+            <input ref={avatarFileRef} type="file" accept="image/*" className="hidden" disabled={avatarUploading}
+              onChange={e=>{if(e.target.files?.[0])handleAvatarFile(e.target.files[0]);e.target.value='';}}/>
+            <button className={b.smGhost} onClick={()=>avatarFileRef.current?.click()} disabled={avatarUploading}>
+              <Camera size={13}/>{avatarUrl?'Change photo':'Upload photo'}
+            </button>
+            {avatarErr && <p className="text-[0.7rem] text-[#dc2626] font-semibold mt-1.5">{avatarErr}</p>}
+          </div>
+        </div>
+        <Field label="Full Name"><input value={fullName} onChange={e=>setFullName(e.target.value)} placeholder="Your name"/></Field>
+        <div className="mt-2 text-[#888] text-xs">{me?.email}</div>
+        <div className="mt-4">
+          <button className={b.primary} onClick={saveProfile} disabled={savingProfile}>
+            <Save size={13}/>{savingProfile?'Saving…':'Save Profile'}
+          </button>
+        </div>
+      </div>
+
+      {/* Change password */}
+      <div className="bg-white border border-[#ebebeb] rounded-2xl p-5 shadow-sm">
+        <p className="text-xs font-bold text-[#aaa] uppercase tracking-[0.1em] mb-4 flex items-center gap-1.5"><Lock size={11}/>Change Password</p>
+        <form onSubmit={submitChangePassword} className="flex flex-col gap-4">
+          <Field label="Current Password"><input type="password" value={currentPassword} onChange={e=>setCurrentPassword(e.target.value)} autoComplete="current-password" required/></Field>
+          <Field label="New Password"><input type="password" value={newPassword} onChange={e=>setNewPassword(e.target.value)} autoComplete="new-password" placeholder="At least 8 characters" required/></Field>
+          <Field label="Confirm New Password"><input type="password" value={confirmPassword} onChange={e=>setConfirmPassword(e.target.value)} autoComplete="new-password" required/></Field>
+          {pwErr && <p className="text-[0.78rem] text-[#dc2626] font-semibold">{pwErr}</p>}
+          {pwMsg && <p className="text-[0.78rem] text-[#15803d] font-semibold">{pwMsg}</p>}
+          <div>
+            <button type="submit" className={b.primary} disabled={changingPw}>
+              <Lock size={13}/>{changingPw?'Changing…':'Change Password'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 const ACTIVE_SECTION_KEY = 'flat_admin_active_section';
 
 const NAV: [SectionKey, string, React.ReactNode, (d:SiteContent)=>number|null][] = [
@@ -760,6 +888,7 @@ const NAV: [SectionKey, string, React.ReactNode, (d:SiteContent)=>number|null][]
   ['pages',        'Page Heroes',  <Globe size={15}/>,           ()=>null],
   ['contact',      'Contact',      <Phone size={15}/>,           ()=>null],
   ['team-access',  'Team Access',  <UserPlus size={15}/>,        ()=>null],
+  ['profile',      'Profile',      <UserCircle size={15}/>,      ()=>null],
 ];
 
 /* ─── MAIN ───────────────────────────────────────────────────────── */
@@ -921,6 +1050,7 @@ const AdminDashboard: React.FC = ()=>{
             onClick={()=>{broadcastLogout();window.location.pathname='/login';}}>
             <LogOut size={14}/>Sign out
           </button>
+          <PoweredByNexventures className="justify-center text-white/25 text-[0.68rem] font-semibold px-3 pt-1"/>
         </div>
       </aside>
 
@@ -1479,6 +1609,8 @@ const AdminDashboard: React.FC = ()=>{
             )}
 
             {active==='team-access'&&<TeamAccessPanel onToast={msg=>{setToast(msg);setTimeout(()=>setToast(null),2200);}}/>}
+
+            {active==='profile'&&<ProfilePanel onToast={msg=>{setToast(msg);setTimeout(()=>setToast(null),2200);}}/>}
 
           </div>
         </div>

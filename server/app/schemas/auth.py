@@ -24,6 +24,7 @@ class AdminOut(BaseModel):
     id: uuid.UUID
     email: str
     full_name: str | None = None
+    avatar_url: str | None = None
 
     class Config:
         from_attributes = True
@@ -45,9 +46,34 @@ class AdminTeamOut(BaseModel):
     id: uuid.UUID
     email: str
     full_name: str | None = None
+    avatar_url: str | None = None
     is_active: bool
     created_at: datetime
     last_login_at: datetime | None = None
 
     class Config:
         from_attributes = True
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ForgotPasswordResponse(BaseModel):
+    message: str
+
+
+class ResetPasswordRequest(BaseModel):
+    email: EmailStr
+    code: str
+    new_password: str
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+
+class UpdateProfileRequest(BaseModel):
+    full_name: str | None = None
+    avatar_url: str | None = None

@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { apiPost, ApiError, AUTH_TOKEN_KEY } from '../lib/apiClient';
+import PoweredByNexventures from '../components/PoweredByNexventures';
 
 const OTP_RESEND_COOLDOWN_SECONDS = 30;
 
 type LoginPendingResponse = { pending_token: string; message: string; email_masked: string };
 type TokenResponse = { access_token: string; token_type: string; admin: { id: string; email: string; full_name?: string } };
+type ForgotPasswordResponse = { message: string };
 
 /* ─── Puzzle generators ─────────────────────────────────────────── */
 type MathPuzzle = { kind: 'math'; question: string; answer: number };
@@ -74,7 +76,7 @@ const PUZZLE_META = [
 
 /* ─── Component ─────────────────────────────────────────────────── */
 const AdminLogin: React.FC = () => {
-  const [step, setStep] = useState<'verify' | 'login' | 'otp'>('verify');
+  const [step, setStep] = useState<'verify' | 'login' | 'otp' | 'forgot' | 'reset'>('verify');
 
   /* puzzles generated once */
   const [puzzles] = useState(makePuzzles);
@@ -99,6 +101,18 @@ const AdminLogin: React.FC = () => {
   const [resending,    setResending]    = useState(false);
   const [resendMsg,    setResendMsg]    = useState('');
   const [cooldown,     setCooldown]     = useState(0);
+
+  /* Forgot / reset password fields */
+  const [forgotEmail,  setForgotEmail]  = useState('');
+  const [forgotErr,    setForgotErr]    = useState('');
+  const [forgotMsg,    setForgotMsg]    = useState('');
+  const [forgotLoading,setForgotLoading]= useState(false);
+  const [resetCode,    setResetCode]    = useState('');
+  const [newPassword,  setNewPassword]  = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [resetErr,     setResetErr]     = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetDone,    setResetDone]    = useState(false);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -180,6 +194,49 @@ const AdminLogin: React.FC = () => {
       setOtpErr(err instanceof ApiError ? err.message : 'Failed to resend code.');
     } finally {
       setResending(false);
+    }
+  };
+
+  /* ── forgot password: step 1 (request a reset code) ── */
+  const requestResetCode = async () => {
+    setForgotLoading(true); setForgotErr(''); setForgotMsg('');
+    try {
+      const res = await apiPost<ForgotPasswordResponse>('/api/auth/forgot-password', {
+        email: forgotEmail.trim().toLowerCase(),
+      });
+      setForgotMsg(res.message);
+      setResetCode(''); setNewPassword(''); setConfirmPassword(''); setResetErr(''); setResetDone(false);
+      setStep('reset');
+    } catch (err) {
+      setForgotErr(err instanceof ApiError ? err.message : 'Something went wrong. Please try again.');
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
+  const submitForgot = (e: React.FormEvent) => {
+    e.preventDefault();
+    void requestResetCode();
+  };
+
+  /* ── forgot password: step 2 (submit code + new password) ── */
+  const submitReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetErr('');
+    if (newPassword.length < 8) { setResetErr('Password must be at least 8 characters.'); return; }
+    if (newPassword !== confirmPassword) { setResetErr('Passwords do not match.'); return; }
+    setResetLoading(true);
+    try {
+      await apiPost('/api/auth/reset-password', {
+        email: forgotEmail.trim().toLowerCase(),
+        code: resetCode.trim(),
+        new_password: newPassword,
+      });
+      setResetDone(true);
+    } catch (err) {
+      setResetErr(err instanceof ApiError ? err.message : 'Something went wrong. Please try again.');
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -289,7 +346,11 @@ const AdminLogin: React.FC = () => {
           </h2>
         </div>
 
-        <p className="relative text-white/25 text-sm">© {new Date().getFullYear()} Flat Productions · Kigali, Rwanda</p>
+        <div className="relative flex items-center gap-2 text-white/25 text-sm flex-wrap">
+          <span>© {new Date().getFullYear()} Flat Productions · Kigali, Rwanda</span>
+          <span aria-hidden="true">·</span>
+          <PoweredByNexventures/>
+        </div>
       </aside>
 
       {/* ── Right panel ── */}
@@ -460,7 +521,16 @@ const AdminLogin: React.FC = () => {
                 </div>
 
                 <div>
-                  <label htmlFor="adm-pass" className="block text-[#222] text-xs font-bold uppercase tracking-[0.12em] mb-2.5">Password</label>
+                  <div className="flex items-center justify-between mb-2.5">
+                    <label htmlFor="adm-pass" className="block text-[#222] text-xs font-bold uppercase tracking-[0.12em]">Password</label>
+                    <button
+                      type="button"
+                      onClick={() => { setForgotEmail(email); setForgotErr(''); setForgotMsg(''); setStep('forgot'); }}
+                      className="text-[#888] text-xs font-semibold hover:text-[#111] transition-colors border-0 bg-transparent cursor-pointer font-[inherit]"
+                    >
+                      Forgot password?
+                    </button>
+                  </div>
                   <input
                     id="adm-pass" type="password" value={password}
                     onChange={e => setPassword(e.target.value)}
@@ -565,6 +635,158 @@ const AdminLogin: React.FC = () => {
                       : "Didn't get a code? Resend"}
                 </button>
               </form>
+            </div>
+          )}
+
+          {/* ═══════════════════════════════════
+              FORGOT PASSWORD — step 1: request code
+          ═══════════════════════════════════ */}
+          {step === 'forgot' && (
+            <div>
+              <button
+                onClick={() => { setStep('login'); setForgotErr(''); }}
+                className="flex items-center gap-1.5 text-[#888] text-xs font-semibold hover:text-[#111] transition-colors mb-8 border-0 bg-transparent cursor-pointer font-[inherit]"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                  <polyline points="15 18 9 12 15 6"/>
+                </svg>
+                Back to login
+              </button>
+
+              <h1 className="text-[#111] font-bold text-4xl tracking-tight mb-2">Reset your password</h1>
+              <p className="text-[#555] text-base mb-8">Enter your admin email and we'll send you a reset code.</p>
+
+              <form onSubmit={submitForgot} className="flex flex-col gap-5">
+                <div>
+                  <label htmlFor="forgot-email" className="block text-[#222] text-xs font-bold uppercase tracking-[0.12em] mb-2.5">Email address</label>
+                  <input
+                    id="forgot-email" type="email" value={forgotEmail}
+                    onChange={e => setForgotEmail(e.target.value)}
+                    placeholder="admin@flatproduction.rw"
+                    required autoComplete="email" disabled={forgotLoading}
+                    className="w-full bg-white border-2 border-[#e0e3e8] text-[#111] rounded-xl px-4 py-4 text-base outline-none transition-all placeholder:text-[#bbb] focus:border-[#111] focus:shadow-[0_0_0_3px_rgba(17,17,17,0.08)] font-[inherit] disabled:opacity-50"
+                  />
+                </div>
+
+                {forgotErr && (
+                  <div className="rounded-xl py-4 px-5 bg-[#fef2f2] border-2 border-[#fca5a5] text-[#dc2626] text-sm font-semibold flex items-center gap-2.5">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                      <circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>
+                    </svg>
+                    {forgotErr}
+                  </div>
+                )}
+
+                <button
+                  type="submit" disabled={forgotLoading}
+                  className="mt-1 flex items-center justify-center gap-2.5 bg-[#111] hover:bg-[#222] text-white font-bold py-4 rounded-xl text-base transition-all border-0 cursor-pointer font-[inherit] shadow-[0_4px_14px_rgba(17,17,17,0.18)] hover:shadow-[0_6px_20px_rgba(17,17,17,0.24)] hover:-translate-y-px disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none"
+                >
+                  {forgotLoading
+                    ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Sending…</>
+                    : 'Send Reset Code →'}
+                </button>
+              </form>
+            </div>
+          )}
+
+          {/* ═══════════════════════════════════
+              FORGOT PASSWORD — step 2: code + new password
+          ═══════════════════════════════════ */}
+          {step === 'reset' && (
+            <div>
+              {!resetDone ? (
+                <>
+                  <button
+                    onClick={() => { setStep('forgot'); setResetErr(''); }}
+                    className="flex items-center gap-1.5 text-[#888] text-xs font-semibold hover:text-[#111] transition-colors mb-8 border-0 bg-transparent cursor-pointer font-[inherit]"
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                      <polyline points="15 18 9 12 15 6"/>
+                    </svg>
+                    Back
+                  </button>
+
+                  <h1 className="text-[#111] font-bold text-4xl tracking-tight mb-2">Check your email</h1>
+                  <p className="text-[#555] text-base mb-8">{forgotMsg || 'If an account exists for that email, a reset code has been sent.'}</p>
+
+                  <form onSubmit={submitReset} className="flex flex-col gap-5">
+                    <div>
+                      <label htmlFor="reset-code" className="block text-[#222] text-xs font-bold uppercase tracking-[0.12em] mb-2.5">Reset code</label>
+                      <input
+                        id="reset-code" type="text" inputMode="numeric" maxLength={6} value={resetCode}
+                        onChange={e => setResetCode(e.target.value.replace(/\D/g, ''))}
+                        placeholder="123456"
+                        required autoComplete="one-time-code" disabled={resetLoading}
+                        className="w-full bg-white border-2 border-[#e0e3e8] text-[#111] rounded-xl px-4 py-4 text-2xl font-mono tracking-[0.3em] text-center outline-none transition-all placeholder:text-[#ddd] focus:border-[#111] focus:shadow-[0_0_0_3px_rgba(17,17,17,0.08)] disabled:opacity-50"
+                      />
+                    </div>
+
+                    <div>
+                      <label htmlFor="reset-new-pass" className="block text-[#222] text-xs font-bold uppercase tracking-[0.12em] mb-2.5">New password</label>
+                      <input
+                        id="reset-new-pass" type="password" value={newPassword}
+                        onChange={e => setNewPassword(e.target.value)}
+                        placeholder="At least 8 characters"
+                        required autoComplete="new-password" disabled={resetLoading}
+                        className="w-full bg-white border-2 border-[#e0e3e8] text-[#111] rounded-xl px-4 py-4 text-base outline-none transition-all placeholder:text-[#bbb] focus:border-[#111] focus:shadow-[0_0_0_3px_rgba(17,17,17,0.08)] font-[inherit] disabled:opacity-50"
+                      />
+                    </div>
+
+                    <div>
+                      <label htmlFor="reset-confirm-pass" className="block text-[#222] text-xs font-bold uppercase tracking-[0.12em] mb-2.5">Confirm new password</label>
+                      <input
+                        id="reset-confirm-pass" type="password" value={confirmPassword}
+                        onChange={e => setConfirmPassword(e.target.value)}
+                        placeholder="Re-enter password"
+                        required autoComplete="new-password" disabled={resetLoading}
+                        className="w-full bg-white border-2 border-[#e0e3e8] text-[#111] rounded-xl px-4 py-4 text-base outline-none transition-all placeholder:text-[#bbb] focus:border-[#111] focus:shadow-[0_0_0_3px_rgba(17,17,17,0.08)] font-[inherit] disabled:opacity-50"
+                      />
+                    </div>
+
+                    {resetErr && (
+                      <div className="rounded-xl py-4 px-5 bg-[#fef2f2] border-2 border-[#fca5a5] text-[#dc2626] text-sm font-semibold flex items-center gap-2.5">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                          <circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>
+                        </svg>
+                        {resetErr}
+                      </div>
+                    )}
+
+                    <button
+                      type="submit" disabled={resetLoading}
+                      className="mt-1 flex items-center justify-center gap-2.5 bg-[#111] hover:bg-[#222] text-white font-bold py-4 rounded-xl text-base transition-all border-0 cursor-pointer font-[inherit] shadow-[0_4px_14px_rgba(17,17,17,0.18)] hover:shadow-[0_6px_20px_rgba(17,17,17,0.24)] hover:-translate-y-px disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none"
+                    >
+                      {resetLoading
+                        ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Resetting…</>
+                        : 'Reset Password →'}
+                    </button>
+
+                    <button
+                      type="button" onClick={() => void requestResetCode()} disabled={forgotLoading}
+                      className="text-[#888] text-xs font-semibold hover:text-[#111] transition-colors border-0 bg-transparent cursor-pointer font-[inherit] disabled:opacity-50"
+                    >
+                      {forgotLoading ? 'Resending…' : "Didn't get a code? Resend"}
+                    </button>
+                  </form>
+                </>
+              ) : (
+                <div>
+                  <div className="flex items-center gap-2 bg-[#f0fdf4] border border-[#86efac] rounded-xl px-4 py-2.5 mb-7 w-fit">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    <span className="text-[#15803d] text-[0.75rem] font-bold">Password reset</span>
+                  </div>
+                  <h1 className="text-[#111] font-bold text-4xl tracking-tight mb-2">You're all set</h1>
+                  <p className="text-[#555] text-base mb-8">Your password has been reset. Sign in with your new password.</p>
+                  <button
+                    onClick={() => { setPassword(''); setStep('login'); }}
+                    className="flex items-center justify-center gap-2.5 bg-[#111] hover:bg-[#222] text-white font-bold py-4 px-7 rounded-xl text-base transition-all border-0 cursor-pointer font-[inherit] shadow-[0_4px_14px_rgba(17,17,17,0.18)] hover:shadow-[0_6px_20px_rgba(17,17,17,0.24)] hover:-translate-y-px"
+                  >
+                    Back to Login →
+                  </button>
+                </div>
+              )}
             </div>
           )}
 

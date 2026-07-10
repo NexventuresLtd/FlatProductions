@@ -53,6 +53,22 @@ async def send_otp_email(to_email: str, code: str, expires_minutes: int) -> None
     await _send(to_email, subject, plain, html)
 
 
+async def send_password_reset_email(to_email: str, code: str, expires_minutes: int) -> None:
+    subject = "Reset your Flat Productions admin password"
+    plain = f"Your password reset code is {code}. It expires in {expires_minutes} minutes."
+    html = _wrap(
+        "Password Reset",
+        f"""
+        <p style="color:#333;font-size:14px;">Use the code below to reset your admin password.</p>
+        <div style="background:#f5f6f8;border-radius:12px;padding:20px;text-align:center;margin:20px 0;">
+          <span style="font-family:monospace;font-size:32px;font-weight:bold;letter-spacing:0.3em;color:#111;">{code}</span>
+        </div>
+        <p style="color:#888;font-size:12px;">This code expires in {expires_minutes} minutes. If you didn't request this, you can safely ignore this email — your password will not change.</p>
+        """,
+    )
+    await _send(to_email, subject, plain, html)
+
+
 async def send_admin_invite_email(to_email: str, temp_password: str, invited_by_email: str) -> None:
     subject = "You've been invited to the Flat Productions admin dashboard"
     plain = (

@@ -13,13 +13,14 @@ from app.core.security import (
     decode_token,
     generate_otp_code,
     hash_otp_code,
+    hash_password,
     is_bypass_otp,
     verify_otp_code,
     verify_password,
 )
 from app.models.admin import Admin
 from app.models.otp import OtpCode
-from app.services.email_service import send_otp_email
+from app.services.email_service import send_otp_email, send_password_reset_email
 
 
 def _mask_email(email: str) -> str:
@@ -130,3 +131,95 @@ async def verify_otp_step2(db: AsyncSession, pending_token: str, code: str) -> A
 
 def issue_access_token(admin: Admin) -> str:
     return create_access_token(str(admin.id))
+
+
+async def forgot_password(db: AsyncSession, email: str) -> dict:
+    generic = {"message": "If an account exists for that email, a reset code has been sent."}
+
+    result = await db.execute(select(Admin).where(Admin.email == email.lower().strip()))
+    admin = result.scalar_one_or_none()
+    if not admin or not admin.is_active:
+        # Never reveal whether the email is registered.
+        return generic
+
+    recent = await db.execute(
+        select(OtpCode.created_at)
+        .where(OtpCode.admin_id == admin.id, OtpCode.purpose == "password_reset")
+        .order_by(OtpCode.created_at.desc())
+        .limit(1)
+    )
+    last_sent_at = recent.scalar_one_or_none()
+    if last_sent_at is not None:
+        elapsed = (datetime.now(timezone.utc) - last_sent_at).total_seconds()
+        if elapsed < settings.otp_resend_cooldown_seconds:
+            # Still return the generic message — don't leak timing info either.
+            return generic
+
+    await db.execute(
+        delete(OtpCode).where(
+            OtpCode.admin_id == admin.id, OtpCode.purpose == "password_reset", OtpCode.consumed_at.is_(None)
+        )
+    )
+
+    code = generate_otp_code()
+    otp = OtpCode(
+        admin_id=admin.id,
+        code_hash=hash_otp_code(code),
+        purpose="password_reset",
+        expires_at=datetime.now(timezone.utc) + timedelta(minutes=settings.otp_expire_minutes),
+    )
+    db.add(otp)
+    await db.commit()
+
+    try:
+        await send_password_reset_email(admin.email, code, settings.otp_expire_minutes)
+    except Exception:
+        pass  # best-effort; still return the generic message either way
+
+    return generic
+
+
+async def reset_password(db: AsyncSession, email: str, code: str, new_password: str) -> None:
+    invalid = HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired code")
+
+    result = await db.execute(select(Admin).where(Admin.email == email.lower().strip()))
+    admin = result.scalar_one_or_none()
+    if not admin or not admin.is_active:
+        raise invalid
+
+    result = await db.execute(
+        select(OtpCode)
+        .where(OtpCode.admin_id == admin.id, OtpCode.purpose == "password_reset", OtpCode.consumed_at.is_(None))
+        .order_by(OtpCode.created_at.desc())
+        .limit(1)
+    )
+    otp = result.scalar_one_or_none()
+
+    if not otp or otp.expires_at < datetime.now(timezone.utc) or otp.attempts >= settings.otp_max_attempts:
+        raise invalid
+
+    if not verify_otp_code(code, otp.code_hash):
+        otp.attempts += 1
+        await db.commit()
+        raise invalid
+
+    otp.consumed_at = datetime.now(timezone.utc)
+    admin.hashed_password = hash_password(new_password)
+    await db.commit()
+
+
+async def change_password(db: AsyncSession, admin: Admin, current_password: str, new_password: str) -> None:
+    if not verify_password(current_password, admin.hashed_password):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Current password is incorrect")
+    admin.hashed_password = hash_password(new_password)
+    await db.commit()
+
+
+async def update_profile(db: AsyncSession, admin: Admin, full_name: str | None, avatar_url: str | None) -> Admin:
+    if full_name is not None:
+        admin.full_name = full_name
+    if avatar_url is not None:
+        admin.avatar_url = avatar_url
+    await db.commit()
+    await db.refresh(admin)
+    return admin
