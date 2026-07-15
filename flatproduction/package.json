@@ -33,5 +33,10 @@
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.58.2",
     "vite": "^8.0.9"
-  }
+  },
+  "description": "A full-featured creative agency website for **Flat Productions Limited** (Kigali, Rwanda) with a built-in admin dashboard for live content management. All public pages update in real time when content is changed from the dashboard — no server, no database, no redeploy needed.",
+  "main": "eslint.config.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
 }

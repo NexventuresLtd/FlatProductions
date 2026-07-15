@@ -326,7 +326,7 @@ const AdminLogin: React.FC = () => {
 
         <div className="relative flex items-center gap-3">
           <div className="w-11 h-11 rounded-xl overflow-hidden ring-2 ring-white/20 flex-shrink-0">
-            <img src="/flat production.jpg.jpeg" alt="Flat Productions" className="w-full h-full object-cover" />
+            <img src="/logo.jpg" alt="Flat Productions" className="w-full h-full object-cover" />
           </div>
           <div>
             <span className="text-white font-bold text-base tracking-wide block">Flat Productions</span>
@@ -360,7 +360,7 @@ const AdminLogin: React.FC = () => {
           {/* Mobile logo */}
           <div className="flex lg:hidden items-center gap-3 mb-10">
             <div className="w-10 h-10 rounded-xl overflow-hidden ring-2 ring-black/10 flex-shrink-0">
-              <img src="/flat production.jpg.jpeg" alt="Logo" className="w-full h-full object-cover" />
+              <img src="/logo.jpg" alt="Logo" className="w-full h-full object-cover" />
             </div>
             <div>
               <span className="text-[#111] font-bold text-base block">Flat Productions</span>

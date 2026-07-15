@@ -1,7 +1,7 @@
 import React from 'react';
 import PoweredByNexventures from './PoweredByNexventures';
 
-const logoSrc = '/flat%20production.jpg.jpeg';
+const logoSrc = '/logo.jpg';
 
 const Footer: React.FC = () => {
     return (

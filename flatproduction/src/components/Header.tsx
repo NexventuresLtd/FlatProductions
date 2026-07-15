@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
-const logoSrc = '/flat%20production.jpg.jpeg';
+const logoSrc = '/logo.jpg';
 
 const normalizePath = (path: string): string => path.replace(/\/+$/, '') || '/';
 

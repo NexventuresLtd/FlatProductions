@@ -1015,7 +1015,7 @@ const AdminDashboard: React.FC = ()=>{
       <aside className={`w-56 flex-shrink-0 bg-[#0a0a0a] flex flex-col h-screen fixed inset-y-0 left-0 z-40 transition-transform duration-200 lg:static lg:translate-x-0 ${sidebarOpen?'translate-x-0':'-translate-x-full'}`}>
         <div className="px-4 py-5 border-b border-white/[0.06] flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl overflow-hidden flex-shrink-0 ring-1 ring-white/10">
-            <img src="/flat production.jpg.jpeg" alt="" className="w-full h-full object-cover"/>
+            <img src="/logo.jpg" alt="" className="w-full h-full object-cover"/>
           </div>
           <div>
             <p className="text-white font-bold text-sm leading-tight">Flat Admin</p>
