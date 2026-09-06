@@ -45,8 +45,8 @@ const Header: React.FC = () => {
                     onClick={closeMenu}
                     aria-label="Flat Production home"
                 >
-                    <span className="inline-flex items-center justify-center w-11 h-11 bg-white text-black font-black text-[1.4rem] overflow-hidden rounded-lg" aria-hidden="true">
-                        <img className="w-full h-full object-cover" src={logoSrc} alt="" />
+                    <span className="inline-flex items-center justify-center w-14 h-14 md:w-16 md:h-16 bg-white text-black font-black text-[1.4rem] overflow-hidden rounded-xl" aria-hidden="true">
+                        <img className="w-full h-full object-cover scale-[1.38]" src={logoSrc} alt="" />
                     </span>
                     <span className="text-white font-bold text-sm tracking-wide">Flat Production</span>
                 </a>

@@ -244,11 +244,14 @@ const PortfolioPage: React.FC = () => {
         }));
     }, [storedPortfolio]);
 
-    /* Dynamic category tabs: All → Video → BTS → alphabetical main cats */
+    /* Dynamic category tabs: All → Video → BTS → main cats.
+       Main cats keep the order the items are stored in, so the arrangement set
+       in the admin dashboard is what visitors see (they used to be sorted
+       alphabetically, which silently discarded that ordering). */
     const categories = useMemo(() => {
         const hasVideo = allCards.some(c => !!c.videoUrl);
         const hasBts   = allCards.some(c => !!c.btsUrl);
-        const mainCats = [...new Set(allCards.map(c => c.category))].sort();
+        const mainCats = [...new Set(allCards.map(c => c.category))];
         return ['All', ...(hasVideo ? ['Video'] : []), ...(hasBts ? ['BTS'] : []), ...mainCats];
     }, [allCards]);
 

@@ -10,6 +10,7 @@ import {
   Filter, Save, Zap,
   Home, Eye, MessageSquare, Globe, Phone,
   UserPlus, ShieldOff, Menu, UserCircle, Lock, Camera,
+  GripVertical,
 } from 'lucide-react';
 import {
   contentStore,
@@ -72,6 +73,92 @@ function move<T>(arr:T[],from:number,to:number):T[]{
   if(to<0||to>=arr.length)return arr;
   const n=[...arr];const[x]=n.splice(from,1);n.splice(to,0,x);return n;
 }
+
+
+/* ─── Drag-to-reorder ────────────────────────────────────────────
+ * Only the grip handle is draggable — the card itself is just a drop
+ * zone. That keeps the drag gesture off inputs, buttons and images
+ * inside the card, which a `draggable` wrapper would otherwise swallow.
+ * Indices are positions in the *full* list, not the filtered view, so
+ * callers pass the same index they give the up/down buttons.           */
+type DragReorder = {
+  draggingIndex: number|null;
+  overIndex: number|null;
+  /** Spread onto the grip handle button. */
+  handleProps: (index:number)=>React.HTMLAttributes<HTMLElement>&{draggable:true};
+  /** Spread onto the card. */
+  zoneProps: (index:number)=>React.HTMLAttributes<HTMLElement>;
+  /** Extra classes conveying "being dragged" / "will drop here". */
+  zoneClass: (index:number)=>string;
+};
+
+function useDragReorder(onReorder:(from:number,to:number)=>void): DragReorder {
+  const [draggingIndex,setDraggingIndex]=useState<number|null>(null);
+  const [overIndex,setOverIndex]=useState<number|null>(null);
+  const fromRef=useRef<number|null>(null);
+
+  const end=()=>{ fromRef.current=null; setDraggingIndex(null); setOverIndex(null); };
+
+  return {
+    draggingIndex, overIndex,
+    handleProps:(index)=>({
+      draggable:true,
+      onDragStart:(e:React.DragEvent)=>{
+        fromRef.current=index;
+        setDraggingIndex(index);
+        e.dataTransfer.effectAllowed='move';
+        // Firefox refuses to start a drag unless some data is attached.
+        e.dataTransfer.setData('text/plain',String(index));
+        // Drag the whole card, not just the little grip icon.
+        const card=(e.currentTarget as HTMLElement).closest('[data-drag-item]') as HTMLElement|null;
+        if(card){
+          const r=card.getBoundingClientRect();
+          e.dataTransfer.setDragImage(card,e.clientX-r.left,e.clientY-r.top);
+        }
+      },
+      onDragEnd:end,
+    }),
+    zoneProps:(index)=>({
+      'data-drag-item':String(index),
+      onDragOver:(e:React.DragEvent)=>{
+        if(fromRef.current===null)return;   // ignore drags from elsewhere (file drops, other lists)
+        e.preventDefault();
+        e.dataTransfer.dropEffect='move';
+        if(overIndex!==index)setOverIndex(index);
+      },
+      onDrop:(e:React.DragEvent)=>{
+        if(fromRef.current===null)return;
+        e.preventDefault();
+        const from=fromRef.current;
+        if(from!==index)onReorder(from,index);
+        end();
+      },
+    } as React.HTMLAttributes<HTMLElement>),
+    zoneClass:(index)=>
+      draggingIndex===index ? 'opacity-40'
+      : (draggingIndex!==null&&overIndex===index) ? 'ring-2 ring-[#111] ring-offset-2'
+      : '',
+  };
+}
+
+/* Grip handle — `dr.handleProps(i)` carries the drag behaviour. */
+const DragHandle: React.FC<{dr:DragReorder;index:number;light?:boolean;className?:string}> =
+  ({dr,index,light=false,className=''})=>(
+  <span
+    {...dr.handleProps(index)}
+    role="button"
+    tabIndex={-1}
+    aria-label="Drag to reorder"
+    title="Drag to reorder"
+    className={`inline-flex items-center justify-center w-8 h-8 rounded-lg cursor-grab active:cursor-grabbing flex-shrink-0 transition-colors ${
+      light
+        ? 'bg-white/90 backdrop-blur-sm text-[#111] shadow hover:bg-white'
+        : 'border border-[#e5e5e5] bg-white text-[#bbb] hover:border-[#111] hover:text-[#111]'
+    } ${className}`}
+  >
+    <GripVertical size={14}/>
+  </span>
+);
 
 
 /* ─── Count-up hook ─────────────────────────────────────────────── */
@@ -510,12 +597,17 @@ const Overview: React.FC<{draft:SiteContent;go:(s:SectionKey)=>void;visits:numbe
 };
 
 /* ─── Section header ─────────────────────────────────────────────── */
-const SectionHeader: React.FC<{title:string;count?:number;onAdd?:()=>void;addLabel?:string;view?:ViewMode;onView?:()=>void;children?:React.ReactNode}> =
-  ({title,count,onAdd,addLabel='Add',view,onView,children})=>(
+const SectionHeader: React.FC<{title:string;count?:number;onAdd?:()=>void;addLabel?:string;view?:ViewMode;onView?:()=>void;reorderable?:boolean;children?:React.ReactNode}> =
+  ({title,count,onAdd,addLabel='Add',view,onView,reorderable=false,children})=>(
   <div className="flex items-center gap-2.5 mb-5 flex-wrap">
     <h3 className="text-[#111] font-bold text-xl flex items-center gap-2.5 mr-auto">
       {title}
       {count!==undefined&&<span className="bg-[#f0f0f0] text-[#777] text-xs font-bold px-2.5 py-1 rounded-full tabular-nums">{count}</span>}
+      {reorderable&&(
+        <span className="hidden sm:inline-flex items-center gap-1 text-[#bbb] text-xs font-semibold normal-case tracking-normal">
+          <GripVertical size={12}/>Drag to reorder
+        </span>
+      )}
     </h3>
     {children}
     {view&&onView&&(
@@ -956,40 +1048,59 @@ const AdminDashboard: React.FC = ()=>{
   const addSlide  = (img:string,n:string)=>persist({...draft,hero:{...draft.hero,images:[...imgs(),img],notes:[...nts(),n]}},'Slide added');
   const editSlide = (i:number,img:string,n:string)=>persist({...draft,hero:{...draft.hero,images:imgs().map((x,j)=>j===i?img:x),notes:nts().map((x,j)=>j===i?n:x)}},'Slide saved');
   const moveSlide = (i:number,d:-1|1)=>persist({...draft,hero:{...draft.hero,images:move(imgs(),i,i+d),notes:move(nts(),i,i+d)}});
+  const reorderSlide = (from:number,to:number)=>persist({...draft,hero:{...draft.hero,images:move(imgs(),from,to),notes:move(nts(),from,to)}},'Slide order updated');
   const delSlide  = (i:number)=>persist({...draft,hero:{...draft.hero,images:imgs().filter((_,j)=>j!==i),notes:nts().filter((_,j)=>j!==i)}},'Slide deleted');
 
   const setAbout = (f:'heading'|'body',v:string)=>persist({...draft,about:{...draft.about,[f]:v}});
 
   const saveSvc = (item:ServiceItem,i?:number)=>persist({...draft,services:i===undefined?[...draft.services,item]:draft.services.map((s,j)=>j===i?item:s)},i===undefined?'Service added':'Service saved');
   const moveSvc = (i:number,d:-1|1)=>persist({...draft,services:move(draft.services,i,i+d)});
+  const reorderSvc = (from:number,to:number)=>persist({...draft,services:move(draft.services,from,to)},'Service order updated');
   const delSvc  = (i:number)=>persist({...draft,services:draft.services.filter((_,j)=>j!==i)},'Service deleted');
 
   const savePf = (item:PortfolioItem,i?:number)=>persist({...draft,portfolio:i===undefined?[...draft.portfolio,item]:draft.portfolio.map((p,j)=>j===i?item:p)},i===undefined?'Project added':'Project saved');
   const movePf = (i:number,d:-1|1)=>persist({...draft,portfolio:move(draft.portfolio,i,i+d)});
+  const reorderPf = (from:number,to:number)=>persist({...draft,portfolio:move(draft.portfolio,from,to)},'Project order updated');
   const delPf  = (i:number)=>persist({...draft,portfolio:draft.portfolio.filter((_,j)=>j!==i)},'Project deleted');
 
   const saveGal = (item:GalleryItem,i?:number)=>persist({...draft,gallery:i===undefined?[...draft.gallery,item]:draft.gallery.map((x,j)=>j===i?item:x)},i===undefined?'Image added':'Image saved');
   const moveGal = (i:number,d:-1|1)=>persist({...draft,gallery:move(draft.gallery,i,i+d)});
+  const reorderGal = (from:number,to:number)=>persist({...draft,gallery:move(draft.gallery,from,to)},'Image order updated');
   const delGal  = (i:number)=>persist({...draft,gallery:draft.gallery.filter((_,j)=>j!==i)},'Image deleted');
 
   const setIntro  = (v:string)=>persist({...draft,clientsIntro:v});
   const setClient = (i:number,v:string)=>persist({...draft,clients:draft.clients.map((x,j)=>j===i?v:x)});
   const addClient = ()=>persist({...draft,clients:[...draft.clients,'New Client']},'Client added');
+  const reorderClient = (from:number,to:number)=>persist({...draft,clients:move(draft.clients,from,to)},'Tag order updated');
   const delClient = (i:number)=>persist({...draft,clients:draft.clients.filter((_,j)=>j!==i)},'Client deleted');
   const saveLogo  = (url:string,i?:number)=>persist({...draft,clientLogos:i===undefined?[...draft.clientLogos,url]:draft.clientLogos.map((x,j)=>j===i?url:x)},i===undefined?'Logo added':'Logo saved');
   const moveLogo  = (i:number,d:-1|1)=>persist({...draft,clientLogos:move(draft.clientLogos,i,i+d)});
+  const reorderLogo = (from:number,to:number)=>persist({...draft,clientLogos:move(draft.clientLogos,from,to)},'Logo order updated');
   const delLogo   = (i:number)=>persist({...draft,clientLogos:draft.clientLogos.filter((_,j)=>j!==i)},'Logo deleted');
 
   const saveTm = (item:TeamItem,i?:number)=>persist({...draft,team:i===undefined?[...draft.team,item]:draft.team.map((m,j)=>j===i?item:m)},i===undefined?'Member added':'Member saved');
   const moveTm = (i:number,d:-1|1)=>persist({...draft,team:move(draft.team,i,i+d)});
+  const reorderTm = (from:number,to:number)=>persist({...draft,team:move(draft.team,from,to)},'Team order updated');
   const delTm  = (i:number)=>persist({...draft,team:draft.team.filter((_,j)=>j!==i)},'Member deleted');
 
   const saveTmt = (item:Testimonial,i?:number)=>persist({...draft,testimonials:i===undefined?[...draft.testimonials,item]:draft.testimonials.map((t,j)=>j===i?item:t)},i===undefined?'Testimonial added':'Testimonial saved');
   const moveTmt = (i:number,d:-1|1)=>persist({...draft,testimonials:move(draft.testimonials,i,i+d)});
+  const reorderTmt = (from:number,to:number)=>persist({...draft,testimonials:move(draft.testimonials,from,to)},'Testimonial order updated');
   const delTmt  = (i:number)=>persist({...draft,testimonials:draft.testimonials.filter((_,j)=>j!==i)},'Testimonial deleted');
 
   const savePageHero=(page:keyof SiteContent['pageHeroes'],title:string,image:string)=>
     persist({...draft,pageHeroes:{...draft.pageHeroes,[page]:{title,image}}},'Hero saved');
+
+  /* One drag-reorder controller per list. Indices are positions in the full
+     (unfiltered) array, matching what the up/down buttons already use. */
+  const drSlide  = useDragReorder(reorderSlide);
+  const drSvc    = useDragReorder(reorderSvc);
+  const drPf     = useDragReorder(reorderPf);
+  const drGal    = useDragReorder(reorderGal);
+  const drClient = useDragReorder(reorderClient);
+  const drLogo   = useDragReorder(reorderLogo);
+  const drTm     = useDragReorder(reorderTm);
+  const drTmt    = useDragReorder(reorderTmt);
 
   const q=query.toLowerCase();
   const filtSvc=draft.services.filter(s=>!q||s.title.toLowerCase().includes(q)||s.description.toLowerCase().includes(q));
@@ -1085,7 +1196,7 @@ const AdminDashboard: React.FC = ()=>{
             {/* ── HERO ─────────────────────────────────────────── */}
             {active==='hero'&&(
               <div>
-                <SectionHeader title="Hero Slides" count={imgs().length} onAdd={()=>setModal({k:'add-slide'})} addLabel="Add Slide"/>
+                <SectionHeader title="Hero Slides" reorderable count={imgs().length} onAdd={()=>setModal({k:'add-slide'})} addLabel="Add Slide"/>
                 <div className="bg-white border border-[#ebebeb] rounded-2xl p-5 shadow-sm mb-5 animate-fade-in-up">
                   <p className="text-[0.7rem] font-bold text-[#aaa] uppercase tracking-[0.09em] mb-3 flex items-center gap-1.5"><Info size={11}/>Page Text</p>
                   <div className="grid grid-cols-2 gap-3">
@@ -1096,7 +1207,8 @@ const AdminDashboard: React.FC = ()=>{
                 {imgs().length===0&&<Empty label="slide" onAdd={()=>setModal({k:'add-slide'})} icon={<Film size={36}/>}/>}
                 <div className="flex flex-col gap-2">
                   {imgs().map((img,i)=>(
-                    <div key={`${img}-${i}`} className="bg-white border border-[#ebebeb] rounded-2xl flex items-center gap-4 p-3 shadow-sm hover:border-[#ccc] hover:shadow-md transition-all duration-200 animate-fade-in-up group" style={{animationDelay:`${i*40}ms`}}>
+                    <div key={`${img}-${i}`} {...drSlide.zoneProps(i)} className={`bg-white border border-[#ebebeb] rounded-2xl flex items-center gap-3 p-3 shadow-sm hover:border-[#ccc] hover:shadow-md transition-all duration-200 animate-fade-in-up group ${drSlide.zoneClass(i)}`} style={{animationDelay:`${i*40}ms`}}>
+                      <DragHandle dr={drSlide} index={i}/>
                       <div className="w-24 h-16 rounded-xl overflow-hidden bg-[#f5f5f5] flex-shrink-0">
                         {img&&<img src={resolveImageUrl(img)} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"/>}
                       </div>
@@ -1242,7 +1354,7 @@ const AdminDashboard: React.FC = ()=>{
             {/* ── SERVICES ─────────────────────────────────────── */}
             {active==='services'&&(
               <div>
-                <SectionHeader title="Services" count={draft.services.length} onAdd={()=>setModal({k:'add-svc'})} addLabel="Add Service" view={vm('services')} onView={()=>tv('services')}/>
+                <SectionHeader title="Services" reorderable count={draft.services.length} onAdd={()=>setModal({k:'add-svc'})} addLabel="Add Service" view={vm('services')} onView={()=>tv('services')}/>
                 <SearchBar query={query} setQuery={setQuery} placeholder="Search services…"/>
                 {filtSvc.length===0&&(query
                   ?<p className="text-[#bbb] text-sm text-center py-10">No services match "{query}"</p>
@@ -1253,8 +1365,9 @@ const AdminDashboard: React.FC = ()=>{
                     {filtSvc.map(svc=>{
                       const i=draft.services.indexOf(svc);
                       return(
-                        <div key={svc.id} className="bg-white border border-[#ebebeb] rounded-2xl overflow-hidden shadow-sm hover:border-[#ccc] hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group animate-fade-in-up" style={{animationDelay:`${i*50}ms`}}>
-                          <div className="aspect-[4/3] bg-[#f5f5f5] overflow-hidden">
+                        <div key={svc.id} {...drSvc.zoneProps(i)} className={`bg-white border border-[#ebebeb] rounded-2xl overflow-hidden shadow-sm hover:border-[#ccc] hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group animate-fade-in-up ${drSvc.zoneClass(i)}`} style={{animationDelay:`${i*50}ms`}}>
+                          <div className="aspect-[4/3] bg-[#f5f5f5] overflow-hidden relative">
+                            <DragHandle dr={drSvc} index={i} light className="absolute top-2 left-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity"/>
                             {svc.image?<img src={resolveImageUrl(svc.image)} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"/>:<div className="w-full h-full flex items-center justify-center"><Briefcase size={32} className="text-[#ddd]"/></div>}
                           </div>
                           <div className="p-4">
@@ -1277,7 +1390,8 @@ const AdminDashboard: React.FC = ()=>{
                     {filtSvc.map(svc=>{
                       const i=draft.services.indexOf(svc);
                       return(
-                        <div key={svc.id} className="bg-white border border-[#ebebeb] rounded-2xl flex items-center gap-4 p-3.5 shadow-sm hover:border-[#ccc] hover:shadow-md transition-all duration-200 group animate-fade-in-up" style={{animationDelay:`${i*35}ms`}}>
+                        <div key={svc.id} {...drSvc.zoneProps(i)} className={`bg-white border border-[#ebebeb] rounded-2xl flex items-center gap-3 p-3.5 shadow-sm hover:border-[#ccc] hover:shadow-md transition-all duration-200 group animate-fade-in-up ${drSvc.zoneClass(i)}`} style={{animationDelay:`${i*35}ms`}}>
+                          <DragHandle dr={drSvc} index={i}/>
                           <div className="w-14 h-14 rounded-xl overflow-hidden bg-[#f5f5f5] flex-shrink-0">
                             {svc.image?<img src={resolveImageUrl(svc.image)} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"/>:<Briefcase size={20} className="text-[#ddd] m-auto mt-4"/>}
                           </div>
@@ -1302,7 +1416,7 @@ const AdminDashboard: React.FC = ()=>{
             {/* ── PORTFOLIO ────────────────────────────────────── */}
             {active==='portfolio'&&(
               <div>
-                <SectionHeader title="Portfolio" count={draft.portfolio.length} onAdd={()=>setModal({k:'add-pf'})} addLabel="Add Project" view={vm('portfolio')} onView={()=>tv('portfolio')}/>
+                <SectionHeader title="Portfolio" reorderable count={draft.portfolio.length} onAdd={()=>setModal({k:'add-pf'})} addLabel="Add Project" view={vm('portfolio')} onView={()=>tv('portfolio')}/>
                 <SearchBar query={query} setQuery={setQuery} placeholder="Search projects…">
                   <div className="flex items-center gap-1.5">
                     <Filter size={13} className="text-[#bbb]"/>
@@ -1327,8 +1441,9 @@ const AdminDashboard: React.FC = ()=>{
                       const i=draft.portfolio.indexOf(pf);
                       const linkedSvc=draft.services.find(s=>s.id===pf.serviceId);
                       return(
-                        <div key={pf.id} className="bg-white border border-[#ebebeb] rounded-2xl overflow-hidden shadow-sm hover:border-[#ccc] hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group animate-fade-in-up" style={{animationDelay:`${i*50}ms`}}>
+                        <div key={pf.id} {...drPf.zoneProps(i)} className={`bg-white border border-[#ebebeb] rounded-2xl overflow-hidden shadow-sm hover:border-[#ccc] hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group animate-fade-in-up ${drPf.zoneClass(i)}`} style={{animationDelay:`${i*50}ms`}}>
                           <div className="aspect-video bg-[#f5f5f5] overflow-hidden relative">
+                            <DragHandle dr={drPf} index={i} light className="absolute top-2 left-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity"/>
                             {pf.image?<img src={resolveImageUrl(pf.image)} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"/>:<div className="w-full h-full flex items-center justify-center"><Layers size={28} className="text-[#ddd]"/></div>}
                             {pf.videoUrl&&<div className="absolute top-2 right-2 flex items-center gap-1 bg-black/70 text-white text-[0.6rem] font-bold px-2 py-1 rounded-full backdrop-blur-sm"><PlayCircle size={10}/>Video</div>}
                             {linkedSvc&&<div className="absolute bottom-2 left-2 flex items-center gap-1 bg-white/90 text-[#111] text-[0.6rem] font-bold px-2 py-1 rounded-full backdrop-blur-sm"><Link2 size={9}/>{linkedSvc.title.split(' ')[0]}</div>}
@@ -1354,7 +1469,8 @@ const AdminDashboard: React.FC = ()=>{
                       const i=draft.portfolio.indexOf(pf);
                       const linkedSvc=draft.services.find(s=>s.id===pf.serviceId);
                       return(
-                        <div key={pf.id} className="bg-white border border-[#ebebeb] rounded-2xl flex items-center gap-4 p-3.5 shadow-sm hover:border-[#ccc] hover:shadow-md transition-all duration-200 group animate-fade-in-up" style={{animationDelay:`${i*35}ms`}}>
+                        <div key={pf.id} {...drPf.zoneProps(i)} className={`bg-white border border-[#ebebeb] rounded-2xl flex items-center gap-3 p-3.5 shadow-sm hover:border-[#ccc] hover:shadow-md transition-all duration-200 group animate-fade-in-up ${drPf.zoneClass(i)}`} style={{animationDelay:`${i*35}ms`}}>
+                          <DragHandle dr={drPf} index={i}/>
                           <div className="w-24 h-16 rounded-xl overflow-hidden bg-[#f5f5f5] flex-shrink-0 relative">
                             {pf.image&&<img src={resolveImageUrl(pf.image)} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"/>}
                             {pf.videoUrl&&<div className="absolute inset-0 flex items-center justify-center"><PlayCircle size={20} className="text-white drop-shadow-lg"/></div>}
@@ -1384,7 +1500,7 @@ const AdminDashboard: React.FC = ()=>{
             {/* ── GALLERY ──────────────────────────────────────── */}
             {active==='gallery'&&(
               <div>
-                <SectionHeader title="Gallery" count={draft.gallery.length} onAdd={()=>setModal({k:'add-gal'})} addLabel="Add Image"/>
+                <SectionHeader title="Gallery" reorderable count={draft.gallery.length} onAdd={()=>setModal({k:'add-gal'})} addLabel="Add Image"/>
                 <SearchBar query={query} setQuery={setQuery} placeholder="Filter by filename…"/>
                 {filtGal.length===0&&(query
                   ?<p className="text-[#bbb] text-sm text-center py-10">No images match</p>
@@ -1394,10 +1510,11 @@ const AdminDashboard: React.FC = ()=>{
                   {filtGal.map(g=>{
                     const i=draft.gallery.indexOf(g);
                     return(
-                      <div key={`${g.src}-${i}`} className="bg-white border border-[#ebebeb] rounded-2xl overflow-hidden group hover:border-[#ccc] hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 animate-fade-in-up" style={{animationDelay:`${i*25}ms`}}>
+                      <div key={`${g.src}-${i}`} {...drGal.zoneProps(i)} className={`bg-white border border-[#ebebeb] rounded-2xl overflow-hidden group hover:border-[#ccc] hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 animate-fade-in-up ${drGal.zoneClass(i)}`} style={{animationDelay:`${i*25}ms`}}>
                         <div className="relative aspect-square bg-[#f5f5f5]">
                           <img src={resolveImageUrl(g.src)} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-600"/>
-                          <div className="absolute inset-0 bg-black/65 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-1.5">
+                          <div className="absolute inset-0 bg-black/65 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-1.5 flex-wrap px-2">
+                            <DragHandle dr={drGal} index={i} light/>
                             <button className={b.iconLt} onClick={()=>moveGal(i,-1)} disabled={i===0}><ChevronUp size={13}/></button>
                             <button className={b.iconLt} onClick={()=>moveGal(i,1)} disabled={i===draft.gallery.length-1}><ChevronDown size={13}/></button>
                             <button className={b.iconLt} onClick={()=>setModal({k:'edit-gal',i})}><Pencil size={13}/></button>
@@ -1419,7 +1536,7 @@ const AdminDashboard: React.FC = ()=>{
             {/* ── CLIENTS ──────────────────────────────────────── */}
             {active==='clients'&&(
               <div className="flex flex-col gap-5">
-                <SectionHeader title="Clients"/>
+                <SectionHeader title="Clients" reorderable/>
                 <div className="bg-white border border-[#ebebeb] rounded-2xl p-5 shadow-sm animate-scale-in">
                   <p className="text-[0.7rem] font-bold text-[#aaa] uppercase tracking-[0.09em] mb-3 flex items-center gap-1.5"><Info size={11}/>Intro Text</p>
                   <Field label="Introduction"><textarea rows={3} value={draft.clientsIntro} onChange={e=>setIntro(e.target.value)}/></Field>
@@ -1431,7 +1548,8 @@ const AdminDashboard: React.FC = ()=>{
                   </div>
                   <div className="flex flex-col gap-2">
                     {draft.clients.map((c,i)=>(
-                      <div key={i} className="flex items-center gap-3 bg-white border border-[#ebebeb] rounded-xl px-4 py-2.5 shadow-sm hover:border-[#ccc] transition-all duration-200 group animate-fade-in-up" style={{animationDelay:`${i*30}ms`}}>
+                      <div key={i} {...drClient.zoneProps(i)} className={`flex items-center gap-3 bg-white border border-[#ebebeb] rounded-xl px-3 py-2.5 shadow-sm hover:border-[#ccc] transition-all duration-200 group animate-fade-in-up ${drClient.zoneClass(i)}`} style={{animationDelay:`${i*30}ms`}}>
+                        <DragHandle dr={drClient} index={i}/>
                         <span className="text-[0.65rem] font-bold text-[#ddd] w-5 flex-shrink-0 tabular-nums">{String(i+1).padStart(2,'0')}</span>
                         <input value={c} onChange={e=>setClient(i,e.target.value)} className="flex-1 bg-transparent text-sm text-[#111] outline-none font-[inherit] border-0 font-medium"/>
                         <button className={`${b.iconDng} opacity-0 group-hover:opacity-100 transition-opacity`} onClick={()=>setModal({k:'del',label:c,onConfirm:()=>delClient(i)})}><Trash2 size={12}/></button>
@@ -1447,10 +1565,11 @@ const AdminDashboard: React.FC = ()=>{
                   </div>
                   <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-3">
                     {draft.clientLogos.map((logo,i)=>(
-                      <div key={`${logo}-${i}`} className="bg-white border border-[#ebebeb] rounded-2xl overflow-hidden group hover:border-[#ccc] hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 animate-fade-in-up" style={{animationDelay:`${i*35}ms`}}>
+                      <div key={`${logo}-${i}`} {...drLogo.zoneProps(i)} className={`bg-white border border-[#ebebeb] rounded-2xl overflow-hidden group hover:border-[#ccc] hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 animate-fade-in-up ${drLogo.zoneClass(i)}`} style={{animationDelay:`${i*35}ms`}}>
                         <div className="relative aspect-square bg-[#f9f9f9] flex items-center justify-center p-4">
                           {logo&&<img src={resolveImageUrl(logo)} alt="" className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500"/>}
-                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-1.5">
+                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-1.5 flex-wrap px-2">
+                            <DragHandle dr={drLogo} index={i} light/>
                             <button className={b.iconLt} onClick={()=>moveLogo(i,-1)} disabled={i===0}><ChevronUp size={13}/></button>
                             <button className={b.iconLt} onClick={()=>moveLogo(i,1)} disabled={i===draft.clientLogos.length-1}><ChevronDown size={13}/></button>
                             <button className={b.iconLt} onClick={()=>setModal({k:'edit-logo',i})}><Pencil size={13}/></button>
@@ -1469,7 +1588,7 @@ const AdminDashboard: React.FC = ()=>{
             {/* ── TEAM ─────────────────────────────────────────── */}
             {active==='team'&&(
               <div>
-                <SectionHeader title="Team" count={draft.team.length} onAdd={()=>setModal({k:'add-tm'})} addLabel="Add Member" view={vm('team')} onView={()=>tv('team')}/>
+                <SectionHeader title="Team" reorderable count={draft.team.length} onAdd={()=>setModal({k:'add-tm'})} addLabel="Add Member" view={vm('team')} onView={()=>tv('team')}/>
                 <SearchBar query={query} setQuery={setQuery} placeholder="Search by name or role…"/>
                 {filtTm.length===0&&(query
                   ?<p className="text-[#bbb] text-sm text-center py-10">No members match</p>
@@ -1480,7 +1599,8 @@ const AdminDashboard: React.FC = ()=>{
                     {filtTm.map(m=>{
                       const i=draft.team.indexOf(m);
                       return(
-                        <div key={m.id} className="bg-white border border-[#ebebeb] rounded-2xl p-5 shadow-sm text-center hover:border-[#ccc] hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group animate-fade-in-up" style={{animationDelay:`${i*60}ms`}}>
+                        <div key={m.id} {...drTm.zoneProps(i)} className={`relative bg-white border border-[#ebebeb] rounded-2xl p-5 shadow-sm text-center hover:border-[#ccc] hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group animate-fade-in-up ${drTm.zoneClass(i)}`} style={{animationDelay:`${i*60}ms`}}>
+                          <DragHandle dr={drTm} index={i} className="absolute top-3 left-3 opacity-0 group-hover:opacity-100 transition-opacity"/>
                           <div className="w-20 h-20 rounded-2xl overflow-hidden bg-[#f5f5f5] mx-auto mb-3 ring-2 ring-transparent group-hover:ring-[#111] transition-all duration-300">
                             {m.photo&&<img src={resolveImageUrl(m.photo)} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" style={{objectPosition:m.position??'50% 20%'}}/>}
                           </div>
@@ -1503,7 +1623,8 @@ const AdminDashboard: React.FC = ()=>{
                     {filtTm.map(m=>{
                       const i=draft.team.indexOf(m);
                       return(
-                        <div key={m.id} className="bg-white border border-[#ebebeb] rounded-2xl flex items-center gap-4 p-3.5 shadow-sm hover:border-[#ccc] hover:shadow-md transition-all duration-200 group animate-fade-in-up" style={{animationDelay:`${i*35}ms`}}>
+                        <div key={m.id} {...drTm.zoneProps(i)} className={`bg-white border border-[#ebebeb] rounded-2xl flex items-center gap-3 p-3.5 shadow-sm hover:border-[#ccc] hover:shadow-md transition-all duration-200 group animate-fade-in-up ${drTm.zoneClass(i)}`} style={{animationDelay:`${i*35}ms`}}>
+                          <DragHandle dr={drTm} index={i}/>
                           <div className="w-12 h-12 rounded-xl overflow-hidden bg-[#f5f5f5] flex-shrink-0">
                             {m.photo&&<img src={resolveImageUrl(m.photo)} alt="" className="w-full h-full object-cover" style={{objectPosition:m.position??'50% 20%'}}/>}
                           </div>
@@ -1529,11 +1650,12 @@ const AdminDashboard: React.FC = ()=>{
             {/* ── TESTIMONIALS ─────────────────────────────────── */}
             {active==='testimonials'&&(
               <div>
-                <SectionHeader title="Testimonials" count={draft.testimonials.length} onAdd={()=>setModal({k:'add-tmt'})} addLabel="Add Testimonial"/>
+                <SectionHeader title="Testimonials" reorderable count={draft.testimonials.length} onAdd={()=>setModal({k:'add-tmt'})} addLabel="Add Testimonial"/>
                 {draft.testimonials.length===0&&<Empty label="testimonial" onAdd={()=>setModal({k:'add-tmt'})} icon={<MessageSquare size={36}/>}/>}
                 <div className="flex flex-col gap-2">
                   {draft.testimonials.map((t,i)=>(
-                    <div key={t.id} className="bg-white border border-[#ebebeb] rounded-2xl flex items-start gap-4 p-4 shadow-sm hover:border-[#ccc] transition-all group animate-fade-in-up" style={{animationDelay:`${i*40}ms`}}>
+                    <div key={t.id} {...drTmt.zoneProps(i)} className={`bg-white border border-[#ebebeb] rounded-2xl flex items-start gap-3 p-4 shadow-sm hover:border-[#ccc] transition-all group animate-fade-in-up ${drTmt.zoneClass(i)}`} style={{animationDelay:`${i*40}ms`}}>
+                      <DragHandle dr={drTmt} index={i}/>
                       <div className="w-12 h-12 rounded-xl overflow-hidden bg-[#f5f5f5] flex-shrink-0 border border-[#ebebeb]">
                         {t.logoSrc&&<img src={resolveImageUrl(t.logoSrc)} alt="" className="w-full h-full object-contain p-1"/>}
                       </div>

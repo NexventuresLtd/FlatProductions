@@ -64,27 +64,27 @@ const Clients: React.FC = () => {
                 </div>
             </div>
 
-            {/* marquee-wrapper class name kept for CSS hover rule in index.css */}
+            {/* The track is what animates (translateX -50%); it holds exactly two
+                identical groups, so -50% lands on the start of group 2 and the loop
+                is seamless. Animating the groups individually slid them only half a
+                group width before snapping back. */}
             <div className="marquee-wrapper relative overflow-hidden w-full" aria-label="Client logos">
-                {/* marquee-track class name kept for CSS hover rule in index.css */}
-                <div className="marquee-track flex">
-                    {/* Group 1: Original List */}
-                    <div className="flex gap-5 pr-5 flex-shrink-0 animate-marquee">
-                        {logoWall.map((logo, index) => (
-                            <figure key={`${logo}-${index}`} className="flex items-center justify-center w-[140px] aspect-[4/3] bg-white/8 rounded-xl border border-white/10 p-3 flex-shrink-0 m-0">
-                                <img src={resolveMediaUrl(logo)} alt={`Client logo ${index + 1}`} loading="lazy" className="max-h-full w-auto object-contain" />
-                            </figure>
-                        ))}
-                    </div>
-
-                    {/* Group 2: Duplicate for Seamless Loop */}
-                    <div className="flex gap-5 pr-5 flex-shrink-0 animate-marquee" aria-hidden="true">
-                        {logoWall.map((logo, index) => (
-                            <figure key={`dup-${logo}-${index}`} className="flex items-center justify-center w-[140px] aspect-[4/3] bg-white/8 rounded-xl border border-white/10 p-3 flex-shrink-0 m-0">
-                                <img src={resolveMediaUrl(logo)} alt="" loading="lazy" className="max-h-full w-auto object-contain" />
-                            </figure>
-                        ))}
-                    </div>
+                <div className="marquee-track flex w-max animate-marquee">
+                    {[0, 1].map(group => (
+                        <div key={group} className="flex gap-5 pr-5 flex-shrink-0" aria-hidden={group === 1 ? true : undefined}>
+                            {logoWall.map((logo, index) => (
+                                <figure key={`${group}-${logo}-${index}`} className="flex items-center justify-center w-[140px] aspect-[4/3] bg-white/8 rounded-xl border border-white/10 p-3 flex-shrink-0 m-0">
+                                    <img
+                                        src={resolveMediaUrl(logo)}
+                                        alt={group === 0 ? `Client logo ${index + 1}` : ''}
+                                        loading="lazy"
+                                        draggable={false}
+                                        className="max-h-full w-auto object-contain"
+                                    />
+                                </figure>
+                            ))}
+                        </div>
+                    ))}
                 </div>
             </div>
         </section>

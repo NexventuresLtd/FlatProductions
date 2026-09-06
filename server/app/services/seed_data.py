@@ -95,7 +95,7 @@ async def seed_about(db) -> None:
     for i, (value, label) in enumerate(stats):
         db.add(AboutStat(value=value, label=label, order_index=i))
 
-    chips = ["Photography", "Video Production", "Live Streaming", "Branding", "Web Design", "Documentary"]
+    chips = ["Photography", "Video Production", "Live Streaming", "Podcast", "Branding", "Web Design", "Documentary"]
     for i, text in enumerate(chips):
         db.add(AboutChip(text=text, order_index=i))
     await db.commit()
@@ -120,13 +120,15 @@ async def seed_services(db) -> list[Service]:
         result = await db.execute(select(Service).order_by(Service.order_index))
         return list(result.scalars().all())
 
+    # Order mirrors DEFAULT_SITE_CONTENT.services in the frontend content store.
     services = [
+        ("EVENT & ENTERTAINMENT", "Here to help differentiate your event through outstanding creativity.", "/photo5.jpg", "Whether it's a concert, gala, or product launch, we capture the energy and emotion with high-quality cameras and a genuine eye for the moments your guests will remember."),
+        ("DESIGN - PRINTING & BRANDING", "It's hard to build and easy to destroy by not branding your excellent work; we are here to express your great work through stunning branding.", "/graphy33.jpg", "Your brand should be recognizable everywhere. We create logos, typography systems, social graphics, and print-ready artwork that hold together across every touchpoint."),
         ("PHOTOGRAPHY & VIDEO PRODUCTION", "Delivering outstanding excellence in video production and photography: capturing moments, crafting stories, creating memories.", "/photo1.jpg", "From corporate events to weddings and product launches, we capture every visual moment with precision equipment and a storytelling eye. Our edits are polished, emotive, and built to work across every screen."),
         ("LIVE STREAMING & FEED", "Lets you interact with your audience in real time with a video feed, chat, reactions, and more.", "/live1.jpeg", "We deploy professional multi-camera streaming rigs for any scale of event — from intimate church services to large-scale conferences. Low-latency, stable, with dedicated technical support on-site."),
-        ("WEBSITE DESIGN", "You are best in your work; let us help you show world your excellent achievements digitally.", "/web.jpg", "We build fast, clean, and modern websites that make your brand look credible online. Every site is mobile-optimized, SEO-ready, and designed to convert visitors into real clients."),
-        ("DESIGN - PRINTING & BRANDING", "It's hard to build and easy to destroy by not branding your excellent work; we are here to express your great work through stunning branding.", "/graphy33.jpg", "Your brand should be recognizable everywhere. We create logos, typography systems, social graphics, and print-ready artwork that hold together across every touchpoint."),
-        ("EVENT & ENTERTAINMENT", "Here to help differentiate your event through outstanding creativity.", "/photo5.jpg", "Whether it's a concert, gala, or product launch, we capture the energy and emotion with high-quality cameras and a genuine eye for the moments your guests will remember."),
+        ("PODCAST", "Full podcast production — multi-camera studio recording, clean audio, and social-ready episode cuts.", "/live2.jpeg", "We handle the whole podcast pipeline: studio or on-location setup, multi-camera video, broadcast-quality audio capture and mixing, episode editing, cover art, and vertical clips cut for Instagram, TikTok, and YouTube Shorts."),
         ("DOCUMENTARY", "A better way of storytelling through interviewing, research, reality filming, narration, and production excellence through experience.", "/photo12.jpg", "Documentaries require patience, curiosity, and craft. We combine deep research, on-location filming, and precise editing to produce pieces that feel honest and compelling."),
+        ("WEBSITE DESIGN", "You are best in your work; let us help you show world your excellent achievements digitally.", "/web.jpg", "We build fast, clean, and modern websites that make your brand look credible online. Every site is mobile-optimized, SEO-ready, and designed to convert visitors into real clients."),
     ]
     created = []
     for i, (title, description, image, extended) in enumerate(services):
@@ -143,13 +145,18 @@ async def seed_portfolio(db, services: list[Service]) -> None:
     if await _count(db, PortfolioItem):
         return
     by_title = {s.title.split(" & ")[0].split(" ")[0].upper(): s.id for s in services}
+    # Order mirrors DEFAULT_SITE_CONTENT.portfolio in the frontend content store.
+    # "Behind The Scenes" is spelled out because "BTS" is a reserved tab name on
+    # the portfolio page (derived from bts_url) and would collide with it.
     portfolio = [
-        ("Photography", "/photo1.jpg", "Photography", None, None, "We capture stunning visuals that tell your unique story with precision and artistic flair."),
-        ("Video Production", "/2I1A0386.JPG.jpeg", "Video Production", "https://youtu.be/RjXqY31jpy0", "https://youtu.be/DHR85WBk4tY", "We deliver high-end video production services tailored for commercials, events, and cinematic projects."),
-        ("Live Streaming", "/2I1A0403.JPG.jpeg", "Live Streaming", "https://youtu.be/de6oWk6vGlM", "https://youtu.be/zWTFpxzQaes", "We provide professional multi-camera live streaming solutions to connect you with a global audience instantly."),
-        ("Web & Digital", "/web.jpg", "Web & Digital", None, None, "We offer comprehensive digital strategies including web design, development, and online marketing solutions."),
-        ("Branding", "/graphy33.jpg", "Branding", None, None, "We create memorable brand identities that resonate deeply with your target market and stand out."),
         ("Documentary", "/photo12.jpg", "Documentary", None, None, "We specialize in in-depth documentary filmmaking that brings important real-world stories to light."),
+        ("Video Production", "/2I1A0386.JPG.jpeg", "Video Production", "https://youtu.be/RjXqY31jpy0", "https://youtu.be/DHR85WBk4tY", "We deliver high-end video production services tailored for commercials, events, and cinematic projects."),
+        ("Event & Entertainment", "/photo5.jpg", "Event & Entertainment", None, None, "We cover concerts, galas, and launches with the energy and detail that make an event worth reliving."),
+        ("Live Streaming", "/2I1A0403.JPG.jpeg", "Live Streaming", "https://youtu.be/de6oWk6vGlM", "https://youtu.be/zWTFpxzQaes", "We provide professional multi-camera live streaming solutions to connect you with a global audience instantly."),
+        ("Podcast", "/live2.jpeg", "Podcast", None, None, "We produce full podcast episodes with multi-camera video, clean audio, and social-ready cuts."),
+        ("Branding", "/graphy33.jpg", "Branding", None, None, "We create memorable brand identities that resonate deeply with your target market and stand out."),
+        ("Behind The Scenes", "/2I1A0407.JPG.jpeg", "Behind The Scenes", None, None, "We document the crew, the gear, and the craft that goes into every production we deliver."),
+        ("Photography", "/photo1.jpg", "Photography", None, None, "We capture stunning visuals that tell your unique story with precision and artistic flair."),
     ]
     for i, (title, image, category, video_url, bts_url, description) in enumerate(portfolio):
         db.add(

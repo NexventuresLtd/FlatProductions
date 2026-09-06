@@ -12,13 +12,15 @@ type ContactInfo = {
   socials: { instagram: string; youtube: string; linkedin: string };
 };
 
+/* Order here drives the filter-tab order and the section order on /gallery. */
 export const GALLERY_CATEGORIES = [
+  'Behind The Scenes',
   'Event Photography',
   'Sports Photography',
-  'Wedding Photography',
-  'Portrait Photography',
   'Advertising Photography',
-  'Behind The Scenes',
+  'Portrait Photography',
+  'Wedding Photography',
+  'Podcast',
 ] as const;
 export type GalleryCategory = typeof GALLERY_CATEGORIES[number];
 type GalleryItem = { src: string; category: string };
@@ -84,7 +86,7 @@ const DEFAULT_SITE_CONTENT: SiteContent = {
       { value: '200+', label: 'Projects Delivered' },
       { value: '50+',  label: 'Clients Served' },
     ],
-    chips: ['Photography', 'Video Production', 'Live Streaming', 'Branding', 'Web Design', 'Documentary'],
+    chips: ['Photography', 'Video Production', 'Live Streaming', 'Podcast', 'Branding', 'Web Design', 'Documentary'],
   },
   testimonials: [
     { id: 'tm-1', name: 'MTN Rwanda',         logoSrc: '/mtn.png',      quote: 'Flat Production delivered event visuals and digital storytelling that elevated our customer engagement campaigns.' },
@@ -93,20 +95,23 @@ const DEFAULT_SITE_CONTENT: SiteContent = {
     { id: 'tm-4', name: 'NBG',                 logoSrc: '/nbg.jpg',      quote: 'We trusted Flat Production for documentary storytelling and campaign content, and the outcome was impactful and authentic.' },
   ],
   services: [
+    { id: 'svc-5', title: 'EVENT & ENTERTAINMENT',          description: 'Here to help differentiate your event through outstanding creativity.',                                                          image: '/photo5.jpg', extendedDescription: "Whether it's a concert, gala, or product launch, we capture the energy and emotion with high-quality cameras and a genuine eye for the moments your guests will remember." },
+    { id: 'svc-4', title: 'DESIGN - PRINTING & BRANDING',   description: "It's hard to build and easy to destroy by not branding your excellent work; we are here to express your great work through stunning branding.", image: '/graphy33.jpg', extendedDescription: 'Your brand should be recognizable everywhere. We create logos, typography systems, social graphics, and print-ready artwork that hold together across every touchpoint.' },
     { id: 'svc-1', title: 'PHOTOGRAPHY & VIDEO PRODUCTION', description: 'Delivering outstanding excellence in video production and photography: capturing moments, crafting stories, creating memories.', image: '/photo1.jpg', extendedDescription: 'From corporate events to weddings and product launches, we capture every visual moment with precision equipment and a storytelling eye. Our edits are polished, emotive, and built to work across every screen.' },
     { id: 'svc-2', title: 'LIVE STREAMING & FEED',          description: 'Lets you interact with your audience in real time with a video feed, chat, reactions, and more.',                               image: '/live1.jpeg', extendedDescription: 'We deploy professional multi-camera streaming rigs for any scale of event — from intimate church services to large-scale conferences. Low-latency, stable, with dedicated technical support on-site.' },
-    { id: 'svc-3', title: 'WEBSITE DESIGN',                 description: 'You are best in your work; let us help you show world your excellent achievements digitally.',                                   image: '/web.jpg', extendedDescription: 'We build fast, clean, and modern websites that make your brand look credible online. Every site is mobile-optimized, SEO-ready, and designed to convert visitors into real clients.' },
-    { id: 'svc-4', title: 'DESIGN - PRINTING & BRANDING',   description: "It's hard to build and easy to destroy by not branding your excellent work; we are here to express your great work through stunning branding.", image: '/graphy33.jpg', extendedDescription: 'Your brand should be recognizable everywhere. We create logos, typography systems, social graphics, and print-ready artwork that hold together across every touchpoint.' },
-    { id: 'svc-5', title: 'EVENT & ENTERTAINMENT',          description: 'Here to help differentiate your event through outstanding creativity.',                                                          image: '/photo5.jpg', extendedDescription: "Whether it's a concert, gala, or product launch, we capture the energy and emotion with high-quality cameras and a genuine eye for the moments your guests will remember." },
+    { id: 'svc-7', title: 'PODCAST',                        description: 'Full podcast production — multi-camera studio recording, clean audio, and social-ready episode cuts.',                          image: '/live2.jpeg', extendedDescription: 'We handle the whole podcast pipeline: studio or on-location setup, multi-camera video, broadcast-quality audio capture and mixing, episode editing, cover art, and vertical clips cut for Instagram, TikTok, and YouTube Shorts.' },
     { id: 'svc-6', title: 'DOCUMENTARY',                    description: 'A better way of storytelling through interviewing, research, reality filming, narration, and production excellence through experience.', image: '/photo12.jpg', extendedDescription: 'Documentaries require patience, curiosity, and craft. We combine deep research, on-location filming, and precise editing to produce pieces that feel honest and compelling.' },
+    { id: 'svc-3', title: 'WEBSITE DESIGN',                 description: 'You are best in your work; let us help you show world your excellent achievements digitally.',                                   image: '/web.jpg', extendedDescription: 'We build fast, clean, and modern websites that make your brand look credible online. Every site is mobile-optimized, SEO-ready, and designed to convert visitors into real clients.' },
   ],
   portfolio: [
-    { id: 'pf-1', title: 'Photography',     image: '/photo1.jpg',          link: '#', category: 'Photography',     description: 'We capture stunning visuals that tell your unique story with precision and artistic flair.' },
-    { id: 'pf-2', title: 'Video Production',image: '/2I1A0386.JPG.jpeg',   link: '#', category: 'Video Production',videoUrl: 'https://youtu.be/RjXqY31jpy0', btsUrl: 'https://youtu.be/DHR85WBk4tY', description: 'We deliver high-end video production services tailored for commercials, events, and cinematic projects.' },
-    { id: 'pf-3', title: 'Live Streaming',  image: '/2I1A0403.JPG.jpeg',   link: '#', category: 'Live Streaming', videoUrl: 'https://youtu.be/de6oWk6vGlM', btsUrl: 'https://youtu.be/zWTFpxzQaes', description: 'We provide professional multi-camera live streaming solutions to connect you with a global audience instantly.' },
-    { id: 'pf-4', title: 'Web & Digital',   image: '/web.jpg',             link: '#', category: 'Web & Digital',  description: 'We offer comprehensive digital strategies including web design, development, and online marketing solutions.' },
-    { id: 'pf-5', title: 'Branding',        image: '/graphy33.jpg',        link: '#', category: 'Branding',       description: 'We create memorable brand identities that resonate deeply with your target market and stand out.' },
-    { id: 'pf-6', title: 'Documentary',     image: '/photo12.jpg',         link: '#', category: 'Documentary',    description: 'We specialize in in-depth documentary filmmaking that brings important real-world stories to light.' },
+    { id: 'pf-6', title: 'Documentary',          image: '/photo12.jpg',        link: '#', category: 'Documentary',          description: 'We specialize in in-depth documentary filmmaking that brings important real-world stories to light.' },
+    { id: 'pf-2', title: 'Video Production',     image: '/2I1A0386.JPG.jpeg',  link: '#', category: 'Video Production',     videoUrl: 'https://youtu.be/RjXqY31jpy0', btsUrl: 'https://youtu.be/DHR85WBk4tY', description: 'We deliver high-end video production services tailored for commercials, events, and cinematic projects.' },
+    { id: 'pf-7', title: 'Event & Entertainment',image: '/photo5.jpg',         link: '#', category: 'Event & Entertainment',description: 'We cover concerts, galas, and launches with the energy and detail that make an event worth reliving.' },
+    { id: 'pf-3', title: 'Live Streaming',       image: '/2I1A0403.JPG.jpeg',  link: '#', category: 'Live Streaming',       videoUrl: 'https://youtu.be/de6oWk6vGlM', btsUrl: 'https://youtu.be/zWTFpxzQaes', description: 'We provide professional multi-camera live streaming solutions to connect you with a global audience instantly.' },
+    { id: 'pf-4', title: 'Podcast',              image: '/live2.jpeg',         link: '#', category: 'Podcast',              description: 'We produce full podcast episodes with multi-camera video, clean audio, and social-ready cuts.' },
+    { id: 'pf-5', title: 'Branding',             image: '/graphy33.jpg',       link: '#', category: 'Branding',             description: 'We create memorable brand identities that resonate deeply with your target market and stand out.' },
+    { id: 'pf-8', title: 'Behind The Scenes',    image: '/2I1A0407.JPG.jpeg',  link: '#', category: 'Behind The Scenes',    description: 'We document the crew, the gear, and the craft that goes into every production we deliver.' },
+    { id: 'pf-1', title: 'Photography',          image: '/photo1.jpg',         link: '#', category: 'Photography',          description: 'We capture stunning visuals that tell your unique story with precision and artistic flair.' },
   ],
   clientsIntro: 'We work with brands, organizations, and creators who want visuals that feel sharp, memorable, and full of character. Every project is tailored to match your message, audience, and moment.',
   clients:     ['Corporate', 'Weddings', 'Events', 'Non-profits'],
