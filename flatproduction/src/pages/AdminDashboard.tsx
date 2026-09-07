@@ -1057,6 +1057,10 @@ const AdminDashboard: React.FC = ()=>{
   const delSlide  = (i:number)=>persist({...draft,hero:{...draft.hero,images:imgs().filter((_,j)=>j!==i),notes:nts().filter((_,j)=>j!==i)}},'Slide deleted');
 
   const setAbout = (f:'heading'|'body',v:string)=>persist({...draft,about:{...draft.about,[f]:v}});
+  const aboutStats = ()=>draft.about.stats ?? DEFAULT_SITE_CONTENT.about.stats!;
+  const aboutChips = ()=>draft.about.chips ?? DEFAULT_SITE_CONTENT.about.chips!;
+  const reorderStat = (from:number,to:number)=>persist({...draft,about:{...draft.about,stats:move(aboutStats(),from,to)}},'Stat order updated');
+  const reorderChip = (from:number,to:number)=>persist({...draft,about:{...draft.about,chips:move(aboutChips(),from,to)}},'Chip order updated');
 
   const saveSvc = (item:ServiceItem,i?:number)=>persist({...draft,services:i===undefined?[...draft.services,item]:draft.services.map((s,j)=>j===i?item:s)},i===undefined?'Service added':'Service saved');
   const moveSvc = (i:number,d:-1|1)=>persist({...draft,services:move(draft.services,i,i+d)});
@@ -1106,6 +1110,8 @@ const AdminDashboard: React.FC = ()=>{
   const drLogo   = useDragReorder(reorderLogo);
   const drTm     = useDragReorder(reorderTm);
   const drTmt    = useDragReorder(reorderTmt);
+  const drStat   = useDragReorder(reorderStat);
+  const drChip   = useDragReorder(reorderChip);
 
   const q=query.toLowerCase();
   const filtSvc=draft.services.filter(s=>!q||s.title.toLowerCase().includes(q)||s.description.toLowerCase().includes(q));
@@ -1266,7 +1272,7 @@ const AdminDashboard: React.FC = ()=>{
                 {/* Stats */}
                 <div className="bg-white border border-[#ebebeb] rounded-2xl p-5 shadow-sm animate-fade-in-up" style={{animationDelay:'60ms'}}>
                   <div className="flex items-center justify-between mb-4">
-                    <p className="text-xs font-bold text-[#aaa] uppercase tracking-[0.1em] flex items-center gap-1.5"><Zap size={11}/>Stats (shown on homepage)</p>
+                    <p className="text-xs font-bold text-[#aaa] uppercase tracking-[0.1em] flex items-center gap-1.5"><Zap size={11}/>Stats (shown on homepage)<span className="hidden sm:inline-flex items-center gap-1 text-[#ccc] normal-case tracking-normal font-semibold"><GripVertical size={10}/>drag to reorder</span></p>
                     <button className={b.sm} onClick={() => {
                       const stats = [...(draft.about.stats ?? DEFAULT_SITE_CONTENT.about.stats!), { value: '0+', label: 'New Stat' }];
                       persist({ ...draft, about: { ...draft.about, stats } }, 'Stat added');
@@ -1274,7 +1280,8 @@ const AdminDashboard: React.FC = ()=>{
                   </div>
                   <div className="flex flex-col gap-2">
                     {(draft.about.stats ?? DEFAULT_SITE_CONTENT.about.stats!).map((stat, i) => (
-                      <div key={i} className="flex items-center gap-3 bg-[#f9f9f9] border border-[#ebebeb] rounded-xl px-4 py-2.5 group">
+                      <div key={i} {...drStat.zoneProps(i)} className={`flex items-center gap-2.5 bg-[#f9f9f9] border border-[#ebebeb] rounded-xl px-3 py-2.5 group ${drStat.zoneClass(i)}`}>
+                        <DragHandle dr={drStat} index={i}/>
                         <span className="text-[0.65rem] font-bold text-[#ddd] w-5 flex-shrink-0 tabular-nums">{i + 1}</span>
                         <input
                           value={stat.value}
@@ -1309,7 +1316,7 @@ const AdminDashboard: React.FC = ()=>{
                 {/* Service Chips */}
                 <div className="bg-white border border-[#ebebeb] rounded-2xl p-5 shadow-sm animate-fade-in-up" style={{animationDelay:'70ms'}}>
                   <div className="flex items-center justify-between mb-4">
-                    <p className="text-xs font-bold text-[#aaa] uppercase tracking-[0.1em] flex items-center gap-1.5"><Layers size={11}/>Service Chips (shown on homepage)</p>
+                    <p className="text-xs font-bold text-[#aaa] uppercase tracking-[0.1em] flex items-center gap-1.5"><Layers size={11}/>Service Chips (shown on homepage)<span className="hidden sm:inline-flex items-center gap-1 text-[#ccc] normal-case tracking-normal font-semibold"><GripVertical size={10}/>drag to reorder</span></p>
                     <button className={b.sm} onClick={() => {
                       const chips = [...(draft.about.chips ?? DEFAULT_SITE_CONTENT.about.chips!), 'New Tag'];
                       persist({ ...draft, about: { ...draft.about, chips } });
@@ -1319,7 +1326,8 @@ const AdminDashboard: React.FC = ()=>{
                     {(draft.about.chips ?? DEFAULT_SITE_CONTENT.about.chips!).map((chip, i) => {
                       const chips = draft.about.chips ?? DEFAULT_SITE_CONTENT.about.chips!;
                       return (
-                        <div key={i} className="flex items-center gap-3 bg-[#f9f9f9] border border-[#ebebeb] rounded-xl px-4 py-2.5 group">
+                        <div key={i} {...drChip.zoneProps(i)} className={`flex items-center gap-2.5 bg-[#f9f9f9] border border-[#ebebeb] rounded-xl px-3 py-2.5 group ${drChip.zoneClass(i)}`}>
+                          <DragHandle dr={drChip} index={i}/>
                           <span className="text-[0.65rem] font-bold text-[#ddd] w-5 flex-shrink-0 tabular-nums">{String(i + 1).padStart(2, '0')}</span>
                           <input
                             value={chip}
