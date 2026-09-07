@@ -23,7 +23,32 @@ export const GALLERY_CATEGORIES = [
   'Podcast',
 ] as const;
 export type GalleryCategory = typeof GALLERY_CATEGORIES[number];
-type GalleryItem = { src: string; category: string };
+/* updatedAt is assigned by the backend: set when a photo is added and bumped when
+ * its category changes, but NOT when it is merely reordered. Optional because
+ * hardcoded defaults and older payloads carry no timestamp. */
+type GalleryItem = { src: string; category: string; updatedAt?: string };
+
+export const GALLERY_SORTS = [
+  { key: 'recent', label: 'Last updated' },
+  { key: 'custom', label: 'Custom order' },
+] as const;
+export type GallerySort = typeof GALLERY_SORTS[number]['key'];
+export const DEFAULT_GALLERY_SORT: GallerySort = 'recent';
+
+/** Sort a gallery list for display. Never mutates the input.
+ *  'custom' is the stored (drag) order, so it passes through untouched.
+ *  'recent' puts the newest updatedAt first; entries without a usable timestamp
+ *  sink to the bottom instead of pretending to be the newest. Array#sort is
+ *  stable, so photos sharing a timestamp keep their custom order relative to
+ *  each other. */
+export function sortGallery(items: GalleryItem[], sort: GallerySort): GalleryItem[] {
+  if (sort === 'custom') return items;
+  const stamp = (g: GalleryItem): number => {
+    const t = g.updatedAt ? Date.parse(g.updatedAt) : NaN;
+    return Number.isNaN(t) ? -Infinity : t;
+  };
+  return [...items].sort((a, b) => stamp(b) - stamp(a));
+}
 
 type SiteContent = {
   hero: { title: string; subtitle: string; images?: string[]; notes?: string[] };
@@ -236,7 +261,7 @@ function normalize(parsed: Partial<SiteContent>): SiteContent {
       return raw.map((item: any, i: number): GalleryItem =>
         typeof item === 'string'
           ? { src: item, category: DEFAULT_SITE_CONTENT.gallery[i]?.category ?? 'Event Photography' }
-          : { src: item.src ?? '', category: item.category ?? 'Event Photography' }
+          : { src: item.src ?? '', category: item.category ?? 'Event Photography', updatedAt: item.updatedAt }
       );
     })(),
     contact: {

@@ -1,7 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { contentStore, GALLERY_CATEGORIES, DEFAULT_SITE_CONTENT, type GalleryItem } from '../store/contentStore';
+import {
+    contentStore, GALLERY_CATEGORIES, DEFAULT_SITE_CONTENT, GALLERY_SORTS,
+    DEFAULT_GALLERY_SORT, sortGallery, type GalleryItem, type GallerySort,
+} from '../store/contentStore';
 import { resolveMediaUrl } from '../lib/apiClient';
 
 /* ─── Google Drive / direct URL resolver ─────────────────────────
@@ -65,6 +68,7 @@ const GalleryPage: React.FC = () => {
     });
     const [heroData, setHeroData] = useState(() => contentStore.read().pageHeroes.gallery);
     const [activeCategory, setActiveCategory] = useState('All');
+    const [sort, setSort] = useState<GallerySort>(DEFAULT_GALLERY_SORT);
     const [lightbox, setLightbox] = useState<{ items: GalleryItem[]; index: number } | null>(null);
 
     useEffect(() => {
@@ -90,20 +94,21 @@ const GalleryPage: React.FC = () => {
     const countFor = (cat: string) =>
         cat === 'All' ? gallery.length : gallery.filter(g => g.category === cat).length;
 
-    const displayed = useMemo(() =>
+    const displayed = useMemo(() => sortGallery(
         activeCategory === 'All' ? gallery : gallery.filter(g => g.category === activeCategory),
-    [gallery, activeCategory]);
+        sort,
+    ), [gallery, activeCategory, sort]);
 
     /* Sections map for "All" view — covers all actual categories, not just predefined ones */
     const sections = useMemo(() => {
         if (activeCategory !== 'All') return null;
         const map = new Map<string, GalleryItem[]>();
         orderedCategories.forEach(cat => {
-            const items = gallery.filter(g => g.category === cat);
+            const items = sortGallery(gallery.filter(g => g.category === cat), sort);
             if (items.length) map.set(cat, items);
         });
         return map;
-    }, [gallery, activeCategory, orderedCategories]);
+    }, [gallery, activeCategory, orderedCategories, sort]);
 
     /* Reset if active tab disappears */
     useEffect(() => {
@@ -180,8 +185,8 @@ const GalleryPage: React.FC = () => {
 
             {/* ── STICKY FILTER BAR ─────────────────────────────────── */}
             <div className="sticky top-0 z-[50] bg-white border-b border-[#e8e8e8] shadow-sm">
-                <div className="max-w-[1400px] mx-auto px-4 sm:px-8 md:px-10">
-                    <div className="flex items-center gap-2 py-3 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <div className="max-w-[1400px] mx-auto px-4 sm:px-8 md:px-10 flex items-center gap-3">
+                    <div className="flex items-center gap-2 py-3 overflow-x-auto flex-1 min-w-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                         {visibleCategories.map(cat => {
                             const isActive = activeCategory === cat;
                             return (
@@ -202,6 +207,18 @@ const GalleryPage: React.FC = () => {
                             );
                         })}
                     </div>
+
+                    <label className="flex items-center gap-2 flex-shrink-0 py-3">
+                        <span className="text-[#999] text-xs font-semibold uppercase tracking-[0.12em] hidden md:inline">Sort</span>
+                        <select
+                            value={sort}
+                            onChange={e => setSort(e.target.value as GallerySort)}
+                            aria-label="Sort photos"
+                            className="py-2 pl-3 pr-8 rounded-full border border-[rgba(17,17,17,0.12)] bg-white text-[#555] text-sm font-semibold cursor-pointer outline-none font-[inherit] transition-colors hover:border-[#111] hover:text-[#111] focus:border-[#111]"
+                        >
+                            {GALLERY_SORTS.map(o => <option key={o.key} value={o.key}>{o.label}</option>)}
+                        </select>
+                    </label>
                 </div>
             </div>
 

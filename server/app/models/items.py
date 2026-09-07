@@ -48,6 +48,12 @@ class GalleryItem(Base):
     category: Mapped[str] = mapped_column(String(64), nullable=False)
     order_index: Mapped[int] = mapped_column(Integer, default=0, nullable=False, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    # Bumped when a photo is added or its image/category is edited — NOT when it is
+    # merely reordered, so "last updated" stays meaningful next to the manual order.
+    # Only survives a save because _replace_gallery diffs instead of delete-all.
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False, index=True
+    )
 
 
 class TeamMember(Base):

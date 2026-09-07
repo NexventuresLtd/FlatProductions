@@ -20,6 +20,10 @@ import {
   type GalleryItem,
   DEFAULT_SITE_CONTENT,
   GALLERY_CATEGORIES,
+  GALLERY_SORTS,
+  DEFAULT_GALLERY_SORT,
+  sortGallery,
+  type GallerySort,
   toOneSentence,
 } from '../store/contentStore';
 import { isAdminAuthed, broadcastLogout } from '../App';
@@ -1001,6 +1005,7 @@ const AdminDashboard: React.FC = ()=>{
   const [toast,setToast]   = useState<string|null>(null);
   const [query,setQuery]   = useState('');
   const [pfSvc,setPfSvc]   = useState('');
+  const [galSort,setGalSort] = useState<GallerySort>(DEFAULT_GALLERY_SORT);
   const [pfType,setPfType] = useState('');
   const [views,setViews]     = useState<Record<string,ViewMode>>({services:'grid',portfolio:'list',team:'grid'});
   const [visits,setVisits]   = useState(()=>parseInt(localStorage.getItem('flat_visit_count')||'0',10));
@@ -1111,7 +1116,13 @@ const AdminDashboard: React.FC = ()=>{
     if(pfType==='image'&&p.videoUrl)return false;
     return true;
   });
-  const filtGal=draft.gallery.filter(g=>!q||g.src.toLowerCase().includes(q)||g.category.toLowerCase().includes(q));
+  /* Displayed gallery order. Reordering by drag only makes sense against the
+     stored order, so the handles are hidden unless galSort is 'custom'. */
+  const filtGal=sortGallery(
+    draft.gallery.filter(g=>!q||g.src.toLowerCase().includes(q)||g.category.toLowerCase().includes(q)),
+    galSort,
+  );
+  const galDraggable=galSort==='custom';
   const filtTm=draft.team.filter(m=>!q||m.name.toLowerCase().includes(q)||m.role.toLowerCase().includes(q));
 
   return(
@@ -1500,7 +1511,24 @@ const AdminDashboard: React.FC = ()=>{
             {/* ── GALLERY ──────────────────────────────────────── */}
             {active==='gallery'&&(
               <div>
-                <SectionHeader title="Gallery" reorderable count={draft.gallery.length} onAdd={()=>setModal({k:'add-gal'})} addLabel="Add Image"/>
+                <SectionHeader title="Gallery" reorderable={galDraggable} count={draft.gallery.length} onAdd={()=>setModal({k:'add-gal'})} addLabel="Add Image">
+                  <label className="flex items-center gap-1.5">
+                    <span className="text-[#aaa] text-[0.7rem] font-bold uppercase tracking-[0.09em]">Sort</span>
+                    <select
+                      value={galSort}
+                      onChange={e=>setGalSort(e.target.value as GallerySort)}
+                      aria-label="Sort gallery images"
+                      className="py-2 px-3 border border-[#e5e5e5] rounded-xl text-[0.78rem] text-[#555] bg-white outline-none font-[inherit] focus:border-[#111] cursor-pointer"
+                    >
+                      {GALLERY_SORTS.map(o=><option key={o.key} value={o.key}>{o.label}</option>)}
+                    </select>
+                  </label>
+                </SectionHeader>
+                {!galDraggable&&(
+                  <p className="text-[#bbb] text-xs -mt-3 mb-4 flex items-center gap-1.5">
+                    <GripVertical size={11}/>Switch to "Custom order" to drag images into a new arrangement.
+                  </p>
+                )}
                 <SearchBar query={query} setQuery={setQuery} placeholder="Filter by filename…"/>
                 {filtGal.length===0&&(query
                   ?<p className="text-[#bbb] text-sm text-center py-10">No images match</p>
@@ -1514,7 +1542,7 @@ const AdminDashboard: React.FC = ()=>{
                         <div className="relative aspect-square bg-[#f5f5f5]">
                           <img src={resolveImageUrl(g.src)} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-600"/>
                           <div className="absolute inset-0 bg-black/65 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-1.5 flex-wrap px-2">
-                            <DragHandle dr={drGal} index={i} light/>
+                            {galDraggable&&<DragHandle dr={drGal} index={i} light/>}
                             <button className={b.iconLt} onClick={()=>moveGal(i,-1)} disabled={i===0}><ChevronUp size={13}/></button>
                             <button className={b.iconLt} onClick={()=>moveGal(i,1)} disabled={i===draft.gallery.length-1}><ChevronDown size={13}/></button>
                             <button className={b.iconLt} onClick={()=>setModal({k:'edit-gal',i})}><Pencil size={13}/></button>

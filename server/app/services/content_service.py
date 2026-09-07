@@ -120,7 +120,10 @@ async def assemble_site_content(db: AsyncSession) -> dict:
             }
             for m in team
         ],
-        "gallery": [{"src": g.src, "category": g.category} for g in gallery],
+        "gallery": [
+            {"src": g.src, "category": g.category, "updatedAt": g.updated_at.isoformat()}
+            for g in gallery
+        ],
         "contact": {
             "phone": contact.phone if contact else "",
             "email": contact.email if contact else "",
@@ -224,9 +227,48 @@ async def _replace_team(db: AsyncSession, items: list[dict]) -> None:
 
 
 async def _replace_gallery(db: AsyncSession, items: list[dict]) -> None:
-    await db.execute(delete(GalleryItem))
+    """Diff the incoming gallery against what is stored instead of deleting and
+    re-inserting everything.
+
+    The old delete-all/insert-all approach reset every row on every save, which
+    made created_at (and any updated_at) meaningless — every photo always looked
+    like it had just been added. Matching on src lets timestamps survive, so the
+    gallery can be sorted by "last updated".
+
+    updated_at is bumped only when a photo is new or its category actually
+    changed. Reordering alone does not count as an update, otherwise dragging
+    photos around would scramble the last-updated sort.
+    """
+    existing = list((await db.execute(select(GalleryItem))).scalars().all())
+
+    # src is the only stable identity the client payload carries. Duplicates are
+    # possible in principle, so bucket by src and consume in order.
+    by_src: dict[str, list[GalleryItem]] = {}
+    for row in existing:
+        by_src.setdefault(row.src, []).append(row)
+
+    now = datetime.now(timezone.utc)
+    kept: set[uuid.UUID] = set()
+
     for i, g in enumerate(items):
-        db.add(GalleryItem(src=g.get("src", ""), category=g.get("category", "Event Photography"), order_index=i))
+        src = g.get("src", "")
+        category = g.get("category", "Event Photography")
+        bucket = by_src.get(src)
+        row = bucket.pop(0) if bucket else None
+
+        if row is None:
+            db.add(GalleryItem(src=src, category=category, order_index=i, updated_at=now))
+            continue
+
+        kept.add(row.id)
+        if row.category != category:
+            row.category = category
+            row.updated_at = now
+        row.order_index = i
+
+    for row in existing:
+        if row.id not in kept:
+            await db.delete(row)
 
 
 async def apply_partial_update(db: AsyncSession, payload: dict) -> None:
