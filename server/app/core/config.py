@@ -1,10 +1,15 @@
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+# Anchored to server/.env rather than a bare ".env", which resolved against the
+# current working directory and so only worked when run from the server/ folder.
+ENV_FILE = Path(__file__).resolve().parents[2] / ".env"
+
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    model_config = SettingsConfigDict(env_file=ENV_FILE, env_file_encoding="utf-8", extra="ignore")
 
     # Database
     database_url: str

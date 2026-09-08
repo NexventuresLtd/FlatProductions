@@ -54,7 +54,7 @@ def upgrade() -> None:
         sa.Column('kind', sa.String(length=16), nullable=False),
         sa.Column('name', sa.String(length=255), nullable=False),
         sa.Column('order_index', sa.Integer(), nullable=False, server_default='0'),
-        sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.func.now()),
+        sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.UniqueConstraint('kind', 'name', name='uq_content_categories_kind_name'),
     )
     op.create_index('ix_content_categories_kind_order', 'content_categories', ['kind', 'order_index'])

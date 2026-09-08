@@ -33,6 +33,9 @@ type GalleryItem = { src: string; category: string; updatedAt?: string };
  * the items pointing at the old name would be orphaned. */
 export type CategoryItem = { id: string; name: string };
 
+/* Portfolio tabs generated from videoUrl / btsUrl — never stored categories. */
+const RESERVED_PORTFOLIO_TABS = new Set(['Video', 'BTS', 'video', 'image']);
+
 export const GALLERY_SORTS = [
   { key: 'recent', label: 'Last updated' },
   { key: 'custom', label: 'Custom order' },
@@ -241,13 +244,31 @@ export function toOneSentence(text?: string): string {
   return `${value}.`;
 }
 
-/* Keep only well-formed rows. An older backend sends nothing here, in which case
- * we fall back to the defaults so the tabs never come up empty. */
+/* Categories the content actually uses, in first-appearance order.
+ * Used when the backend sends none (it predates the categories table). Deriving
+ * from real items rather than a hardcoded list matters because the dashboard
+ * persists whatever is in the draft: falling back to a constant meant a save
+ * could overwrite the real categories in the database with the constant, which
+ * is exactly how the live site ended up showing categories nobody had created
+ * while a category in active use ("Web & Digital") had no row at all. */
+function deriveCategories(names: (string | undefined)[]): CategoryItem[] {
+  const seen: string[] = [];
+  for (const raw of names) {
+    const name = (raw ?? '').trim();
+    if (name && !seen.includes(name)) seen.push(name);
+  }
+  // Empty id => "no server identity yet"; the backend treats it as new and
+  // matches an existing row by name rather than duplicating it.
+  return seen.map(name => ({ id: '', name }));
+}
+
+/* Keep only well-formed rows; fall back to what the content itself implies. */
 function normalizeCategories(raw: unknown, fallback: CategoryItem[]): CategoryItem[] {
-  if (!Array.isArray(raw)) return fallback.map(c => ({ ...c }));
-  const clean = raw
-    .map((c): CategoryItem => ({ id: String((c as CategoryItem)?.id ?? ''), name: String((c as CategoryItem)?.name ?? '').trim() }))
-    .filter(c => c.name);
+  const clean = Array.isArray(raw)
+    ? raw
+        .map((c): CategoryItem => ({ id: String((c as CategoryItem)?.id ?? ''), name: String((c as CategoryItem)?.name ?? '').trim() }))
+        .filter(c => c.name)
+    : [];
   return clean.length ? clean : fallback.map(c => ({ ...c }));
 }
 
@@ -290,8 +311,15 @@ function normalize(parsed: Partial<SiteContent>): SiteContent {
           : { src: item.src ?? '', category: item.category ?? 'Event Photography', updatedAt: item.updatedAt }
       );
     })(),
-    portfolioCategories: normalizeCategories(parsed.portfolioCategories, DEFAULT_SITE_CONTENT.portfolioCategories),
-    galleryCategories:   normalizeCategories(parsed.galleryCategories,   DEFAULT_SITE_CONTENT.galleryCategories),
+    portfolioCategories: normalizeCategories(
+      parsed.portfolioCategories,
+      deriveCategories((parsed.portfolio ?? []).map(p =>
+        p.category && !RESERVED_PORTFOLIO_TABS.has(p.category) ? p.category : p.title)),
+    ),
+    galleryCategories: normalizeCategories(
+      parsed.galleryCategories,
+      deriveCategories((parsed.gallery ?? []).map(g => (g as GalleryItem)?.category)),
+    ),
     contact: {
       ...DEFAULT_SITE_CONTENT.contact,
       ...parsed.contact,
