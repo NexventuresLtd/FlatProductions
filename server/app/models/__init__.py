@@ -13,11 +13,12 @@ from app.models.content import (
     HeroSettings,
     PageHero,
 )
-from app.models.items import GalleryItem, PortfolioItem, Service, TeamMember, Testimonial
+from app.models.items import ContentCategory, GalleryItem, PortfolioItem, Service, TeamMember, Testimonial
 from app.models.otp import OtpCode
 from app.models.visit import VisitCounter
 
 __all__ = [
+    "ContentCategory",
     "Admin",
     "ContactMessage",
     "AboutChip",

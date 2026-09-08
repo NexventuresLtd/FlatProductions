@@ -10,7 +10,7 @@ import {
   Filter, Save, Zap,
   Home, Eye, MessageSquare, Globe, Phone,
   UserPlus, ShieldOff, Menu, UserCircle, Lock, Camera,
-  GripVertical,
+  GripVertical, Tag,
 } from 'lucide-react';
 import {
   contentStore,
@@ -19,11 +19,11 @@ import {
   type StatItem,
   type GalleryItem,
   DEFAULT_SITE_CONTENT,
-  GALLERY_CATEGORIES,
   GALLERY_SORTS,
   DEFAULT_GALLERY_SORT,
   sortGallery,
   type GallerySort,
+  type CategoryItem,
   toOneSentence,
 } from '../store/contentStore';
 import { isAdminAuthed, broadcastLogout } from '../App';
@@ -32,7 +32,7 @@ import { apiGet, apiPost, apiPatch, apiDelete, apiUploadFile, ApiError, resolveM
 import { compressImage } from '../lib/imageCompress';
 
 /* ─── Types ─────────────────────────────────────────────────────── */
-type SectionKey = 'overview'|'hero'|'about'|'services'|'portfolio'|'gallery'|'clients'|'team'|'testimonials'|'pages'|'contact'|'team-access'|'profile';
+type SectionKey = 'overview'|'hero'|'about'|'services'|'portfolio'|'gallery'|'categories'|'clients'|'team'|'testimonials'|'pages'|'contact'|'team-access'|'profile';
 type ServiceItem   = SiteContent['services'][number];
 type PortfolioItem = SiteContent['portfolio'][number];
 type TeamItem      = SiteContent['team'][number];
@@ -63,6 +63,8 @@ function cloneContent(c: SiteContent): SiteContent {
     clientLogos:  [...c.clientLogos],
     team:         c.team.map(m=>({...m})),
     gallery:      c.gallery.map(g => ({ ...g })),
+    portfolioCategories: c.portfolioCategories.map(x=>({...x})),
+    galleryCategories:   c.galleryCategories.map(x=>({...x})),
     contact:      { ...c.contact, socials: { ...c.contact.socials } },
     pageHeroes: {
       about:     { ...c.pageHeroes.about },
@@ -365,19 +367,15 @@ const ServiceModal: React.FC<{initial?:ServiceItem;onSave:(item:ServiceItem)=>vo
 };
 
 /* ─── Portfolio Modal ────────────────────────────────────────────── */
-const PORTFOLIO_CATS = ['Photography','Video Production','Live Streaming','Web & Digital','Graphics Design','Branding','Documentary','Event & Entertainment'];
-const PortfolioModal: React.FC<{initial?:PortfolioItem;services:ServiceItem[];onSave:(item:PortfolioItem)=>void;onClose:()=>void}> =
-  ({initial,services,onSave,onClose})=>{
+const PortfolioModal: React.FC<{initial?:PortfolioItem;services:ServiceItem[];categories:CategoryItem[];onSave:(item:PortfolioItem)=>void;onClose:()=>void}> =
+  ({initial,services,categories,onSave,onClose})=>{
   const [t,setT]=useState(initial?.title??'');
   const [d,setD]=useState(initial?.description??'');
   const [img,setImg]=useState(initial?.image??'');
   const [vid,setVid]=useState(initial?.videoUrl??'');
   const [bts,setBts]=useState(initial?.btsUrl??'');
   const [svc,setSvc]=useState(initial?.serviceId??'');
-  const [cat,setCat]=useState(()=>{
-    const c=initial?.category??'';
-    return PORTFOLIO_CATS.includes(c)?c:'';
-  });
+  const [cat,setCat]=useState(()=>initial?.category??'');
   const [lnk,setLnk]=useState(initial?.link??'');
   return(
     <ModalShell title={initial?'Edit Project':'Add Project'} wide onClose={onClose}>
@@ -388,7 +386,9 @@ const PortfolioModal: React.FC<{initial?:PortfolioItem;services:ServiceItem[];on
           <label className="text-[0.7rem] font-bold text-[#111] uppercase tracking-[0.09em]">Category</label>
           <select value={cat} onChange={e=>setCat(e.target.value)} className="w-full py-2 px-3 border border-[#ddd] rounded-xl text-[0.82rem] text-[#111] bg-white outline-none font-[inherit] focus:border-[#111] transition-all cursor-pointer">
             <option value="">— Select category —</option>
-            {PORTFOLIO_CATS.map(c=><option key={c} value={c}>{c}</option>)}
+            {categories.map(c=><option key={c.id} value={c.name}>{c.name}</option>)}
+            {/* Keep an unknown existing value selectable rather than wiping it. */}
+            {cat&&!categories.some(c=>c.name===cat)&&<option value={cat}>{cat} (not in list)</option>}
           </select>
         </div>
       </div>
@@ -436,17 +436,18 @@ const SlideModal: React.FC<{initial?:{image:string;note:string};onSave:(img:stri
 };
 
 /* ─── Gallery Modal ──────────────────────────────────────────────── */
-const GalleryModal: React.FC<{initial?:GalleryItem;onSave:(item:GalleryItem)=>void;onClose:()=>void}> =
-  ({initial,onSave,onClose})=>{
+const GalleryModal: React.FC<{initial?:GalleryItem;categories:CategoryItem[];onSave:(item:GalleryItem)=>void;onClose:()=>void}> =
+  ({initial,categories,onSave,onClose})=>{
   const [url,setUrl]=useState(initial?.src??'');
-  const [cat,setCat]=useState<string>(initial?.category??'Event Photography');
+  const [cat,setCat]=useState<string>(initial?.category??categories[0]?.name??'Event Photography');
   return(
     <ModalShell title={initial?'Edit Image':'Add Gallery Image'} onClose={onClose}>
       <ImageField value={url} onChange={setUrl}/>
       <div className="flex flex-col gap-1.5">
         <label className="text-[0.7rem] font-bold text-[#111] uppercase tracking-[0.09em]">Category</label>
         <select value={cat} onChange={e=>setCat(e.target.value)} className="w-full py-2.5 px-3.5 border border-[#ddd] rounded-xl text-sm text-[#111] bg-white outline-none font-[inherit] focus:border-[#111] transition-all cursor-pointer">
-          {GALLERY_CATEGORIES.map(c=><option key={c} value={c}>{c}</option>)}
+          {categories.map(c=><option key={c.id} value={c.name}>{c.name}</option>)}
+          {cat&&!categories.some(c=>c.name===cat)&&<option value={cat}>{cat} (not in list)</option>}
         </select>
       </div>
       <div className="flex gap-2 pt-2">
@@ -978,6 +979,7 @@ const NAV: [SectionKey, string, React.ReactNode, (d:SiteContent)=>number|null][]
   ['services',     'Services',     <Briefcase size={15}/>,       d=>d.services.length],
   ['portfolio',    'Portfolio',    <Layers size={15}/>,          d=>d.portfolio.length],
   ['gallery',      'Gallery',      <ImageIcon size={15}/>,       d=>d.gallery.length],
+  ['categories',   'Categories',   <Tag size={15}/>,             d=>d.portfolioCategories.length+d.galleryCategories.length],
   ['clients',      'Clients',      <Star size={15}/>,            d=>d.clients.length+d.clientLogos.length],
   ['team',         'Team',         <Users size={15}/>,           d=>d.team.length],
   ['testimonials', 'Testimonials', <MessageSquare size={15}/>,   d=>d.testimonials.length],
@@ -1077,6 +1079,37 @@ const AdminDashboard: React.FC = ()=>{
   const reorderGal = (from:number,to:number)=>persist({...draft,gallery:move(draft.gallery,from,to)},'Image order updated');
   const delGal  = (i:number)=>persist({...draft,gallery:draft.gallery.filter((_,j)=>j!==i)},'Image deleted');
 
+  /* Categories. `kind` picks which list and which items reference it, so the
+     two lists share one set of handlers. A rename is applied to the matching
+     items locally too, so the dashboard reflects it before the server answers. */
+  type CatKind = 'portfolio'|'gallery';
+  const catsOf   = (k:CatKind)=>k==='portfolio'?draft.portfolioCategories:draft.galleryCategories;
+  const catUsage = (k:CatKind,name:string)=>k==='portfolio'
+    ? draft.portfolio.filter(p=>(p.category??p.title)===name).length
+    : draft.gallery.filter(g=>g.category===name).length;
+
+  const writeCats = (k:CatKind,next:CategoryItem[],extra:Partial<SiteContent>={},msg='Categories saved')=>
+    persist({...draft,...extra,...(k==='portfolio'?{portfolioCategories:next}:{galleryCategories:next})},msg);
+
+  const addCat = (k:CatKind)=>{
+    const base='New Category';const existing=catsOf(k).map(c=>c.name);
+    let name=base,i=2;while(existing.includes(name))name=`${base} ${i++}`;
+    writeCats(k,[...catsOf(k),{id:'',name}],{},'Category added');
+  };
+  const renameCat = (k:CatKind,i:number,name:string)=>{
+    const list=catsOf(k);const old=list[i]?.name;
+    const next=list.map((c,j)=>j===i?{...c,name}:c);
+    // Carry the items with the rename so nothing is left pointing at the old name.
+    const extra:Partial<SiteContent> = !old||old===name ? {} : k==='portfolio'
+      ? {portfolio:draft.portfolio.map(p=>p.category===old?{...p,category:name}:p)}
+      : {gallery:draft.gallery.map(g=>g.category===old?{...g,category:name}:g)};
+    writeCats(k,next,extra,'Category renamed');
+  };
+  const delCat = (k:CatKind,i:number)=>
+    writeCats(k,catsOf(k).filter((_,j)=>j!==i),{},'Category deleted');
+  const reorderCat = (k:CatKind,from:number,to:number)=>
+    writeCats(k,move(catsOf(k),from,to),{},'Category order updated');
+
   const setIntro  = (v:string)=>persist({...draft,clientsIntro:v});
   const setClient = (i:number,v:string)=>persist({...draft,clients:draft.clients.map((x,j)=>j===i?v:x)});
   const addClient = ()=>persist({...draft,clients:[...draft.clients,'New Client']},'Client added');
@@ -1112,6 +1145,8 @@ const AdminDashboard: React.FC = ()=>{
   const drTmt    = useDragReorder(reorderTmt);
   const drStat   = useDragReorder(reorderStat);
   const drChip   = useDragReorder(reorderChip);
+  const drPfCat  = useDragReorder((f,t)=>reorderCat('portfolio',f,t));
+  const drGalCat = useDragReorder((f,t)=>reorderCat('gallery',f,t));
 
   const q=query.toLowerCase();
   const filtSvc=draft.services.filter(s=>!q||s.title.toLowerCase().includes(q)||s.description.toLowerCase().includes(q));
@@ -1569,6 +1604,71 @@ const AdminDashboard: React.FC = ()=>{
               </div>
             )}
 
+            {/* ── CATEGORIES ───────────────────────────────────── */}
+            {active==='categories'&&(
+              <div className="flex flex-col gap-5">
+                <SectionHeader title="Categories"/>
+                <p className="text-[#888] text-sm -mt-2">
+                  These are the filter tabs on the public Portfolio and Gallery pages. Drag to set the order
+                  visitors see. Renaming a category updates every item using it.
+                </p>
+                {([
+                  ['portfolio','Portfolio Categories',drPfCat,<Layers size={11}/>],
+                  ['gallery',  'Gallery Categories',  drGalCat,<ImageIcon size={11}/>],
+                ] as const).map(([kind,title,dr,icon],idx)=>{
+                  const list=catsOf(kind);
+                  return(
+                    <div key={kind} className="bg-white border border-[#ebebeb] rounded-2xl p-5 shadow-sm animate-fade-in-up" style={{animationDelay:`${idx*70}ms`}}>
+                      <div className="flex items-center justify-between mb-1.5 flex-wrap gap-2">
+                        <p className="text-xs font-bold text-[#aaa] uppercase tracking-[0.1em] flex items-center gap-1.5">
+                          {icon}{title}
+                          <span className="bg-[#f0f0f0] text-[#888] px-2 py-0.5 rounded-full tabular-nums">{list.length}</span>
+                          <span className="hidden sm:inline-flex items-center gap-1 text-[#ccc] normal-case tracking-normal font-semibold"><GripVertical size={10}/>drag to reorder</span>
+                        </p>
+                        <button className={b.sm} onClick={()=>addCat(kind)}><Plus size={12}/>Add Category</button>
+                      </div>
+                      <p className="text-[#bbb] text-xs mb-4">
+                        {kind==='portfolio'
+                          ? 'The "Video" and "BTS" tabs are generated from each project\u2019s video links, so they are not listed here.'
+                          : 'A category with no photos still appears here, so you can pick it when adding an image.'}
+                      </p>
+                      <div className="flex flex-col gap-2">
+                        {list.map((c,i)=>{
+                          const used=catUsage(kind,c.name);
+                          const dupe=list.some((o,j)=>j!==i&&o.name.trim().toLowerCase()===c.name.trim().toLowerCase());
+                          return(
+                            <div key={c.id||`new-${i}`} {...dr.zoneProps(i)} className={`flex items-center gap-2.5 bg-[#f9f9f9] border rounded-xl px-3 py-2.5 group ${dupe?'border-[#fca5a5]':'border-[#ebebeb]'} ${dr.zoneClass(i)}`}>
+                              <DragHandle dr={dr} index={i}/>
+                              <span className="text-[0.65rem] font-bold text-[#ddd] w-5 flex-shrink-0 tabular-nums">{String(i+1).padStart(2,'0')}</span>
+                              <input
+                                value={c.name}
+                                onChange={e=>renameCat(kind,i,e.target.value)}
+                                aria-label={`${title} name`}
+                                className="flex-1 min-w-0 bg-white border border-[#ddd] rounded-lg px-2.5 py-1.5 text-sm text-[#111] outline-none font-[inherit] font-medium focus:border-[#111] transition-all"
+                              />
+                              <span className="text-[#bbb] text-xs font-semibold tabular-nums flex-shrink-0 w-16 text-right">
+                                {used} item{used===1?'':'s'}
+                              </span>
+                              <button
+                                className={b.iconDng}
+                                disabled={used>0}
+                                title={used>0?`In use by ${used} item${used===1?'':'s'} — reassign them first`:'Delete category'}
+                                onClick={()=>setModal({k:'del',label:c.name,onConfirm:()=>delCat(kind,i)})}
+                              ><Trash2 size={12}/></button>
+                            </div>
+                          );
+                        })}
+                        {!list.length&&<p className="text-[#ccc] text-sm py-6 text-center">No categories yet — add one</p>}
+                        {list.some((c,i)=>list.some((o,j)=>j!==i&&o.name.trim().toLowerCase()===c.name.trim().toLowerCase()))&&(
+                          <p className="text-[#dc2626] text-xs font-semibold">Two categories share a name — rename one, duplicates are not saved.</p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
             {/* ── CLIENTS ──────────────────────────────────────── */}
             {active==='clients'&&(
               <div className="flex flex-col gap-5">
@@ -1777,12 +1877,12 @@ const AdminDashboard: React.FC = ()=>{
       {/* ── MODALS ───────────────────────────────────────────────── */}
       {modal?.k==='add-svc'&&    <ServiceModal   onSave={item=>{saveSvc(item);setModal(null);}}                             onClose={()=>setModal(null)}/>}
       {modal?.k==='edit-svc'&&   <ServiceModal   initial={draft.services[modal.i]}   onSave={item=>{saveSvc(item,modal.i);setModal(null);}} onClose={()=>setModal(null)}/>}
-      {modal?.k==='add-pf'&&     <PortfolioModal services={draft.services}            onSave={item=>{savePf(item);setModal(null);}}          onClose={()=>setModal(null)}/>}
-      {modal?.k==='edit-pf'&&    <PortfolioModal initial={draft.portfolio[modal.i]}   services={draft.services} onSave={item=>{savePf(item,modal.i);setModal(null);}} onClose={()=>setModal(null)}/>}
+      {modal?.k==='add-pf'&&     <PortfolioModal services={draft.services} categories={draft.portfolioCategories}            onSave={item=>{savePf(item);setModal(null);}}          onClose={()=>setModal(null)}/>}
+      {modal?.k==='edit-pf'&&    <PortfolioModal initial={draft.portfolio[modal.i]}   services={draft.services} categories={draft.portfolioCategories} onSave={item=>{savePf(item,modal.i);setModal(null);}} onClose={()=>setModal(null)}/>}
       {modal?.k==='add-slide'&&  <SlideModal     onSave={(img,n)=>{addSlide(img,n);setModal(null);}}                        onClose={()=>setModal(null)}/>}
       {modal?.k==='edit-slide'&& <SlideModal     initial={{image:imgs()[modal.i],note:nts()[modal.i]??''}} onSave={(img,n)=>{editSlide(modal.i,img,n);setModal(null);}} onClose={()=>setModal(null)}/>}
-      {modal?.k==='add-gal'&&    <GalleryModal   onSave={item=>{saveGal(item);setModal(null);}}                              onClose={()=>setModal(null)}/>}
-      {modal?.k==='edit-gal'&&   <GalleryModal   initial={draft.gallery[modal.i]}    onSave={item=>{saveGal(item,modal.i);setModal(null);}} onClose={()=>setModal(null)}/>}
+      {modal?.k==='add-gal'&&    <GalleryModal categories={draft.galleryCategories}   onSave={item=>{saveGal(item);setModal(null);}}                              onClose={()=>setModal(null)}/>}
+      {modal?.k==='edit-gal'&&   <GalleryModal categories={draft.galleryCategories}   initial={draft.gallery[modal.i]}    onSave={item=>{saveGal(item,modal.i);setModal(null);}} onClose={()=>setModal(null)}/>}
       {modal?.k==='add-tm'&&     <TeamModal       onSave={item=>{saveTm(item);setModal(null);}}                              onClose={()=>setModal(null)}/>}
       {modal?.k==='edit-tm'&&    <TeamModal       initial={draft.team[modal.i]}       onSave={item=>{saveTm(item,modal.i);setModal(null);}}  onClose={()=>setModal(null)}/>}
       {modal?.k==='add-logo'&&   <LogoModal       onSave={url=>{saveLogo(url);setModal(null);}}                              onClose={()=>setModal(null)}/>}

@@ -19,6 +19,7 @@ from app.models import (
     ClientLogo,
     ClientsSettings,
     ContactInfoSettings,
+    ContentCategory,
     GalleryItem,
     HeroImage,
     HeroSettings,
@@ -168,6 +169,26 @@ async def seed_portfolio(db, services: list[Service]) -> None:
     await db.commit()
 
 
+async def seed_categories(db) -> None:
+    """Seed portfolio/gallery categories. Idempotent: existing rows are left alone,
+    so this never disturbs a database that already has content."""
+    if await _count(db, ContentCategory):
+        return
+
+    portfolio = [
+        "Documentary", "Video Production", "Event & Entertainment", "Live Streaming",
+        "Podcast", "Branding", "Behind The Scenes", "Photography",
+    ]
+    gallery = [
+        "Behind The Scenes", "Event Photography", "Sports Photography",
+        "Advertising Photography", "Portrait Photography", "Wedding Photography", "Podcast",
+    ]
+    for kind, names in (("portfolio", portfolio), ("gallery", gallery)):
+        for i, name in enumerate(names):
+            db.add(ContentCategory(kind=kind, name=name, order_index=i))
+    await db.commit()
+
+
 async def seed_clients(db) -> None:
     if await db.get(ClientsSettings, 1):
         return
@@ -299,6 +320,7 @@ async def seed_all() -> None:
         await seed_testimonials(db)
         services = await seed_services(db)
         await seed_portfolio(db, services)
+        await seed_categories(db)
         await seed_clients(db)
         await seed_team(db)
         await seed_gallery(db)

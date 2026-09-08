@@ -28,6 +28,11 @@ export type GalleryCategory = typeof GALLERY_CATEGORIES[number];
  * hardcoded defaults and older payloads carry no timestamp. */
 type GalleryItem = { src: string; category: string; updatedAt?: string };
 
+/* A category row. `id` is the server's UUID and is what makes a rename
+ * traceable — without it a rename is indistinguishable from delete + add, and
+ * the items pointing at the old name would be orphaned. */
+export type CategoryItem = { id: string; name: string };
+
 export const GALLERY_SORTS = [
   { key: 'recent', label: 'Last updated' },
   { key: 'custom', label: 'Custom order' },
@@ -74,6 +79,10 @@ type SiteContent = {
   clientLogos: string[];
   team: Array<{ id: string; name: string; role: string; bio?: string; photo?: string; position?: string }>;
   gallery: GalleryItem[];
+  /* Ordered category lists, owned by the database. The hardcoded constants are
+   * only a fallback for a backend that has not been migrated yet. */
+  portfolioCategories: CategoryItem[];
+  galleryCategories: CategoryItem[];
   contact: ContactInfo;
   pageHeroes: {
     about:     PageHero;
@@ -173,6 +182,11 @@ const DEFAULT_SITE_CONTENT: SiteContent = {
     { src: '/MARR0039.JPG',          category: 'Wedding Photography'     },
     { src: '/MARR0058.JPG',          category: 'Wedding Photography'     },
   ],
+  portfolioCategories: [
+    'Documentary', 'Video Production', 'Event & Entertainment', 'Live Streaming',
+    'Podcast', 'Branding', 'Behind The Scenes', 'Photography',
+  ].map((name, i) => ({ id: `pc-${i + 1}`, name })),
+  galleryCategories: GALLERY_CATEGORIES.map((name, i) => ({ id: `gc-${i + 1}`, name })),
   contact: {
     phone:    '+250 781 691 713',
     email:    'info@flatproduction.rw',
@@ -206,6 +220,8 @@ function cloneContent(c: SiteContent): SiteContent {
     clientLogos:  [...c.clientLogos],
     team:         c.team.map(m => ({ ...m })),
     gallery:      c.gallery.map(g => ({ ...g })),
+    portfolioCategories: c.portfolioCategories.map(x => ({ ...x })),
+    galleryCategories:   c.galleryCategories.map(x => ({ ...x })),
     contact:      { ...c.contact, socials: { ...c.contact.socials } },
     pageHeroes: {
       about:     { ...c.pageHeroes.about },
@@ -223,6 +239,16 @@ export function toOneSentence(text?: string): string {
   const m = value.match(/^(.+?[.!?])(?:\s|$)/);
   if (m) return m[1].trim();
   return `${value}.`;
+}
+
+/* Keep only well-formed rows. An older backend sends nothing here, in which case
+ * we fall back to the defaults so the tabs never come up empty. */
+function normalizeCategories(raw: unknown, fallback: CategoryItem[]): CategoryItem[] {
+  if (!Array.isArray(raw)) return fallback.map(c => ({ ...c }));
+  const clean = raw
+    .map((c): CategoryItem => ({ id: String((c as CategoryItem)?.id ?? ''), name: String((c as CategoryItem)?.name ?? '').trim() }))
+    .filter(c => c.name);
+  return clean.length ? clean : fallback.map(c => ({ ...c }));
 }
 
 function normalize(parsed: Partial<SiteContent>): SiteContent {
@@ -264,6 +290,8 @@ function normalize(parsed: Partial<SiteContent>): SiteContent {
           : { src: item.src ?? '', category: item.category ?? 'Event Photography', updatedAt: item.updatedAt }
       );
     })(),
+    portfolioCategories: normalizeCategories(parsed.portfolioCategories, DEFAULT_SITE_CONTENT.portfolioCategories),
+    galleryCategories:   normalizeCategories(parsed.galleryCategories,   DEFAULT_SITE_CONTENT.galleryCategories),
     contact: {
       ...DEFAULT_SITE_CONTENT.contact,
       ...parsed.contact,

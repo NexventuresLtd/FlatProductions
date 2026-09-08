@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy import DateTime, ForeignKey, Index, Integer, String, Text, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -54,6 +54,30 @@ class GalleryItem(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False, index=True
     )
+
+
+class ContentCategory(Base):
+    """Portfolio / gallery categories as first-class, orderable rows.
+
+    Items still store their category as a plain string rather than a foreign key.
+    That is deliberate: the live database already holds items whose category text
+    was free-form, and a FK migration would have to either drop or guess at
+    anything that did not match. Keying on the name keeps the migration purely
+    additive — worst case a category row is missing and the tab falls back to
+    being discovered from the items, exactly as before.
+    """
+
+    __tablename__ = "content_categories"
+    __table_args__ = (
+        UniqueConstraint("kind", "name", name="uq_content_categories_kind_name"),
+        Index("ix_content_categories_kind_order", "kind", "order_index"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    kind: Mapped[str] = mapped_column(String(16), nullable=False)  # 'portfolio' | 'gallery'
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    order_index: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 class TeamMember(Base):

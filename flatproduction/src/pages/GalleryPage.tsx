@@ -2,8 +2,8 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import {
-    contentStore, GALLERY_CATEGORIES, DEFAULT_SITE_CONTENT, GALLERY_SORTS,
-    DEFAULT_GALLERY_SORT, sortGallery, type GalleryItem, type GallerySort,
+    contentStore, DEFAULT_SITE_CONTENT, GALLERY_SORTS,
+    DEFAULT_GALLERY_SORT, sortGallery, type CategoryItem, type GalleryItem, type GallerySort,
 } from '../store/contentStore';
 import { resolveMediaUrl } from '../lib/apiClient';
 
@@ -67,6 +67,7 @@ const GalleryPage: React.FC = () => {
         return g.length ? g : DEFAULT_SITE_CONTENT.gallery;
     });
     const [heroData, setHeroData] = useState(() => contentStore.read().pageHeroes.gallery);
+    const [storedCategories, setStoredCategories] = useState<CategoryItem[]>(() => contentStore.read().galleryCategories);
     const [activeCategory, setActiveCategory] = useState('All');
     const [sort, setSort] = useState<GallerySort>(DEFAULT_GALLERY_SORT);
     const [lightbox, setLightbox] = useState<{ items: GalleryItem[]; index: number } | null>(null);
@@ -75,19 +76,20 @@ const GalleryPage: React.FC = () => {
         return contentStore.onUpdate((c: any) => {
             const g: GalleryItem[] = c.gallery ?? [];
             setGallery(g.length ? g : DEFAULT_SITE_CONTENT.gallery);
+            setStoredCategories(c.galleryCategories ?? []);
             if (c.pageHeroes?.gallery) setHeroData(c.pageHeroes.gallery);
         });
     }, []);
 
-    /* All categories present in data — GALLERY_CATEGORIES order first, then any custom ones */
+    /* Categories that actually have photos, ordered by the database. Anything a
+       photo uses but the category table does not know about is appended, so no
+       photo becomes unreachable if the two ever drift apart. */
     const orderedCategories = useMemo(() => {
         const present = new Set(gallery.map(g => g.category));
-        const known = GALLERY_CATEGORIES.filter(c => present.has(c));
-        const extra = [...present]
-            .filter(c => !(GALLERY_CATEGORIES as readonly string[]).includes(c))
-            .sort();
+        const known = storedCategories.map(c => c.name).filter(name => present.has(name));
+        const extra = [...present].filter(name => !known.includes(name)).sort();
         return [...known, ...extra];
-    }, [gallery]);
+    }, [gallery, storedCategories]);
 
     const visibleCategories = useMemo(() => ['All', ...orderedCategories], [orderedCategories]);
 

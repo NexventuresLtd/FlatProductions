@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { contentStore } from '../store/contentStore';
+import { contentStore, type CategoryItem } from '../store/contentStore';
 import { resolveMediaUrl } from '../lib/apiClient';
 
 type PortfolioCard = {
@@ -198,6 +198,7 @@ const PortfolioPage: React.FC = () => {
     const [activeCategory, setActiveCategory] = useState('All');
     const [serviceIdFilter, setServiceIdFilter] = useState<string | null>(null);
     const [storedPortfolio, setStoredPortfolio] = useState(() => contentStore.read().portfolio);
+    const [storedCategories, setStoredCategories] = useState<CategoryItem[]>(() => contentStore.read().portfolioCategories);
     const [heroData, setHeroData] = useState(() => contentStore.read().pageHeroes.portfolio);
     const [videoModal, setVideoModal] = useState<VideoModal | null>(null);
     const [imageModal, setImageModal] = useState<ImageModal | null>(null);
@@ -206,6 +207,7 @@ const PortfolioPage: React.FC = () => {
     useEffect(() => {
         return contentStore.onUpdate((c: any) => {
             setStoredPortfolio(c.portfolio ?? []);
+            setStoredCategories(c.portfolioCategories ?? []);
             if (c.pageHeroes?.portfolio) setHeroData(c.pageHeroes.portfolio);
         });
     }, []);
@@ -244,16 +246,20 @@ const PortfolioPage: React.FC = () => {
         }));
     }, [storedPortfolio]);
 
-    /* Dynamic category tabs: All → Video → BTS → main cats.
-       Main cats keep the order the items are stored in, so the arrangement set
-       in the admin dashboard is what visitors see (they used to be sorted
-       alphabetically, which silently discarded that ordering). */
+    /* Category tabs: All → Video → BTS → main cats.
+       'Video' and 'BTS' are derived filters (from videoUrl / btsUrl), not real
+       categories, so they stay pinned right after 'All'.
+       Main cats follow the order stored in the database. Any category present on
+       an item but missing from that table is appended rather than dropped, so a
+       backend that has not run the categories migration still shows every tab. */
     const categories = useMemo(() => {
         const hasVideo = allCards.some(c => !!c.videoUrl);
         const hasBts   = allCards.some(c => !!c.btsUrl);
-        const mainCats = [...new Set(allCards.map(c => c.category))];
-        return ['All', ...(hasVideo ? ['Video'] : []), ...(hasBts ? ['BTS'] : []), ...mainCats];
-    }, [allCards]);
+        const present  = new Set(allCards.map(c => c.category));
+        const ordered  = storedCategories.map(c => c.name).filter(name => present.has(name));
+        const extra    = [...present].filter(name => !ordered.includes(name));
+        return ['All', ...(hasVideo ? ['Video'] : []), ...(hasBts ? ['BTS'] : []), ...ordered, ...extra];
+    }, [allCards, storedCategories]);
 
     /* Count per tab */
     const countFor = (cat: string) => {

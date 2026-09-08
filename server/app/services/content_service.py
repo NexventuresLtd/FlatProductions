@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.content import (
@@ -17,7 +17,7 @@ from app.models.content import (
     HeroSettings,
     PageHero,
 )
-from app.models.items import GalleryItem, PortfolioItem, Service, TeamMember, Testimonial
+from app.models.items import ContentCategory, GalleryItem, PortfolioItem, Service, TeamMember, Testimonial
 from app.services.seed_data import seed_all
 
 PAGE_KEYS = ["about", "services", "portfolio", "gallery", "contact"]
@@ -54,6 +54,9 @@ async def assemble_site_content(db: AsyncSession) -> dict:
     client_logos = await _ordered(db, ClientLogo)
     team = await _ordered(db, TeamMember)
     gallery = await _ordered(db, GalleryItem)
+    categories = list((await db.execute(
+        select(ContentCategory).order_by(ContentCategory.kind, ContentCategory.order_index)
+    )).scalars().all())
     contact = await db.get(ContactInfoSettings, 1)
     page_heroes_result = await db.execute(select(PageHero))
     page_heroes = {ph.page_key: ph for ph in page_heroes_result.scalars().all()}
@@ -123,6 +126,12 @@ async def assemble_site_content(db: AsyncSession) -> dict:
         "gallery": [
             {"src": g.src, "category": g.category, "updatedAt": g.updated_at.isoformat()}
             for g in gallery
+        ],
+        "portfolioCategories": [
+            {"id": str(c.id), "name": c.name} for c in categories if c.kind == "portfolio"
+        ],
+        "galleryCategories": [
+            {"id": str(c.id), "name": c.name} for c in categories if c.kind == "gallery"
         ],
         "contact": {
             "phone": contact.phone if contact else "",
@@ -271,6 +280,72 @@ async def _replace_gallery(db: AsyncSession, items: list[dict]) -> None:
             await db.delete(row)
 
 
+async def _apply_categories(db: AsyncSession, kind: str, items: list[dict]) -> None:
+    """Upsert one kind of category, keyed by id so renames stay traceable.
+
+    A rename has to carry the items with it: the item tables store the category
+    as text, so renaming "Web & Digital" to "Podcast" rewrites every matching
+    item in the same transaction. Without that the items would keep pointing at
+    a name no category row claims any more, and their tab would vanish.
+
+    Deletes are refused while items still reference the category, so a stray
+    payload can never silently orphan content. The client blocks this too; this
+    is the backstop.
+    """
+    item_model = PortfolioItem if kind == "portfolio" else GalleryItem
+
+    async def _usage(name: str) -> int:
+        result = await db.execute(
+            select(func.count()).select_from(item_model).where(item_model.category == name)
+        )
+        return int(result.scalar_one())
+
+    existing = list((await db.execute(
+        select(ContentCategory).where(ContentCategory.kind == kind)
+    )).scalars().all())
+    by_id = {str(c.id): c for c in existing}
+    seen: set[str] = set()
+
+    for i, incoming in enumerate(items):
+        name = (incoming.get("name") or "").strip()
+        if not name:
+            continue
+        raw_id = str(incoming.get("id") or "")
+        row = by_id.get(raw_id)
+
+        if row is None:
+            # New category — unless that name already exists, in which case just
+            # reposition the existing row rather than violating (kind, name).
+            twin = next((c for c in existing if c.name == name), None)
+            if twin is not None:
+                twin.order_index = i
+                seen.add(str(twin.id))
+                continue
+            fresh = ContentCategory(kind=kind, name=name, order_index=i)
+            db.add(fresh)
+            existing.append(fresh)
+            continue
+
+        seen.add(raw_id)
+        if row.name != name:
+            # Refuse a rename that would collide with another category of this
+            # kind; merging two categories is not something a reorder should do.
+            if any(c is not row and c.name == name for c in existing):
+                row.order_index = i
+                continue
+            await db.execute(
+                update(item_model).where(item_model.category == row.name).values(category=name)
+            )
+            row.name = name
+        row.order_index = i
+
+    for row in existing:
+        if str(row.id) in seen or row in db.new:
+            continue
+        if await _usage(row.name) == 0:
+            await db.delete(row)
+
+
 async def apply_partial_update(db: AsyncSession, payload: dict) -> None:
     if "hero" in payload:
         hero_payload = payload["hero"] or {}
@@ -327,6 +402,10 @@ async def apply_partial_update(db: AsyncSession, payload: dict) -> None:
 
     if "gallery" in payload:
         await _replace_gallery(db, payload["gallery"] or [])
+    if "portfolioCategories" in payload:
+        await _apply_categories(db, "portfolio", payload["portfolioCategories"] or [])
+    if "galleryCategories" in payload:
+        await _apply_categories(db, "gallery", payload["galleryCategories"] or [])
 
     if "contact" in payload:
         contact_payload = payload["contact"] or {}
@@ -369,7 +448,8 @@ async def apply_partial_update(db: AsyncSession, payload: dict) -> None:
 
 _CONTENT_TABLES = [
     HeroImage, HeroSettings, AboutStat, AboutChip, AboutSettings, Testimonial, Service, PortfolioItem,
-    Client, ClientLogo, ClientsSettings, TeamMember, GalleryItem, ContactInfoSettings, PageHero,
+    Client, ClientLogo, ClientsSettings, TeamMember, GalleryItem, ContentCategory, ContactInfoSettings,
+    PageHero,
 ]
 
 
