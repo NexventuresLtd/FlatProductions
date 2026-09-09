@@ -45,17 +45,30 @@ export const DEFAULT_GALLERY_SORT: GallerySort = 'recent';
 
 /** Sort a gallery list for display. Never mutates the input.
  *  'custom' is the stored (drag) order, so it passes through untouched.
- *  'recent' puts the newest updatedAt first; entries without a usable timestamp
- *  sink to the bottom instead of pretending to be the newest. Array#sort is
- *  stable, so photos sharing a timestamp keep their custom order relative to
- *  each other. */
+ *  'recent' puts the newest first.
+ *
+ *  Photos added before timestamps were tracked all share one updatedAt value —
+ *  the old save path rewrote every row on every save, so the real history is
+ *  gone and is not recoverable. Sorting on the timestamp alone is a no-op for
+ *  them, which made "Last updated" look broken. Stored position breaks the tie:
+ *  the admin appends new photos to the end, so a later position means added
+ *  later. Newest therefore comes first even when every timestamp is identical.
+ *
+ *  A photo whose timestamp really is newer still wins outright, so anything
+ *  added or edited from now on rises to the top of its section regardless of
+ *  where it sits in the stored order. */
 export function sortGallery(items: GalleryItem[], sort: GallerySort): GalleryItem[] {
   if (sort === 'custom') return items;
   const stamp = (g: GalleryItem): number => {
     const t = g.updatedAt ? Date.parse(g.updatedAt) : NaN;
+    // No usable timestamp sinks below anything that has one, rather than
+    // pretending to be the newest.
     return Number.isNaN(t) ? -Infinity : t;
   };
-  return [...items].sort((a, b) => stamp(b) - stamp(a));
+  return items
+    .map((g, position) => ({ g, position }))
+    .sort((a, b) => (stamp(b.g) - stamp(a.g)) || (b.position - a.position))
+    .map(entry => entry.g);
 }
 
 type SiteContent = {
