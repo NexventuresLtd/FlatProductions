@@ -81,15 +81,32 @@ const GalleryPage: React.FC = () => {
         });
     }, []);
 
-    /* Categories that actually have photos, ordered by the database. Anything a
-       photo uses but the category table does not know about is appended, so no
-       photo becomes unreachable if the two ever drift apart. */
+    /* Categories that actually have photos.
+
+       Under 'custom' they follow the order set in the dashboard. Under 'recent'
+       the whole page is ordered by recency, so the categories themselves are
+       ranked by their newest photo — otherwise the sections stayed in a fixed
+       order and only the photos inside them moved, which made the sort look
+       broken on a page that groups by category.
+
+       The ranking reuses the same sortGallery pass the sections use, so "latest"
+       has exactly one definition: newest timestamp first, stored position
+       breaking ties. Anything a photo uses but the category table does not know
+       about is still included, so no photo becomes unreachable. */
     const orderedCategories = useMemo(() => {
         const present = new Set(gallery.map(g => g.category));
         const known = storedCategories.map(c => c.name).filter(name => present.has(name));
         const extra = [...present].filter(name => !known.includes(name)).sort();
-        return [...known, ...extra];
-    }, [gallery, storedCategories]);
+        const byDashboard = [...known, ...extra];
+        if (sort === 'custom') return byDashboard;
+
+        const byRecency: string[] = [];
+        for (const item of sortGallery(gallery, sort)) {
+            if (!byRecency.includes(item.category)) byRecency.push(item.category);
+        }
+        // Belt and braces: keep any category that somehow produced no photo above.
+        return [...byRecency, ...byDashboard.filter(name => !byRecency.includes(name))];
+    }, [gallery, storedCategories, sort]);
 
     const visibleCategories = useMemo(() => ['All', ...orderedCategories], [orderedCategories]);
 
