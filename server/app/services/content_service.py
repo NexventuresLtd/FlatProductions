@@ -294,17 +294,28 @@ async def _apply_categories(db: AsyncSession, kind: str, items: list[dict]) -> N
     """
     item_model = PortfolioItem if kind == "portfolio" else GalleryItem
 
-    async def _usage(name: str) -> int:
-        result = await db.execute(
-            select(func.count()).select_from(item_model).where(item_model.category == name)
-        )
-        return int(result.scalar_one())
+    # Count usage once, up front, instead of querying per row inside the delete
+    # loop below. A query there would autoflush the not-yet-inserted categories
+    # added in this same call, which silently defeated the guard protecting them.
+    # This runs after _replace_portfolio / _replace_gallery, so flush first to
+    # count the items being saved now rather than the ones they replaced.
+    await db.flush()
+    usage: dict[str, int] = {
+        name: int(count)
+        for name, count in (await db.execute(
+            select(item_model.category, func.count()).group_by(item_model.category)
+        )).all()
+        if name
+    }
 
     existing = list((await db.execute(
         select(ContentCategory).where(ContentCategory.kind == kind)
     )).scalars().all())
     by_id = {str(c.id): c for c in existing}
     seen: set[str] = set()
+    # Tracked by object identity: a pending row has no id yet, and membership of
+    # Session.new cannot be relied on once anything triggers a flush.
+    created: list[ContentCategory] = []
 
     for i, incoming in enumerate(items):
         name = (incoming.get("name") or "").strip()
@@ -324,6 +335,7 @@ async def _apply_categories(db: AsyncSession, kind: str, items: list[dict]) -> N
             fresh = ContentCategory(kind=kind, name=name, order_index=i)
             db.add(fresh)
             existing.append(fresh)
+            created.append(fresh)
             continue
 
         seen.add(raw_id)
@@ -339,10 +351,11 @@ async def _apply_categories(db: AsyncSession, kind: str, items: list[dict]) -> N
             row.name = name
         row.order_index = i
 
+    created_ids = {id(row) for row in created}
     for row in existing:
-        if str(row.id) in seen or row in db.new:
+        if id(row) in created_ids or str(row.id) in seen:
             continue
-        if await _usage(row.name) == 0:
+        if usage.get(row.name, 0) == 0:
             await db.delete(row)
 
 
