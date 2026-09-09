@@ -3,7 +3,7 @@ import sys
 from logging.config import fileConfig
 from pathlib import Path
 
-from sqlalchemy import engine_from_config, pool
+from sqlalchemy import create_engine, pool
 
 from alembic import context
 
@@ -25,15 +25,13 @@ def _database_url() -> str:
     """
     url = os.getenv("DATABASE_URL_SYNC")
     if url:
-        return url
+        return url.strip()
     from app.core.config import settings  # noqa: PLC0415 — needs a complete .env
 
     return settings.database_url_sync
 
 
 config = context.config
-config.set_main_option("sqlalchemy.url", _database_url())
-
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
@@ -41,9 +39,8 @@ target_metadata = Base.metadata
 
 
 def run_migrations_offline() -> None:
-    url = config.get_main_option("sqlalchemy.url")
     context.configure(
-        url=url,
+        url=_database_url(),
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
@@ -54,11 +51,7 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
-    connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
-        prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
-    )
+    connectable = create_engine(_database_url(), poolclass=pool.NullPool)
 
     with connectable.connect() as connection:
         context.configure(connection=connection, target_metadata=target_metadata)
